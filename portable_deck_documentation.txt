@@ -1,0 +1,126 @@
+
+==============================
+VIRTUAL DECK - PROJECT DOC
+==============================
+
+📌 DESCRIPTION
+--------------
+Virtual Deck is a Python app that replaces physical card decks for playing any kind of card game.
+It simulates shuffling, drawing, and dealing cards among players — without implementing game rules.
+You can use it with standard decks, custom games, tarot cards, etc.
+
+📁 PROJECT STRUCTURE
+---------------------
+virtual_deck/
+├── main.py              # Main script
+├── decks/
+│   └── demodeck.json    # Example card deck (editable)
+
+
+🧱 CLASS OVERVIEW
+==================
+
+🔸 Deck
+--------
+Handles loading, flattening, shuffling, and drawing cards from a deck file.
+
+Attributes:
+- path: path to the deck file
+- types: list of card types (e.g., suits)
+- cards: 2D list of values under each type
+- flat_deck: full list of "value of type" strings
+
+Methods:
+- load(): loads and parses the deck JSON
+- flatten(): converts cards to a flat list
+- shuffle(): shuffles the deck
+- draw_card(): returns the top card (or None)
+
+
+🔸 Player
+----------
+Represents a player with a hand of cards.
+
+Attributes:
+- name: player's name
+- hand: list of drawn cards
+
+Methods:
+- draw_card(card): adds card to hand
+- __str__(): prints the player’s hand
+
+
+🔸 Game
+--------
+Controls the deck and the players.
+
+Attributes:
+- players: list of Player instances
+- deck: the current Deck object
+- current_player_index: whose turn it is to draw
+
+Methods:
+- start(cards_per_player=5): shuffles and deals to players
+- deal_card(): deals one card to the current player
+- show_player_hands(): prints hands of all players
+
+
+⚙️ USAGE
+========
+
+Run with:
+
+    python main.py
+
+Main script creates a Game, loads a deck, shuffles it, deals cards to 3 players, and prints their hands.
+
+You can modify:
+- Number of players
+- Cards per player
+- Deck JSON file
+
+
+🧾 DECK FORMAT (JSON)
+======================
+
+Sample: decks/demodeck.json
+
+{
+  "types": ["Hearts", "Spades", "Diamonds", "Clubs"],
+  "cards": [
+    ["2", "3", ..., "A"],     <-- Cards for Hearts
+    ["2", "3", ..., "A"],     <-- Cards for Spades
+    ...
+  ]
+}
+
+- "types": Categories (suits, symbols, colors, etc.)
+- "cards": A list of lists, each list holds values under that type
+
+
+💡 EXAMPLE OUTPUT
+==================
+
+Deck shuffled. Starting the game...
+Player1 received card: 10 of Spades
+Player2 received card: A of Hearts
+Player3 received card: 3 of Diamonds
+...
+
+Player1: ['10 of Spades', '2 of Clubs', ...]
+Player2: ['A of Hearts', '9 of Diamonds', ...]
+Player3: ['3 of Diamonds', 'K of Spades', ...]
+
+
+🚀 IDEAS FOR EXPANSION
+========================
+- Add support for jokers or wildcards
+- Load deck types dynamically from CLI
+- Export player hands to a file
+- Add GUI (Tkinter or web interface)
+- Save/load sessions
+
+
+==============================
+END OF DOCUMENTATION
+==============================
