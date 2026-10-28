@@ -1,126 +1,143 @@
-
 ==============================
-VIRTUAL DECK - PROJECT DOC
+VIRTUAL DECK - PROJECT GUIDE
 ==============================
 
-📌 DESCRIPTION
---------------
-Virtual Deck is a Python app that replaces physical card decks for playing any kind of card game.
-It simulates shuffling, drawing, and dealing cards among players — without implementing game rules.
-You can use it with standard decks, custom games, tarot cards, etc.
-
-📁 PROJECT STRUCTURE
----------------------
-virtual_deck/
-├── main.py              # Main script
-├── decks/
-│   └── demodeck.json    # Example card deck (editable)
-
-
-🧱 CLASS OVERVIEW
-==================
-
-🔸 Deck
+OVERVIEW
 --------
-Handles loading, flattening, shuffling, and drawing cards from a deck file.
+Virtual Deck is a Python/Tkinter application for handling cards in tabletop
+games. It loads a deck from a JSON file, deals cards to players, and provides
+basic draw, play, discard, and turn actions. It does not implement the rules of a
+specific card game.
 
-Attributes:
-- path: path to the deck file
-- types: list of card types (e.g., suits)
-- cards: 2D list of values under each type
-- flat_deck: full list of "value of type" strings
-
-Methods:
-- load(): loads and parses the deck JSON
-- flatten(): converts cards to a flat list
-- shuffle(): shuffles the deck
-- draw_card(): returns the top card (or None)
-
-
-🔸 Player
-----------
-Represents a player with a hand of cards.
-
-Attributes:
-- name: player's name
-- hand: list of drawn cards
-
-Methods:
-- draw_card(card): adds card to hand
-- __str__(): prints the player’s hand
-
-
-🔸 Game
---------
-Controls the deck and the players.
-
-Attributes:
-- players: list of Player instances
-- deck: the current Deck object
-- current_player_index: whose turn it is to draw
-
-Methods:
-- start(cards_per_player=5): shuffles and deals to players
-- deal_card(): deals one card to the current player
-- show_player_hands(): prints hands of all players
-
-
-⚙️ USAGE
-========
-
-Run with:
+STARTING THE APP
+----------------
+Run the application from this folder with:
 
     python main.py
 
-Main script creates a Game, loads a deck, shuffles it, deals cards to 3 players, and prints their hands.
+The main menu contains:
+- Play: start a new game using the current settings.
+- Load: choose a saved game to resume. The file picker opens in the saves
+  folder by default and can browse to another location.
+- Settings: configure a new game.
+- Quit: close the application.
 
-You can modify:
-- Number of players
-- Cards per player
-- Deck JSON file
+GAME WINDOW
+-----------
+The game window shows the current player's hand, card counts, and a game log.
+Available actions are:
+- Draw Card: draw one card from the draw deck.
+- Discard Selected: move the selected hand card to the discard pile.
+- Play Selected: move the selected hand card onto the shared table. Played
+  cards stay visible there and remain separate from the discard pile.
+- Next Turn: pass the turn to the next player.
+- Save: save the current game without leaving it.
+- Restart Game: start a fresh game with the same players and setup. If scoring
+  is enabled, choose whether to keep or reset the current scores.
+- Request Point: request one point for the current player when scoring is
+  enabled.
+- Exit to Main Menu: ask whether to save, then return to the main menu.
+- Exit to Desktop: ask whether to save, then close the application.
 
+For either exit action, Yes saves the game, No exits without saving the current
+game, and Cancel stays in the game. The window's close button behaves like
+Exit to Desktop.
 
-🧾 DECK FORMAT (JSON)
-======================
+SETTINGS
+--------
+Settings are stored in configs/settings.json. The separate
+configs/default_settings.json file defines the defaults. Restore Defaults in
+Settings replaces the current config with those values. Current settings are
+created from the defaults on first launch. They include:
+- num_players: number of players (at least 1).
+- cards_per_player: cards dealt to each player at the start (0 or more).
+- deck_path: path to the deck JSON file. Relative paths are resolved from the
+  application folder.
+- save_discard_on_exit: whether to write the discard pile to
+  decks/discard.json when exiting to the desktop.
+- use_custom_player_names: whether custom player names are enabled.
+- player_names: names used for players when custom names are enabled.
+- enable_score_counter: show scores and allow players to request points.
+- require_point_confirmation: require approval by all other players before a
+  requested point is awarded. Each other player is asked at the start of their
+  next turn, before card actions are available. A No rejects the request; Yes
+  records that player's approval. When confirmation is disabled, a request
+  awards the point immediately.
+- allow_take_from_table: show the action for taking a selected table card into
+  the current player's hand.
+- allow_move_table_card_to_discard: show the action for moving a selected table
+  card to the discard pile.
+- allow_manual_table_cleanup: let the current player move all table cards to
+  the discard pile with one action.
+- clear_table_on_round_end: automatically move all table cards to the discard
+  pile when the last player in turn order ends the round.
 
-Sample: decks/demodeck.json
+Both manual and automatic table cleanup move the cards into the discard pile.
 
-{
-  "types": ["Hearts", "Spades", "Diamonds", "Clubs"],
-  "cards": [
-    ["2", "3", ..., "A"],     <-- Cards for Hearts
-    ["2", "3", ..., "A"],     <-- Cards for Spades
-    ...
-  ]
-}
+The settings screen can browse for a deck file. When custom names are enabled,
+one name field is shown per configured player. Every name must be non-empty.
+The game checks that the deck contains enough cards to deal the requested
+starting hands before it begins.
 
-- "types": Categories (suits, symbols, colors, etc.)
-- "cards": A list of lists, each list holds values under that type
+SAVED GAMES
+-----------
+Game saves are JSON files in the saves/ folder. Save opens a name prompt and
+suggests sessionX, where X is one greater than the highest number used by an
+existing sessionX.json file. Other filenames do not affect this number. The
+.json extension is added automatically when omitted, and replacing an existing
+save requires confirmation.
 
+A saved game contains the deck path and remaining deck order, each player's
+name and hand, the discard pile, cards played onto the table, the current
+player, the original cards-per-player setting, and game history. Load
+restores this state, including scores and any pending point request. Saves can
+also be loaded from a JSON file outside saves/.
 
-💡 EXAMPLE OUTPUT
-==================
+DECK FILE FORMAT
+----------------
+Decks are JSON files with a types array and a cards array. Each card group in
+cards corresponds by position to one entry in types. Example:
 
-Deck shuffled. Starting the game...
-Player1 received card: 10 of Spades
-Player2 received card: A of Hearts
-Player3 received card: 3 of Diamonds
-...
+    {
+      "types": ["Hearts", "Spades"],
+      "cards": [
+        ["2", "3", "A"],
+        ["2", "3", "A"]
+      ]
+    }
 
-Player1: ['10 of Spades', '2 of Clubs', ...]
-Player2: ['A of Hearts', '9 of Diamonds', ...]
-Player3: ['3 of Diamonds', 'K of Spades', ...]
+This creates cards such as "2 of Hearts" and "A of Spades". The example deck
+in decks/demodeck.json contains the standard 52-card deck.
 
+PROJECT FILES
+-------------
+- main.py: application entry point; opens the main menu.
+- mainmenu.py: main menu, settings form, game start/load, and exit handling.
+- settings.py: default settings, config loading/saving, and path resolution.
+- game.py: game state, dealing, drawing, discarding, and game save/load.
+- deck.py: deck JSON loading, shuffling, and drawing.
+- player.py: player names and hands.
+- guibase.py: Tkinter game window and action controls.
+- tableframe.py: displays cards played onto the shared table.
+- handframe.py: displays and selects cards in the current player's hand.
+- statuspanel.py: displays player, draw deck, and discard pile counts.
+- cardactions.py: callbacks for draw, discard, and next-turn actions.
+- configs/settings.json: current application settings.
+- configs/default_settings.json: saved default settings used by Restore Defaults.
+- saves/: saved game JSON files.
+- decks/: deck definitions and the optional discard pile output.
+- backup/: older copies of application modules.
 
-🚀 IDEAS FOR EXPANSION
-========================
-- Add support for jokers or wildcards
-- Load deck types dynamically from CLI
-- Export player hands to a file
-- Add GUI (Tkinter or web interface)
-- Save/load sessions
-
+CURRENT SCOPE
+-------------
+The app provides a general card-handling interface rather than game rules.
+There is no automatic save-on-every-action. Use Save or choose Yes when
+leaving to keep the current game for later.
 
 ==============================
-END OF DOCUMENTATION
+END OF PROJECT GUIDE
 ==============================
+
+
+
+

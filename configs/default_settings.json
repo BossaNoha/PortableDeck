@@ -1,0 +1,14 @@
+{
+  "num_players": 5,
+  "cards_per_player": 3,
+  "deck_path": "decks/demodeck.json",
+  "save_discard_on_exit": true,
+  "use_custom_player_names": false,
+  "player_names": [],
+  "enable_score_counter": false,
+  "require_point_confirmation": false,
+  "allow_take_from_table": false,
+  "allow_move_table_card_to_discard": false,
+  "allow_manual_table_cleanup": false,
+  "clear_table_on_round_end": false
+}

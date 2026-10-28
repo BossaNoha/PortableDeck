@@ -24,6 +24,9 @@ class StatusPanel(tk.LabelFrame):
         self.discard_label = tk.Label(self, text="")
         self.discard_label.pack(anchor="w")
 
+        self.table_label = tk.Label(self, text="")
+        self.table_label.pack(anchor="w")
+
         # Initial update
         self.update_status()
 
@@ -32,6 +35,8 @@ class StatusPanel(tk.LabelFrame):
         for i, player in enumerate(self.game.players):
             count = len(player.hand)
             display = f"{count} card{'s' if count != 1 else ''}" if count < 8 else "many"
+            if self.game.score_enabled:
+                display += f"  |  Score: {self.game.scores[i]}"
             self.player_labels[i].config(text=f"{player.name}: {display}")
 
         # Update draw deck
@@ -43,3 +48,5 @@ class StatusPanel(tk.LabelFrame):
         discard_count = len(self.game.discard_pile)
         discard_display = str(discard_count) if discard_count < 12 else "many"
         self.discard_label.config(text=f"Discard Pile: {discard_display}")
+
+        self.table_label.config(text=f"Cards on Table: {len(self.game.table_cards)}")
