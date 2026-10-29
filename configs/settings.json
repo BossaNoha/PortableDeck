@@ -10,5 +10,8 @@
   "allow_take_from_table": true,
   "allow_move_table_card_to_discard": true,
   "allow_manual_table_cleanup": false,
-  "clear_table_on_round_end": false
+  "clear_table_on_round_end": false,
+  "allow_positioned_play": true,
+  "occupied_slot_action": "invalid",
+  "enable_undo": false
 }

@@ -10,6 +10,7 @@ from cardactions import (
     discard_selected,
     end_turn,
     move_selected_table_card_to_discard,
+    play_at_selected_spot,
     play_selected,
     request_point,
     take_selected_from_table,
@@ -17,7 +18,8 @@ from cardactions import (
 
 class GameGUI:
     def __init__(
-        self, root, game, on_save=None, on_exit_menu=None, on_exit_desktop=None, on_restart=None
+        self, root, game, on_save=None, on_exit_menu=None, on_exit_desktop=None,
+        on_restart=None, on_checkpoint=None,
     ):
         self.root = root
         self.game = game
@@ -25,67 +27,90 @@ class GameGUI:
         self.on_exit_menu = on_exit_menu
         self.on_exit_desktop = on_exit_desktop
         self.on_restart = on_restart
+        self.on_checkpoint = on_checkpoint
         self.root.title("Virtual Deck Game")
+        self.root.minsize(900, 560)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
-        # ----- Frames -----
-        # Status panel shows counts of cards
-        self.status_panel = StatusPanel(root, self.game)
+        self.layout_frame = tk.Frame(root)
+        self.layout_frame.pack(fill="both", expand=True)
+        self.left_frame = tk.Frame(self.layout_frame)
+        self.left_frame.pack(side="left", fill="both", expand=True)
+        self.right_frame = tk.Frame(self.layout_frame)
+        self.right_frame.pack(side="right", fill="y", padx=(0, 10), pady=5)
+
+        # Status, hand, actions, and log stay together on the left.
+        self.status_panel = StatusPanel(self.left_frame, self.game)
         self.status_panel.pack(padx=10, pady=5, fill="x")
 
-        self.table_frame = TableFrame(root, self.game)
-        self.table_frame.pack(padx=10, pady=5, fill="x")
-
-        # HandFrame shows the current player's hand
-        self.hand_frame = HandFrame(root, self)
+        self.hand_frame = HandFrame(self.left_frame, self)
         self.hand_frame.pack(padx=10, pady=5, fill="x")
 
-        # Action buttons frame
-        self.actions_frame = tk.LabelFrame(root, text="Actions", padx=5, pady=5)
+        self.actions_frame = tk.LabelFrame(self.left_frame, text="Actions", padx=5, pady=5)
         self.actions_frame.pack(padx=10, pady=5, fill="x")
         self.card_actions_frame = tk.Frame(self.actions_frame)
         self.card_actions_frame.pack(fill="x")
         self.turn_actions_frame = tk.Frame(self.actions_frame)
         self.turn_actions_frame.pack(fill="x")
 
-        # Game log frame
-        self.log_frame = tk.LabelFrame(root, text="Game Log", padx=5, pady=5)
+        self.log_frame = tk.LabelFrame(self.left_frame, text="Game Log", padx=5, pady=5)
         self.log_frame.pack(padx=10, pady=5, fill="both", expand=True)
 
         self.log_text = tk.Text(self.log_frame, height=10, state="disabled")
         self.log_text.pack(fill="both", expand=True)
 
+        self.table_frame = TableFrame(self.right_frame, self.game)
+        self.table_frame.pack(fill="both", expand=True)
+
         # ----- Action buttons -----
         self.draw_button = tk.Button(
             self.card_actions_frame,
             text="Draw Card",
-            command=lambda: draw_card(self.game, self.hand_frame, self.log, self.status_panel)
+            command=lambda: self.run_action(
+                draw_card, self.game, self.hand_frame, self.log, self.status_panel
+            ),
         )
         self.draw_button.pack(side="left", padx=5)
 
         self.discard_button = tk.Button(
             self.card_actions_frame,
             text="Discard Selected",
-            command=lambda: discard_selected(self.game, self.hand_frame, self.log, self.status_panel)
+            command=lambda: self.run_action(
+                discard_selected, self.game, self.hand_frame, self.log, self.status_panel
+            ),
         )
         self.discard_button.pack(side="left", padx=5)
 
         self.play_button = tk.Button(
             self.card_actions_frame,
-            text="Play Selected",
-            command=lambda: play_selected(
-                self.game, self.hand_frame, self.table_frame, self.log, self.status_panel
+            text="Play Selected Card",
+            command=lambda: self.run_action(
+                play_selected, self.game, self.hand_frame, self.table_frame, self.log, self.status_panel
             ),
         )
         self.play_button.pack(side="left", padx=5)
+
+        self.positioned_play_buttons = []
+        if self.game.allow_positioned_play:
+            self.play_at_spot_button = tk.Button(
+                self.card_actions_frame,
+                text="Play at Selected Spot",
+                command=lambda: self.run_action(
+                    play_at_selected_spot,
+                    self.game, self.hand_frame, self.table_frame, self.log, self.status_panel,
+                ),
+            )
+            self.play_at_spot_button.pack(side="left", padx=5)
+            self.positioned_play_buttons.append(self.play_at_spot_button)
 
         self.table_action_buttons = []
         if self.game.allow_take_from_table:
             self.take_table_button = tk.Button(
                 self.card_actions_frame,
                 text="Take Selected from Table",
-                command=lambda: take_selected_from_table(
-                    self.game, self.table_frame, self.hand_frame, self.log, self.status_panel
+                command=lambda: self.run_action(
+                    take_selected_from_table,
+                    self.game, self.table_frame, self.hand_frame, self.log, self.status_panel,
                 ),
             )
             self.take_table_button.pack(side="left", padx=5)
@@ -94,8 +119,9 @@ class GameGUI:
             self.table_discard_button = tk.Button(
                 self.card_actions_frame,
                 text="Move Selected to Discard",
-                command=lambda: move_selected_table_card_to_discard(
-                    self.game, self.table_frame, self.log, self.status_panel
+                command=lambda: self.run_action(
+                    move_selected_table_card_to_discard,
+                    self.game, self.table_frame, self.log, self.status_panel,
                 ),
             )
             self.table_discard_button.pack(side="left", padx=5)
@@ -104,8 +130,8 @@ class GameGUI:
             self.clear_table_button = tk.Button(
                 self.card_actions_frame,
                 text="Clear Table",
-                command=lambda: clear_table(
-                    self.game, self.table_frame, self.log, self.status_panel
+                command=lambda: self.run_action(
+                    clear_table, self.game, self.table_frame, self.log, self.status_panel
                 ),
             )
             self.clear_table_button.pack(side="left", padx=5)
@@ -114,11 +140,21 @@ class GameGUI:
         self.next_button = tk.Button(
             self.turn_actions_frame,
             text="Next Turn",
-            command=lambda: end_turn(
-                self.game, self.hand_frame, self.log, self.status_panel, self.handle_turn_start
+            command=lambda: self.run_action(
+                end_turn,
+                self.game, self.hand_frame, self.log, self.status_panel, self.handle_turn_start,
             ),
         )
         self.next_button.pack(side="left", padx=5)
+
+        if self.game.enable_undo:
+            self.undo_button = tk.Button(
+                self.turn_actions_frame,
+                text="Undo",
+                command=self.undo,
+                state="disabled",
+            )
+            self.undo_button.pack(side="left", padx=5)
 
         self.save_button = tk.Button(self.turn_actions_frame, text="Save", command=self.save)
         self.save_button.pack(side="left", padx=5)
@@ -149,9 +185,18 @@ class GameGUI:
         # Initialize GUI
         self.hand_frame.update_hand()
         self.status_panel.update_status()
-        self.log(f"{self.current_player_name()}'s turn starts.")
+        if self.game.gui_log:
+            self._restore_log()
+        else:
+            self.log(f"{self.current_player_name()}'s turn starts.")
+        turn_start_state = (
+            self.game.capture_undo_state() if self.game.enable_undo else None
+        )
         self.handle_turn_start()
+        self._record_undo_state(turn_start_state)
         self.update_point_button()
+        self.update_undo_button()
+        self.checkpoint()
 
     # ----- Helper methods -----
     def current_player(self):
@@ -162,14 +207,64 @@ class GameGUI:
 
     def log(self, message):
         """Append a message to the log text box."""
+        self.game.gui_log.append(message)
         self.log_text.config(state="normal")
         self.log_text.insert("end", message + "\n")
+        self.log_text.see("end")
+        self.log_text.config(state="disabled")
+
+    def _restore_log(self):
+        """Render log messages restored from a saved game without duplicating them."""
+        self.log_text.config(state="normal")
+        self.log_text.insert("end", "\n".join(self.game.gui_log) + "\n")
         self.log_text.see("end")
         self.log_text.config(state="disabled")
 
     def save(self):
         if self.on_save:
             self.on_save(self.game)
+
+    def run_action(self, action, *args):
+        undo_state = self.game.capture_undo_state() if self.game.enable_undo else None
+        action(*args)
+        self._record_undo_state(undo_state)
+        self.update_undo_button()
+        self.checkpoint()
+
+    def _record_undo_state(self, undo_state):
+        if undo_state is not None and undo_state != self.game.capture_undo_state():
+            self.game.undo_stack.append(undo_state)
+
+    def undo(self):
+        if not self.game.undo_last_action():
+            return
+        self.hand_frame.selected_index = None
+        self.table_frame.selected_index = None
+        self.table_frame.selected_position = None
+        self.hand_frame.update_hand()
+        self.table_frame.update_table()
+        self.status_panel.update_status()
+        self.log_text.config(state="normal")
+        self.log_text.delete("1.0", "end")
+        if self.game.gui_log:
+            self.log_text.insert("end", "\n".join(self.game.gui_log) + "\n")
+        self.log_text.see("end")
+        self.log_text.config(state="disabled")
+        self.handle_turn_start()
+        self.update_point_button()
+        self.update_undo_button()
+        self.checkpoint()
+
+    def update_undo_button(self):
+        if hasattr(self, "undo_button"):
+            state = "normal" if self.game.undo_stack else "disabled"
+            self.undo_button.config(state=state)
+
+    def checkpoint(self):
+        if self.on_checkpoint:
+            error = self.on_checkpoint(self.game)
+            if error:
+                self.log(f"Autosave failed: {error}")
 
     def restart(self):
         if self.game.score_enabled:
@@ -194,7 +289,9 @@ class GameGUI:
             self.on_restart(self.game, keep_scores)
 
     def request_current_point(self):
-        request_point(self.game, self.hand_frame, self.log, self.status_panel)
+        self.run_action(
+            request_point, self.game, self.hand_frame, self.log, self.status_panel
+        )
         self.update_point_button()
 
     def update_point_button(self):
@@ -204,6 +301,7 @@ class GameGUI:
 
     def handle_turn_start(self):
         self.table_frame.selected_index = None
+        self.table_frame.selected_position = None
         self.table_frame.update_table()
         if not self.game.current_player_must_confirm_point():
             return
@@ -229,6 +327,7 @@ class GameGUI:
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
+        buttons.extend(self.positioned_play_buttons)
         buttons.extend(self.table_action_buttons)
         if hasattr(self, "point_button"):
             buttons.append(self.point_button)
@@ -242,6 +341,7 @@ class GameGUI:
         )
 
     def exit_to_menu(self):
+        self.checkpoint()
         save_choice = self._ask_to_save()
         if save_choice is None:
             return
@@ -249,6 +349,7 @@ class GameGUI:
             self.on_exit_menu(self.game, save_choice)
 
     def exit_to_desktop(self):
+        self.checkpoint()
         save_choice = self._ask_to_save()
         if save_choice is None:
             return

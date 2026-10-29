@@ -8,32 +8,99 @@ class TableFrame(tk.LabelFrame):
         super().__init__(master, text="Table", padx=8, pady=5, **kwargs)
         self.game = game
         self.selected_index = None
+        self.selected_position = None
         self.update_table()
 
     def update_table(self):
         for widget in self.winfo_children():
             widget.destroy()
         self.card_buttons = []
+        if self.game.allow_positioned_play:
+            self._draw_spatial_table()
+            self.after_idle(self._expand_window_for_table)
+            return
         if not self.game.table_cards:
             tk.Label(self, text="No cards on the table.").pack(anchor="w")
+            self.after_idle(self._expand_window_for_table)
             return
         for index, entry in enumerate(self.game.table_cards):
-            button = tk.Button(
-                self,
-                text=f"{entry['card']}\n{entry['player']}",
-                width=16,
-                command=lambda card_index=index: self.select_card(card_index),
+            self._draw_card(index)
+        self.after_idle(self._expand_window_for_table)
+
+    def _expand_window_for_table(self):
+        """Grow the game window when the table needs more room for its cards."""
+        root = self.winfo_toplevel()
+        root.update_idletasks()
+        width = max(root.winfo_width(), root.winfo_reqwidth())
+        height = max(root.winfo_height(), root.winfo_reqheight())
+        if width > root.winfo_width() or height > root.winfo_height():
+            root.geometry(f"{width}x{height}")
+
+    def _draw_spatial_table(self):
+        occupied = {}
+        for index, entry in enumerate(self.game.table_cards):
+            occupied.setdefault(tuple(entry["position"]), []).append((index, entry))
+        available = self.game.available_table_positions()
+        positions = set(occupied) | available
+        min_row = min(row for row, _ in positions)
+        min_column = min(column for _, column in positions)
+
+        for position in sorted(positions):
+            row, column = position
+            if position in occupied:
+                index, entry = occupied[position][-1]
+                button = tk.Button(
+                    self,
+                    text=f"{entry['card']}\n{entry['player']}",
+                    width=18,
+                    command=lambda card_index=index: self.select_card(card_index),
+                )
+                self.card_buttons.append(button)
+                if index == self.selected_index:
+                    button.config(bg="lightblue")
+            else:
+                button = tk.Button(
+                    self,
+                    text="Empty",
+                    width=18,
+                    height=2,
+                    command=lambda spot=position: self.select_slot(spot),
+                )
+                if position == self.selected_position:
+                    button.config(bg="lightgreen")
+            button.grid(
+                row=row - min_row,
+                column=column - min_column,
+                padx=3,
+                pady=3,
+                sticky="ew",
             )
-            button.pack(side="left", padx=4, pady=3)
-            self.card_buttons.append(button)
-            if index == self.selected_index:
-                button.config(bg="lightblue")
+            self.grid_columnconfigure(column - min_column, weight=1)
+
+    def _draw_card(self, index):
+        entry = self.game.table_cards[index]
+        button = tk.Button(
+            self,
+            text=f"{entry['card']}\n{entry['player']}",
+            width=18,
+            command=lambda card_index=index: self.select_card(card_index),
+        )
+        button.pack(side="left", padx=4, pady=3)
+        self.card_buttons.append(button)
+        if index == self.selected_index:
+            button.config(bg="lightblue")
 
     def select_card(self, index):
         self.selected_index = index
+        self.selected_position = None
+        self.update_table()
+
+    def select_slot(self, position):
+        self.selected_index = None
+        self.selected_position = position
         self.update_table()
 
     def clear_selection(self):
-        if self.selected_index is not None:
-            self.selected_index = None
-            self.update_table()
+        self.selected_index = None
+        self.selected_position = None
+        self.update_table()

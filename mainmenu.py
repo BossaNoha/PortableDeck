@@ -8,6 +8,7 @@ from guibase import GameGUI
 from settings import BASE_DIR, load_default_settings, load_settings, resolve_deck_path, save_settings
 
 SAVES_DIR = os.path.join(BASE_DIR, "saves")
+AUTOSAVE_PATH = os.path.join(SAVES_DIR, "last_session.json")
 
 
 class MainMenu:
@@ -25,17 +26,29 @@ class MainMenu:
 
     def show_main_menu(self):
         self.clear_window()
+        self.root.minsize(1, 1)
         self.root.protocol("WM_DELETE_WINDOW", self.root.destroy)
         frame = tk.Frame(self.root, padx=32, pady=28)
-        frame.pack(fill="both", expand=True)
+        # Let the menu determine the window size instead of stretching the
+        # frame to the dimensions used by the game session.
+        frame.pack()
         tk.Label(frame, text="Virtual Deck", font=("TkDefaultFont", 20, "bold")).pack(pady=(0, 20))
         tk.Button(frame, text="Play", width=24, command=self.play).pack(pady=5)
+        resume_state = "normal" if os.path.isfile(AUTOSAVE_PATH) else "disabled"
+        tk.Button(frame, text="Resume", width=24, state=resume_state, command=self.resume_game).pack(pady=5)
         tk.Button(frame, text="Load", width=24, command=self.load_game).pack(pady=5)
         tk.Button(frame, text="Settings", width=24, command=self.show_settings).pack(pady=5)
         tk.Button(frame, text="Quit", width=24, command=self.root.destroy).pack(pady=5)
+        self.root.update_idletasks()
+        width = frame.winfo_reqwidth()
+        height = frame.winfo_reqheight()
+        self.root.minsize(width, height)
+        self.root.geometry(f"{width}x{height}")
 
     def show_settings(self):
         self.clear_window()
+        self.root.minsize(1, 1)
+        self.root.resizable(True, True)
         frame = tk.Frame(self.root, padx=20, pady=18)
         frame.pack(fill="both", expand=True)
         tk.Label(frame, text="Settings", font=("TkDefaultFont", 16, "bold")).grid(
@@ -61,6 +74,13 @@ class MainMenu:
         round_cleanup_var = tk.BooleanVar(
             value=bool(self.settings.get("clear_table_on_round_end", False))
         )
+        positioned_play_var = tk.BooleanVar(
+            value=bool(self.settings.get("allow_positioned_play", False))
+        )
+        occupied_slot_action_var = tk.StringVar(
+            value=self.settings.get("occupied_slot_action", "invalid")
+        )
+        undo_var = tk.BooleanVar(value=bool(self.settings.get("enable_undo", False)))
         advanced_expanded = tk.BooleanVar(value=False)
 
         tk.Label(frame, text="Number of players:").grid(row=1, column=0, sticky="w", pady=5)
@@ -93,6 +113,7 @@ class MainMenu:
             name_vars.clear()
             if not custom_names_var.get():
                 names_frame.grid_remove()
+                self.root.after_idle(lambda: self._fit_window_to_frame(frame))
                 return
             names_frame.grid()
             try:
@@ -115,6 +136,7 @@ class MainMenu:
                     row=index, column=1, sticky="ew", pady=2
                 )
             names_frame.columnconfigure(1, weight=1)
+            self.root.after_idle(lambda: self._fit_window_to_frame(frame))
 
         players_var.trace_add("write", refresh_name_inputs)
         custom_names_var.trace_add("write", refresh_name_inputs)
@@ -129,6 +151,11 @@ class MainMenu:
             advanced_frame,
             text="Enable score counters and point requests",
             variable=score_var,
+        ).pack(anchor="w")
+        tk.Checkbutton(
+            advanced_frame,
+            text="Enable Undo",
+            variable=undo_var,
         ).pack(anchor="w")
         confirmation_check = tk.Checkbutton(
             advanced_frame,
@@ -157,6 +184,15 @@ class MainMenu:
             text="Automatically clear the table when the last player ends the round",
             variable=round_cleanup_var,
         ).pack(anchor="w")
+        tk.Checkbutton(
+            advanced_frame,
+            text="Allow playing cards to specific table positions",
+            variable=positioned_play_var,
+        ).pack(anchor="w")
+        occupied_action_row = tk.Frame(advanced_frame)
+        occupied_action_row.pack(anchor="w", pady=(3, 0))
+        tk.Label(occupied_action_row, text="When playing on an occupied spot:").pack(side="left")
+        tk.OptionMenu(occupied_action_row, occupied_slot_action_var, "invalid", "swap").pack(side="left")
 
         def update_confirmation_control(*_):
             confirmation_check.config(state="normal" if score_var.get() else "disabled")
@@ -170,6 +206,7 @@ class MainMenu:
             else:
                 advanced_frame.grid_remove()
                 advanced_button.config(text="Advanced Settings ▸")
+            self.root.after_idle(lambda: self._fit_window_to_frame(frame))
 
         advanced_button.config(command=toggle_advanced)
         score_var.trace_add("write", update_confirmation_control)
@@ -185,10 +222,21 @@ class MainMenu:
             command=lambda: self.save_form(
                 players_var, cards_var, deck_var, save_var, custom_names_var, name_vars,
                 score_var, confirmation_var, take_table_var, table_to_discard_var,
-                manual_cleanup_var, round_cleanup_var,
+                manual_cleanup_var, round_cleanup_var, positioned_play_var,
+                occupied_slot_action_var, undo_var,
             ),
         ).pack(side="left", padx=5)
         frame.columnconfigure(1, weight=1)
+        self.root.after_idle(lambda: self._fit_window_to_frame(frame))
+
+    def _fit_window_to_frame(self, frame):
+        if not frame.winfo_exists():
+            return
+        self.root.update_idletasks()
+        width = frame.winfo_reqwidth()
+        height = frame.winfo_reqheight()
+        self.root.minsize(width, height)
+        self.root.geometry(f"{width}x{height}")
 
     def restore_defaults(self):
         if not messagebox.askyesno(
@@ -221,7 +269,8 @@ class MainMenu:
     def save_form(
         self, players_var, cards_var, deck_var, save_var, custom_names_var, name_vars,
         score_var, confirmation_var, take_table_var, table_to_discard_var,
-        manual_cleanup_var, round_cleanup_var,
+        manual_cleanup_var, round_cleanup_var, positioned_play_var, occupied_slot_action_var,
+        undo_var,
     ):
         try:
             num_players = int(players_var.get())
@@ -257,6 +306,9 @@ class MainMenu:
             "allow_move_table_card_to_discard": table_to_discard_var.get(),
             "allow_manual_table_cleanup": manual_cleanup_var.get(),
             "clear_table_on_round_end": round_cleanup_var.get(),
+            "allow_positioned_play": positioned_play_var.get(),
+            "occupied_slot_action": occupied_slot_action_var.get(),
+            "enable_undo": undo_var.get(),
         }
         try:
             save_settings(self.settings)
@@ -281,6 +333,9 @@ class MainMenu:
                 ),
                 allow_manual_table_cleanup=self.settings.get("allow_manual_table_cleanup", False),
                 clear_table_on_round_end=self.settings.get("clear_table_on_round_end", False),
+                allow_positioned_play=self.settings.get("allow_positioned_play", False),
+                occupied_slot_action=self.settings.get("occupied_slot_action", "invalid"),
+                enable_undo=self.settings.get("enable_undo", False),
             )
             game.start(self.settings["cards_per_player"])
         except (OSError, ValueError, KeyError, TypeError) as error:
@@ -307,6 +362,15 @@ class MainMenu:
         self.clear_window()
         self.show_game(game)
 
+    def resume_game(self):
+        try:
+            game = Game.load_session(AUTOSAVE_PATH)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            messagebox.showerror("Could not resume game", str(error), parent=self.root)
+            return
+        self.clear_window()
+        self.show_game(game)
+
     def show_game(self, game):
         GameGUI(
             self.root,
@@ -315,7 +379,15 @@ class MainMenu:
             on_exit_menu=self.exit_to_menu,
             on_exit_desktop=self.exit_to_desktop,
             on_restart=self.restart_game,
+            on_checkpoint=self.checkpoint_game,
         )
+
+    def checkpoint_game(self, game):
+        try:
+            game.save_session(AUTOSAVE_PATH)
+            return None
+        except (OSError, TypeError, ValueError) as error:
+            return str(error)
 
     def restart_game(self, game, keep_scores):
         try:

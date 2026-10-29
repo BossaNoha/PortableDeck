@@ -20,6 +20,9 @@ DEFAULT_SETTINGS = {
     "allow_move_table_card_to_discard": False,
     "allow_manual_table_cleanup": False,
     "clear_table_on_round_end": False,
+    "allow_positioned_play": False,
+    "occupied_slot_action": "invalid",
+    "enable_undo": False,
 }
 
 

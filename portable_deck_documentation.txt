@@ -17,6 +17,8 @@ Run the application from this folder with:
 
 The main menu contains:
 - Play: start a new game using the current settings.
+- Resume: reopen the latest automatic checkpoint, including after leaving
+  without a manual save or recovering from an application crash.
 - Load: choose a saved game to resume. The file picker opens in the saves
   folder by default and can browse to another location.
 - Settings: configure a new game.
@@ -28,9 +30,13 @@ The game window shows the current player's hand, card counts, and a game log.
 Available actions are:
 - Draw Card: draw one card from the draw deck.
 - Discard Selected: move the selected hand card to the discard pile.
-- Play Selected: move the selected hand card onto the shared table. Played
-  cards stay visible there and remain separate from the discard pile.
+- Play Selected Card: append the selected hand card to the end of the table.
+- Play at Selected Spot: when positioned play is enabled, insert the selected
+  hand card at the selected empty slot, or apply the occupied-spot setting to
+  a selected table card. Empty slots appear next to table cards.
 - Next Turn: pass the turn to the next player.
+- Undo: when enabled in Advanced Settings, reverse the most recent action that
+  changed the game state. Available undo history is preserved in saved games.
 - Save: save the current game without leaving it.
 - Restart Game: start a fresh game with the same players and setup. If scoring
   is enabled, choose whether to keep or reset the current scores.
@@ -71,6 +77,12 @@ created from the defaults on first launch. They include:
   the discard pile with one action.
 - clear_table_on_round_end: automatically move all table cards to the discard
   pile when the last player in turn order ends the round.
+- allow_positioned_play: show empty slots above, below, left, and right of
+  table cards and allow cards to be placed in those positions.
+- occupied_slot_action: choose whether playing at a selected table card is
+  invalid or swaps that table card with the selected hand card.
+- enable_undo: show the Undo action and keep a reversible history of game
+  actions. Undo history is included in saved games and the automatic checkpoint.
 
 Both manual and automatic table cleanup move the cards into the discard pile.
 
@@ -92,6 +104,10 @@ name and hand, the discard pile, cards played onto the table, the current
 player, the original cards-per-player setting, and game history. Load
 restores this state, including scores and any pending point request. Saves can
 also be loaded from a JSON file outside saves/.
+
+The app maintains a separate automatic checkpoint at saves/last_session.json.
+It is refreshed when a game starts, after game actions, and when leaving the
+game. Resume loads this latest checkpoint; it does not replace named saves.
 
 DECK FILE FORMAT
 ----------------
@@ -124,15 +140,14 @@ PROJECT FILES
 - cardactions.py: callbacks for draw, discard, and next-turn actions.
 - configs/settings.json: current application settings.
 - configs/default_settings.json: saved default settings used by Restore Defaults.
-- saves/: saved game JSON files.
+- saves/: named saves and the automatic last_session.json checkpoint.
 - decks/: deck definitions and the optional discard pile output.
 - backup/: older copies of application modules.
 
 CURRENT SCOPE
 -------------
 The app provides a general card-handling interface rather than game rules.
-There is no automatic save-on-every-action. Use Save or choose Yes when
-leaving to keep the current game for later.
+Named saves are manual; Resume uses the separate automatic checkpoint.
 
 ==============================
 END OF PROJECT GUIDE

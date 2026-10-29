@@ -31,22 +31,57 @@ def discard_selected(game, hand_frame, gui_log, status_panel):
 
 
 def play_selected(game, hand_frame, table_frame, gui_log, status_panel):
-    """Move the selected card from the current hand onto the shared table."""
+    """Play the selected hand card at the end of the table's original line."""
+    _play_from_hand_at(game, hand_frame, table_frame, None, gui_log, status_panel)
+
+
+def _play_from_hand_at(game, hand_frame, table_frame, position, gui_log, status_panel):
     selected = hand_frame.selected_index
     if selected is None:
-        messagebox.showwarning("No selection", "Select a card first!")
+        messagebox.showwarning("No selection", "Select a card from your hand first!")
         return
 
-    card = game.play_to_table(selected + 1)
+    card = game.play_to_table(selected + 1, position=position)
     if card:
         player_name = game.players[game.current_player_index].name
         hand_frame.selected_index = None
         hand_frame.update_hand()
-        table_frame.update_table()
+        table_frame.clear_selection()
         status_panel.update_status()
         gui_log(f"{player_name} played {card} onto the table.")
     else:
         messagebox.showwarning("Invalid", "Invalid card selection!")
+
+
+def play_at_selected_spot(game, hand_frame, table_frame, gui_log, status_panel):
+    selected_hand = hand_frame.selected_index
+    if selected_hand is None:
+        messagebox.showwarning("No selection", "Select a card from your hand first!")
+        return
+    if table_frame.selected_index is not None:
+        if game.occupied_slot_action == "invalid":
+            messagebox.showwarning(
+                "Occupied spot", "This spot is occupied. Choose an empty slot or enable swapping in Settings."
+            )
+            return
+        result = game.swap_with_table(selected_hand + 1, table_frame.selected_index)
+        if result is None:
+            messagebox.showwarning("Invalid", "The selected card could not be swapped.")
+            return
+        played_card, returned_card = result
+        player_name = game.players[game.current_player_index].name
+        hand_frame.selected_index = None
+        hand_frame.update_hand()
+        table_frame.clear_selection()
+        status_panel.update_status()
+        gui_log(f"{player_name} swapped {played_card} for {returned_card} on the table.")
+        return
+    if table_frame.selected_position is None:
+        messagebox.showwarning("No spot selected", "Select an empty spot on the table first!")
+        return
+    _play_from_hand_at(
+        game, hand_frame, table_frame, table_frame.selected_position, gui_log, status_panel
+    )
 
 
 def take_selected_from_table(game, table_frame, hand_frame, gui_log, status_panel):
