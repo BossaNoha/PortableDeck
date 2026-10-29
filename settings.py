@@ -21,6 +21,8 @@ DEFAULT_SETTINGS = {
     "allow_manual_table_cleanup": False,
     "clear_table_on_round_end": False,
     "allow_positioned_play": False,
+    "allow_move_cards_on_table": False,
+    "allow_play_in_front_of_players": False,
     "occupied_slot_action": "invalid",
     "enable_undo": False,
 }

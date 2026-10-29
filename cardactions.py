@@ -58,7 +58,7 @@ def play_at_selected_spot(game, hand_frame, table_frame, gui_log, status_panel):
     if selected_hand is None:
         messagebox.showwarning("No selection", "Select a card from your hand first!")
         return
-    if table_frame.selected_index is not None:
+    if table_frame.selected_position is None and table_frame.selected_index is not None:
         if game.occupied_slot_action == "invalid":
             messagebox.showwarning(
                 "Occupied spot", "This spot is occupied. Choose an empty slot or enable swapping in Settings."
@@ -116,6 +116,25 @@ def move_selected_table_card_to_discard(game, table_frame, gui_log, status_panel
     table_frame.update_table()
     status_panel.update_status()
     gui_log(f"{card} was moved from the table to the discard pile.")
+
+
+def move_selected_table_card(game, table_frame, gui_log, status_panel):
+    """Move the selected table card to the selected empty table slot."""
+    selected = table_frame.selected_index
+    position = table_frame.selected_position
+    if selected is None:
+        messagebox.showwarning("No card selected", "Select a table card to move first!")
+        return
+    if position is None:
+        messagebox.showwarning("No spot selected", "Select an empty table spot as the destination!")
+        return
+    card = game.move_table_card(selected, position)
+    if card is None:
+        messagebox.showwarning("Invalid move", "The selected card could not be moved to that spot!")
+        return
+    table_frame.clear_selection()
+    status_panel.update_status()
+    gui_log(f"{card} was moved to another spot on the table.")
 
 
 def clear_table(game, table_frame, gui_log, status_panel):

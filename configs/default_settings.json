@@ -12,6 +12,8 @@
   "allow_manual_table_cleanup": false,
   "clear_table_on_round_end": false,
   "allow_positioned_play": false,
+  "allow_move_cards_on_table": false,
+  "allow_play_in_front_of_players": false,
   "occupied_slot_action": "invalid",
   "enable_undo": false
 }

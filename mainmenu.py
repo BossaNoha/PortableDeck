@@ -16,7 +16,7 @@ class MainMenu:
         self.root = root
         self.settings = load_settings()
         os.makedirs(SAVES_DIR, exist_ok=True)
-        self.root.title("Virtual Deck")
+        self.root.title("Portable Deck")
         self.root.protocol("WM_DELETE_WINDOW", self.root.destroy)
         self.show_main_menu()
 
@@ -32,7 +32,7 @@ class MainMenu:
         # Let the menu determine the window size instead of stretching the
         # frame to the dimensions used by the game session.
         frame.pack()
-        tk.Label(frame, text="Virtual Deck", font=("TkDefaultFont", 20, "bold")).pack(pady=(0, 20))
+        tk.Label(frame, text="Portable Deck", font=("TkDefaultFont", 20, "bold")).pack(pady=(0, 20))
         tk.Button(frame, text="Play", width=24, command=self.play).pack(pady=5)
         resume_state = "normal" if os.path.isfile(AUTOSAVE_PATH) else "disabled"
         tk.Button(frame, text="Resume", width=24, state=resume_state, command=self.resume_game).pack(pady=5)
@@ -76,6 +76,12 @@ class MainMenu:
         )
         positioned_play_var = tk.BooleanVar(
             value=bool(self.settings.get("allow_positioned_play", False))
+        )
+        move_table_cards_var = tk.BooleanVar(
+            value=bool(self.settings.get("allow_move_cards_on_table", False))
+        )
+        play_in_front_var = tk.BooleanVar(
+            value=bool(self.settings.get("allow_play_in_front_of_players", False))
         )
         occupied_slot_action_var = tk.StringVar(
             value=self.settings.get("occupied_slot_action", "invalid")
@@ -189,6 +195,16 @@ class MainMenu:
             text="Allow playing cards to specific table positions",
             variable=positioned_play_var,
         ).pack(anchor="w")
+        tk.Checkbutton(
+            advanced_frame,
+            text="Allow moving cards between table positions",
+            variable=move_table_cards_var,
+        ).pack(anchor="w")
+        tk.Checkbutton(
+            advanced_frame,
+            text="Allow playing cards in front of any player",
+            variable=play_in_front_var,
+        ).pack(anchor="w")
         occupied_action_row = tk.Frame(advanced_frame)
         occupied_action_row.pack(anchor="w", pady=(3, 0))
         tk.Label(occupied_action_row, text="When playing on an occupied spot:").pack(side="left")
@@ -223,7 +239,7 @@ class MainMenu:
                 players_var, cards_var, deck_var, save_var, custom_names_var, name_vars,
                 score_var, confirmation_var, take_table_var, table_to_discard_var,
                 manual_cleanup_var, round_cleanup_var, positioned_play_var,
-                occupied_slot_action_var, undo_var,
+                occupied_slot_action_var, undo_var, move_table_cards_var, play_in_front_var,
             ),
         ).pack(side="left", padx=5)
         frame.columnconfigure(1, weight=1)
@@ -270,7 +286,7 @@ class MainMenu:
         self, players_var, cards_var, deck_var, save_var, custom_names_var, name_vars,
         score_var, confirmation_var, take_table_var, table_to_discard_var,
         manual_cleanup_var, round_cleanup_var, positioned_play_var, occupied_slot_action_var,
-        undo_var,
+        undo_var, move_table_cards_var, play_in_front_var,
     ):
         try:
             num_players = int(players_var.get())
@@ -307,6 +323,8 @@ class MainMenu:
             "allow_manual_table_cleanup": manual_cleanup_var.get(),
             "clear_table_on_round_end": round_cleanup_var.get(),
             "allow_positioned_play": positioned_play_var.get(),
+            "allow_move_cards_on_table": move_table_cards_var.get(),
+            "allow_play_in_front_of_players": play_in_front_var.get(),
             "occupied_slot_action": occupied_slot_action_var.get(),
             "enable_undo": undo_var.get(),
         }
@@ -336,6 +354,10 @@ class MainMenu:
                 allow_positioned_play=self.settings.get("allow_positioned_play", False),
                 occupied_slot_action=self.settings.get("occupied_slot_action", "invalid"),
                 enable_undo=self.settings.get("enable_undo", False),
+                allow_move_cards_on_table=self.settings.get("allow_move_cards_on_table", False),
+                allow_play_in_front_of_players=self.settings.get(
+                    "allow_play_in_front_of_players", False
+                ),
             )
             game.start(self.settings["cards_per_player"])
         except (OSError, ValueError, KeyError, TypeError) as error:

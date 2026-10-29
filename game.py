@@ -20,6 +20,8 @@ class Game:
         allow_positioned_play=False,
         occupied_slot_action="invalid",
         enable_undo=False,
+        allow_move_cards_on_table=False,
+        allow_play_in_front_of_players=False,
     ):
         if not isinstance(num_players, int) or isinstance(num_players, bool) or num_players < 1:
             raise ValueError("num_players must be a positive integer")
@@ -36,6 +38,8 @@ class Game:
         self.history = []
         self.gui_log = []
         self.enable_undo = bool(enable_undo)
+        self.allow_move_cards_on_table = bool(allow_move_cards_on_table)
+        self.allow_play_in_front_of_players = bool(allow_play_in_front_of_players)
         self.undo_stack = []
         self.cards_drawn_this_turn = 0
         self.cards_per_player = 0
@@ -138,6 +142,8 @@ class Game:
             allow_positioned_play=self.allow_positioned_play,
             occupied_slot_action=self.occupied_slot_action,
             enable_undo=self.enable_undo,
+            allow_move_cards_on_table=self.allow_move_cards_on_table,
+            allow_play_in_front_of_players=self.allow_play_in_front_of_players,
         )
         restarted.start(self.cards_per_player)
         if keep_scores:
@@ -210,7 +216,7 @@ class Game:
             return None   # ❌ failure
 
     def play_to_table(self, index, position=None):
-        if self.allow_positioned_play:
+        if self.allow_play_in_front_of_players:
             if position is None:
                 position = self.default_table_position()
             if (
@@ -221,13 +227,26 @@ class Game:
             ):
                 return None
             position = list(position)
+        elif self.allow_positioned_play:
+            if position is None:
+                position = self.default_table_position()
+            if (
+                not isinstance(position, (tuple, list))
+                or len(position) != 2
+                or any(not isinstance(value, int) or isinstance(value, bool) for value in position)
+                or tuple(position) not in self.available_table_positions()
+            ):
+                return None
+            position = list(position)
+        elif self.allow_move_cards_on_table:
+            position = list(self.default_table_position())
         else:
             position = None
         player = self.players[self.current_player_index]
         card = player.play_card(index)
         if card:
             entry = {"player": player.name, "card": card}
-            if self.allow_positioned_play:
+            if self.allow_positioned_play or self.allow_move_cards_on_table or self.allow_play_in_front_of_players:
                 entry["position"] = position
             self.table_cards.append(entry)
             self.log_action(player.name, "play", card)
@@ -241,7 +260,15 @@ class Game:
             if isinstance(entry.get("position"), (tuple, list)) and len(entry["position"]) == 2
         }
         if not occupied:
+            if self.allow_play_in_front_of_players:
+                return {(index, 0) for index in range(len(self.players))}
             return {(0, 0)}
+        if self.allow_play_in_front_of_players:
+            positions = set()
+            for player_index in range(len(self.players)):
+                columns = [column for row, column in occupied if row == player_index]
+                positions.add((player_index, max(columns) + 1 if columns else 0))
+            return positions
         available = set()
         for row, column in occupied:
             for neighbor in (
@@ -268,6 +295,18 @@ class Game:
 
     def _compact_main_line(self):
         """Close gaps between cards in the original row after a removal."""
+        if self.allow_play_in_front_of_players:
+            for player_index in range(len(self.players)):
+                lane = sorted(
+                    (entry for entry in self.table_cards
+                     if isinstance(entry.get("position"), (tuple, list))
+                     and len(entry["position"]) == 2
+                     and entry["position"][0] == player_index),
+                    key=lambda entry: entry["position"][1],
+                )
+                for column, entry in enumerate(lane):
+                    entry["position"] = [player_index, column]
+            return
         main_line = sorted(
             (entry for entry in self.table_cards
              if isinstance(entry.get("position"), (tuple, list))
@@ -278,7 +317,34 @@ class Game:
         for column, entry in enumerate(main_line):
             entry["position"] = [0, column]
 
+    def move_table_card(self, table_index, position):
+        """Move a selected table card into an available table position."""
+        if (
+            not self.allow_move_cards_on_table
+            or not 0 <= table_index < len(self.table_cards)
+            or not isinstance(position, (tuple, list))
+            or len(position) != 2
+            or any(not isinstance(value, int) or isinstance(value, bool) for value in position)
+            or tuple(position) not in self.available_table_positions()
+        ):
+            return None
+        entry = self.table_cards[table_index]
+        entry["position"] = list(position)
+        self._compact_main_line()
+        self.log_action(entry["player"], "move_table_card", entry["card"])
+        return entry["card"]
+
     def default_table_position(self):
+        if self.allow_play_in_front_of_players:
+            player_index = self.current_player_index
+            columns = [
+                entry["position"][1]
+                for entry in self.table_cards
+                if isinstance(entry.get("position"), (tuple, list))
+                and len(entry["position"]) == 2
+                and entry["position"][0] == player_index
+            ]
+            return player_index, max(columns) + 1 if columns else 0
         if not self.table_cards:
             return 0, 0
         main_row_columns = [
@@ -317,7 +383,7 @@ class Game:
         if not self.allow_take_from_table or not 0 <= index < len(self.table_cards):
             return None
         entry = self.table_cards.pop(index)
-        if self.allow_positioned_play:
+        if self.allow_positioned_play or self.allow_move_cards_on_table or self.allow_play_in_front_of_players:
             self._compact_main_line()
         card = entry["card"]
         player = self.players[self.current_player_index]
@@ -332,7 +398,7 @@ class Game:
         ):
             return None
         entry = self.table_cards.pop(index)
-        if self.allow_positioned_play:
+        if self.allow_positioned_play or self.allow_move_cards_on_table or self.allow_play_in_front_of_players:
             self._compact_main_line()
         card = entry["card"]
         self.discard_pile.append(card)
@@ -444,6 +510,8 @@ class Game:
             "allow_positioned_play": self.allow_positioned_play,
             "occupied_slot_action": self.occupied_slot_action,
             "enable_undo": self.enable_undo,
+            "allow_move_cards_on_table": self.allow_move_cards_on_table,
+            "allow_play_in_front_of_players": self.allow_play_in_front_of_players,
             "undo_stack": self.undo_stack,
         }
         directory = os.path.dirname(os.path.abspath(path))
@@ -493,8 +561,10 @@ class Game:
         game.allow_positioned_play = state.get("allow_positioned_play", False)
         game.occupied_slot_action = state.get("occupied_slot_action", "invalid")
         game.enable_undo = state.get("enable_undo", False)
+        game.allow_move_cards_on_table = state.get("allow_move_cards_on_table", False)
+        game.allow_play_in_front_of_players = state.get("allow_play_in_front_of_players", False)
         game.undo_stack = state.get("undo_stack", [])
-        if game.allow_positioned_play:
+        if game.allow_positioned_play or game.allow_move_cards_on_table or game.allow_play_in_front_of_players:
             positions = [entry.get("position") for entry in game.table_cards]
             if not all(
                 isinstance(position, (tuple, list))

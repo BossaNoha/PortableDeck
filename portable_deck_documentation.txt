@@ -1,10 +1,10 @@
 ==============================
-VIRTUAL DECK - PROJECT GUIDE
+PORTABLE DECK - PROJECT GUIDE
 ==============================
 
 OVERVIEW
 --------
-Virtual Deck is a Python/Tkinter application for handling cards in tabletop
+Portable Deck is a Python/Tkinter application for handling cards in tabletop
 games. It loads a deck from a JSON file, deals cards to players, and provides
 basic draw, play, discard, and turn actions. It does not implement the rules of a
 specific card game.
@@ -30,10 +30,14 @@ The game window shows the current player's hand, card counts, and a game log.
 Available actions are:
 - Draw Card: draw one card from the draw deck.
 - Discard Selected: move the selected hand card to the discard pile.
-- Play Selected Card: append the selected hand card to the end of the table.
-- Play at Selected Spot: when positioned play is enabled, insert the selected
-  hand card at the selected empty slot, or apply the occupied-spot setting to
-  a selected table card. Empty slots appear next to table cards.
+- Play Selected Card: append the selected hand card to the table, or to the
+  current player's row when player lanes are enabled.
+- Play at Selected Spot: when positioned play or player lanes are enabled,
+  insert the selected hand card at the selected empty slot, or apply the
+  occupied-spot setting to a selected table card. Player lanes let you target
+  an empty slot in front of any player.
+- Move Selected Table Card: when table-card movement is enabled, select a table
+  card and an empty destination slot, then move the card there.
 - Next Turn: pass the turn to the next player.
 - Undo: when enabled in Advanced Settings, reverse the most recent action that
   changed the game state. Available undo history is preserved in saved games.
@@ -77,8 +81,14 @@ created from the defaults on first launch. They include:
   the discard pile with one action.
 - clear_table_on_round_end: automatically move all table cards to the discard
   pile when the last player in turn order ends the round.
-- allow_positioned_play: show empty slots above, below, left, and right of
-  table cards and allow cards to be placed in those positions.
+- allow_positioned_play: show empty table positions and allow cards to be
+  placed in them. The original horizontal row stays compact and has one
+  continuation slot.
+- allow_move_cards_on_table: show table positions and allow a selected table
+  card to be moved to an empty position.
+- allow_play_in_front_of_players: display a separate row in front of each
+  player. Play Selected Card uses the current player's row; Play at Selected
+  Spot can target another player's row.
 - occupied_slot_action: choose whether playing at a selected table card is
   invalid or swaps that table card with the selected hand card.
 - enable_undo: show the Undo action and keep a reversible history of game

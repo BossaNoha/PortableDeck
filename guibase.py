@@ -10,6 +10,7 @@ from cardactions import (
     discard_selected,
     end_turn,
     move_selected_table_card_to_discard,
+    move_selected_table_card,
     play_at_selected_spot,
     play_selected,
     request_point,
@@ -28,7 +29,7 @@ class GameGUI:
         self.on_exit_desktop = on_exit_desktop
         self.on_restart = on_restart
         self.on_checkpoint = on_checkpoint
-        self.root.title("Virtual Deck Game")
+        self.root.title("Portable Deck - Game")
         self.root.minsize(900, 560)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
@@ -91,7 +92,7 @@ class GameGUI:
         self.play_button.pack(side="left", padx=5)
 
         self.positioned_play_buttons = []
-        if self.game.allow_positioned_play:
+        if self.game.allow_positioned_play or self.game.allow_play_in_front_of_players:
             self.play_at_spot_button = tk.Button(
                 self.card_actions_frame,
                 text="Play at Selected Spot",
@@ -126,6 +127,17 @@ class GameGUI:
             )
             self.table_discard_button.pack(side="left", padx=5)
             self.table_action_buttons.append(self.table_discard_button)
+        if self.game.allow_move_cards_on_table:
+            self.move_table_card_button = tk.Button(
+                self.card_actions_frame,
+                text="Move Selected Table Card",
+                command=lambda: self.run_action(
+                    move_selected_table_card,
+                    self.game, self.table_frame, self.log, self.status_panel,
+                ),
+            )
+            self.move_table_card_button.pack(side="left", padx=5)
+            self.table_action_buttons.append(self.move_table_card_button)
         if self.game.allow_manual_table_cleanup:
             self.clear_table_button = tk.Button(
                 self.card_actions_frame,
