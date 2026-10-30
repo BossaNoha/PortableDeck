@@ -1,5 +1,5 @@
 # main.py
-from mainmenu import start_menu
+from portable_deck.app.mainmenu import start_menu
 
 def main():
     start_menu()

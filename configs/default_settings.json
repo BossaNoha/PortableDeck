@@ -14,6 +14,17 @@
   "allow_positioned_play": false,
   "allow_move_cards_on_table": false,
   "allow_play_in_front_of_players": false,
+  "allow_draw_from_discard": false,
+  "draw_from_discard_mode": "top",
+  "allow_face_down_table_cards": false,
+  "allow_move_table_sequences": false,
+  "allow_recycle_discard_to_deck": false,
+  "shared_discard_pile_count": 1,
+  "personal_discard_pile_count": 0,
+  "enable_chip_accounts": false,
+  "minimum_bet": 1,
+  "starting_balance": 100,
+  "require_pot_withdrawal_confirmation": false,
   "occupied_slot_action": "invalid",
   "enable_undo": false
 }
