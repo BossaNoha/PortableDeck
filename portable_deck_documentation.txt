@@ -19,8 +19,9 @@ The main menu contains:
 - Play: start a new game using the current settings.
 - Resume: reopen the latest automatic checkpoint, including after leaving
   without a manual save or recovering from an application crash.
-- Load: choose a saved game to resume. The file picker opens in the saves
-  folder by default and can browse to another location.
+- Load: opens the session library, showing players, next turn, and save time.
+  Load, rename, or delete a named save, or use Browse to open a JSON save from
+  another location.
 - Settings: configure a new game.
 - Quit: close the application.
 
@@ -29,6 +30,8 @@ GAME WINDOW
 The game window shows the current player's hand, card counts, and a game log.
 Available actions are:
 - Draw Card: draw one card from the draw deck.
+- Take from Discard: when enabled in Advanced Settings, take either the top
+  discard card or choose any card from the discard pile.
 - Discard Selected: move the selected hand card to the discard pile.
 - Play Selected Card: append the selected hand card to the table, or to the
   current player's row when player lanes are enabled.
@@ -42,10 +45,19 @@ Available actions are:
 - Undo: when enabled in Advanced Settings, reverse the most recent action that
   changed the game state. Available undo history is preserved in saved games.
 - Save: save the current game without leaving it.
+- View Full Deck: preview every card in the original deck definition, including
+  cards already dealt or drawn. Cards are grouped by symbol and sorted by value.
 - Restart Game: start a fresh game with the same players and setup. If scoring
   is enabled, choose whether to keep or reset the current scores.
 - Request Point: request one point for the current player when scoring is
   enabled.
+- Buy Chips: when Chip Accounts are enabled, add chips to a selected player's
+  account during the session.
+- Play Chips: move chips from the current player's account into the shared pot.
+  The amount must meet the configured minimum bet and fit the player's balance.
+- Take Pot: request moving the full pot to a selected player's account. If pot
+  withdrawal confirmation is enabled, every other player must approve on their
+  turn; a rejection leaves the pot unchanged.
 - Exit to Main Menu: ask whether to save, then return to the main menu.
 - Exit to Desktop: ask whether to save, then close the application.
 
@@ -63,8 +75,8 @@ created from the defaults on first launch. They include:
 - cards_per_player: cards dealt to each player at the start (0 or more).
 - deck_path: path to the deck JSON file. Relative paths are resolved from the
   application folder.
-- save_discard_on_exit: whether to write the discard pile to
-  decks/discard.json when exiting to the desktop.
+- save_discard_on_exit: whether the app saves the discard pile in its internal
+  portable_deck/data/discard.json file when exiting to the desktop.
 - use_custom_player_names: whether custom player names are enabled.
 - player_names: names used for players when custom names are enabled.
 - enable_score_counter: show scores and allow players to request points.
@@ -89,17 +101,58 @@ created from the defaults on first launch. They include:
 - allow_play_in_front_of_players: display a separate row in front of each
   player. Play Selected Card uses the current player's row; Play at Selected
   Spot can target another player's row.
+- allow_draw_from_discard: add the Take from Discard action during a session.
+- draw_from_discard_mode: "top" allows only the top discard; "any" opens a list
+  so the current player can choose any discard card. This option applies when
+  allow_draw_from_discard is enabled.
+- allow_face_down_table_cards: add an action to play a card face down and an
+  action to reveal an eligible face-down card on the table.
+- allow_move_table_sequences: allow moving a face-up card and the cards below it
+  together to another table column. This also enables positioned table play and
+  table-card movement.
+- allow_recycle_discard_to_deck: add an action that returns the entire discard
+  pile to an empty draw deck.
+- shared_discard_pile_count: number of discard piles available to every player
+  (1 through 20).
+- personal_discard_pile_count: number of private discard piles assigned to
+  each player (0 through 20). When discarding with multiple destinations, the
+  player chooses a shared pile or one of their personal piles. Drawing from
+  discard can use any pile; the "any" mode lists every card in every pile.
 - occupied_slot_action: choose whether playing at a selected table card is
   invalid or swaps that table card with the selected hand card.
 - enable_undo: show the Undo action and keep a reversible history of game
   actions. Undo history is included in saved games and the automatic checkpoint.
+- enable_chip_accounts: show each player's chip balance and the Buy Chips
+  action.
+- minimum_bet: minimum bet value shown as a reference when chip accounts are on.
+- starting_balance: number of chips given to every player when a new game starts.
+- require_pot_withdrawal_confirmation: require every other player to approve a
+  request to transfer the pot. Approvals are collected at the start of each
+  other player's turn. A rejection cancels the transfer.
 
 Both manual and automatic table cleanup move the cards into the discard pile.
 
-The settings screen can browse for a deck file. When custom names are enabled,
-one name field is shown per configured player. Every name must be non-empty.
-The game checks that the deck contains enough cards to deal the requested
-starting hands before it begins.
+The settings screen can browse for a deck file. Use Check deck to validate its
+JSON structure and verify the selected setup has enough cards. Decks need
+non-empty type names, one list of cards per type, and at least one card. Card
+values may be text or numbers. When custom names are enabled, one name field is
+shown per configured player and every name must be non-empty.
+
+Preview deck displays every card in a responsive table-style grid with up to 10
+cards per row. Symbols follow their order in the deck file, and card values are
+sorted within each symbol. Manage decks also includes a Preview action for each
+deck in the library.
+
+Create deck opens a deck editor. Each group has a symbol/type and a list of card
+values, entered one per line or separated by commas. Duplicate a group to reuse
+its cards with another symbol, then save the new JSON deck. The new deck is
+selected automatically in Settings.
+
+Manage decks lists the JSON decks in decks/ with each deck's card count and
+symbols. Use selected sets it as the active deck. Edit changes the selected
+deck after confirmation; Duplicate opens the editor with a copy so the original
+file remains unchanged. Import validates a JSON deck before adding it to the
+library. Export copies the selected deck to a chosen location.
 
 SAVED GAMES
 -----------
@@ -109,9 +162,15 @@ existing sessionX.json file. Other filenames do not affect this number. The
 .json extension is added automatically when omitted, and replacing an existing
 save requires confirmation.
 
-A saved game contains the deck path and remaining deck order, each player's
+Load opens a session library with player names, the next player, and the last
+modified time. Sessions can be loaded, renamed, or deleted there. Browse opens
+a JSON save from outside the saves folder.
+
+A saved game contains the deck path, original deck definition, and remaining
+deck order, each player's
 name and hand, the discard pile, cards played onto the table, the current
-player, the original cards-per-player setting, and game history. Load
+player, the original cards-per-player setting, game history, and (when enabled)
+chip account balances, the shared pot, and any pending pot-withdrawal request. Load
 restores this state, including scores and any pending point request. Saves can
 also be loaded from a JSON file outside saves/.
 
@@ -138,21 +197,16 @@ in decks/demodeck.json contains the standard 52-card deck.
 PROJECT FILES
 -------------
 - main.py: application entry point; opens the main menu.
-- mainmenu.py: main menu, settings form, game start/load, and exit handling.
-- settings.py: default settings, config loading/saving, and path resolution.
-- game.py: game state, dealing, drawing, discarding, and game save/load.
-- deck.py: deck JSON loading, shuffling, and drawing.
-- player.py: player names and hands.
-- guibase.py: Tkinter game window and action controls.
-- tableframe.py: displays cards played onto the shared table.
-- handframe.py: displays and selects cards in the current player's hand.
-- statuspanel.py: displays player, draw deck, and discard pile counts.
-- cardactions.py: callbacks for draw, discard, and next-turn actions.
-- configs/settings.json: current application settings.
-- configs/default_settings.json: saved default settings used by Restore Defaults.
+- portable_deck/app/: main menu, settings UI/configuration, and named save
+  management.
+- portable_deck/core/: game state, deck/player models, turn and table actions,
+  scoring, undo, chip accounts, and save/load serialization.
+- portable_deck/ui/: game window composition, action callbacks, and hand/table,
+  status, and chip interface components.
+- portable_deck/data/: internal discard-pile data maintained by the app.
+- configs/: current settings and saved defaults used by Restore Defaults.
+- decks/: deck definitions and the optional discard-pile output.
 - saves/: named saves and the automatic last_session.json checkpoint.
-- decks/: deck definitions and the optional discard pile output.
-- backup/: older copies of application modules.
 
 CURRENT SCOPE
 -------------

@@ -1,11 +1,11 @@
 {
-  "num_players": 5,
+  "num_players": 2,
   "cards_per_player": 3,
   "deck_path": "decks/demodeck.json",
   "save_discard_on_exit": true,
   "use_custom_player_names": false,
   "player_names": [],
-  "enable_score_counter": false,
+  "enable_score_counter": true,
   "require_point_confirmation": false,
   "allow_take_from_table": false,
   "allow_move_table_card_to_discard": false,
@@ -13,7 +13,18 @@
   "clear_table_on_round_end": false,
   "allow_positioned_play": false,
   "allow_move_cards_on_table": false,
+  "allow_move_table_sequences": false,
+  "allow_face_down_table_cards": false,
+  "allow_recycle_discard_to_deck": false,
+  "shared_discard_pile_count": 1,
+  "personal_discard_pile_count": 0,
   "allow_play_in_front_of_players": false,
+  "allow_draw_from_discard": true,
+  "draw_from_discard_mode": "any",
+  "enable_chip_accounts": true,
+  "minimum_bet": 1,
+  "starting_balance": 100,
+  "require_pot_withdrawal_confirmation": true,
   "occupied_slot_action": "invalid",
-  "enable_undo": false
+  "enable_undo": true
 }
