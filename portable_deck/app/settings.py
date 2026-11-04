@@ -10,6 +10,11 @@ DEFAULT_CONFIG_PATH = os.path.join(CONFIG_DIR, "default_settings.json")
 APP_DATA_DIR = os.path.join(BASE_DIR, "portable_deck", "data")
 DISCARD_PATH = os.path.join(APP_DATA_DIR, "discard.json")
 DEFAULT_SETTINGS = {
+    "enable_personal_piles": False,
+    "personal_pile_count": 1,
+    "personal_pile_settings": [],
+    "enable_table": True,
+    "enable_discard_pile": True,
     "autosave_enabled": True,
     "autosave_count": 5,
     "require_exit_confirmation": True,
@@ -64,6 +69,10 @@ def load_settings():
             saved = json.load(config_file)
         if isinstance(saved, dict):
             settings.update({key: saved[key] for key in DEFAULT_SETTINGS if key in saved})
+            if "enable_personal_piles" not in saved and saved.get("personal_discard_pile_count", 0) > 0:
+                settings["enable_personal_piles"] = True
+                settings["personal_pile_count"] = saved["personal_discard_pile_count"]
+                settings["personal_discard_pile_count"] = 0
     except (OSError, json.JSONDecodeError):
         pass
 

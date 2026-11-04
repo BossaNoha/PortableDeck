@@ -30,10 +30,12 @@ class StatusPanel(tk.LabelFrame):
         self.deck_label.pack(anchor="w")
 
         self.discard_label = tk.Label(self, text="", justify="left", anchor="w", wraplength=620)
-        self.discard_label.pack(anchor="w")
+        if game.enable_discard_pile:
+            self.discard_label.pack(anchor="w")
 
         self.table_label = tk.Label(self, text="")
-        self.table_label.pack(anchor="w")
+        if game.enable_table:
+            self.table_label.pack(anchor="w")
 
         # Initial update
         self.update_status()
@@ -61,6 +63,8 @@ class StatusPanel(tk.LabelFrame):
         ]
         self.discard_label.config(text="Discard piles:\n" + "\n".join(discard_lines))
 
-        self.table_label.config(text=f"Cards on Table: {len(self.game.table_cards)}")
+        personal_count = (sum(len(pile) for group in self.game.personal_piles for pile in group)
+                          if self.game.enable_personal_piles else 0)
+        self.table_label.config(text=f"Cards on Table: {len(self.game.table_cards) + personal_count}")
         if self.chip_pot_label is not None:
             self.chip_pot_label.config(text=f"Pot: {self.game.chip_pot} chips")

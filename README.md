@@ -16,9 +16,9 @@ On Windows, `py main.py` can be used if the Python launcher is installed.
 
 ## Main menu
 
-- **Play** starts a new game using the current settings.
-- **Resume** restores the latest automatic checkpoint from `saves/last_session.json`.
-- **Load** opens a session library with player/turn details and actions to load,
+- **New game** starts a new game using the current settings.
+- **Resume game** restores the latest automatic checkpoint from `saves/last_session.json`.
+- **Load save** opens a session library with player/turn details and actions to load,
   rename, or delete a named save. **Browse…** can open a JSON save elsewhere.
 - **Settings** configures player count, starting hand size, deck, optional player
   names, and game actions.
@@ -79,12 +79,12 @@ fresh game with the same setup and can keep or reset scores when scoring is on.
 `sessionX.json`, where `X` is one greater than the largest numbered session save.
 The app asks before replacing an existing save.
 
-**Load** lists named sessions with their players, next player, and save time.
+**Load save** lists named sessions with their players, next player, and save time.
 Sessions can be loaded, renamed, or deleted from this list; Browse can select a
 JSON save outside the saves folder.
 
 When Autosave is enabled, the app updates `saves/last_session.json` when a game starts,
-after game actions, and when leaving a game. **Resume** loads this checkpoint,
+after game actions, and when leaving a game. **Resume game** loads this checkpoint,
 including the game log and available Undo history. It is separate from named
 saves. With Require exit confirmation enabled, exit actions ask whether to create a named save; choosing No still
 leaves the latest automatic checkpoint available for Resume if Autosave is enabled.
@@ -152,3 +152,26 @@ stops new automatic saves and keeps existing saves available.
 **Require exit confirmation** controls the save/confirmation dialog when leaving
 a game and the confirmation when quitting from the main menu. When disabled,
 leaving is immediate; use **Save** during a game to create a named save manually.
+
+**Game Settings -> Table settings -> Enable table** shows the table and enables
+playing cards onto it. **Game Settings -> Discard pile -> Enable discard pile**
+enables discarding, discard draws and recycling. Both are enabled by default.
+Disabling the discard pile also disables clearing the table into discard.
+These choices are preserved in game saves and on restart.
+
+## Personal piles on table
+
+**Game Settings -> Personal piles on table** enables personal piles and sets
+the number per player (1-20). Each player/pile has independent access and
+ordering preferences. **Everyone** permits all players to play and take cards;
+**Team** currently permits only the owner, as does **Owner**.
+
+Choose **Not ordered**, **Ordered by time**, or **Ordered by size**. Time ordering lets new cards
+go on top or underneath the stack. Size ordering offers **up** (smallest at the bottom, largest on top)
+and **down** (largest at the bottom, smallest on top) (J, Q, K, A follow 10). Unordered piles put new
+cards on top. The game shows piles top first; use **Play to Personal Pile** to
+play and **Take top card** to draw from an accessible pile.
+
+Personal piles require an enabled table and remain separate from discard piles.
+Discard recycling and table cleanup do not empty them. State, access rules and
+ordering are included in saves, restart settings and Undo.

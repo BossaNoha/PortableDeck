@@ -10,6 +10,12 @@ def save_session(game, path):
     """Save the complete state needed to continue a game later."""
     game.ensure_discard_pile_state()
     state = {
+        "enable_personal_piles": game.enable_personal_piles,
+        "personal_pile_count": game.personal_pile_count,
+        "personal_pile_settings": game.personal_pile_settings,
+        "personal_piles": game.personal_piles,
+        "enable_table": game.enable_table,
+        "enable_discard_pile": game.enable_discard_pile,
         "deck_path": game.deck.path,
         "deck_types": game.deck.types,
         "deck_cards": game.deck.cards,
@@ -72,6 +78,8 @@ def load_session(game_class, path):
         state = json.load(session_file)
 
     game = game_class.__new__(game_class)
+    game.enable_table = state.get("enable_table", True)
+    game.enable_discard_pile = state.get("enable_discard_pile", True)
     game.deck = Deck(state["deck_path"])
     if "deck_types" in state and "deck_cards" in state:
         original_deck = {"types": state["deck_types"], "cards": state["deck_cards"]}
@@ -191,4 +199,25 @@ def load_session(game_class, path):
             if dealt_cards >= 0 and dealt_cards % len(game.players) == 0
             else 0
         )
+    legacy_count = game.personal_discard_pile_count
+    game.initialize_personal_piles(
+        state.get("enable_personal_piles", legacy_count > 0),
+        state.get("personal_pile_count", legacy_count or 1),
+        state.get("personal_pile_settings", []),
+    )
+    if "personal_piles" in state:
+        game.personal_piles = state["personal_piles"]
+    elif legacy_count:
+        game.personal_piles = game.personal_discard_piles
+        game.personal_discard_piles = [[] for _ in game.players]
+        game.personal_discard_pile_count = 0
+        for snapshot in game.undo_stack:
+            snapshot["personal_piles"] = snapshot.get("personal_discard_piles", game.personal_piles)
+            snapshot["personal_discard_piles"] = [[] for _ in game.players]
+    if (not isinstance(game.personal_piles, list) or len(game.personal_piles) != len(game.players)
+            or any(not isinstance(group, list) or len(group) != game.personal_pile_count
+                   or any(not isinstance(pile, list) or any(not isinstance(card, str) for card in pile)
+                          for pile in group) for group in game.personal_piles)):
+        raise ValueError("Saved personal piles do not match the player and pile counts.")
+    game.apply_feature_settings()
     return game

@@ -10,6 +10,7 @@ from .deckbuilder import DeckBuilder
 from .decklibrary import DeckLibrary
 from .deckpreview import show_deck_preview
 from ..ui.tooltip import add_tooltip
+from ..ui.collapsiblesection import CollapsibleSection
 from ..core.deck import Deck
 
 
@@ -41,53 +42,54 @@ class SettingsWindow:
         players_var = tk.StringVar(value=str(self.settings["num_players"]))
         cards_var = tk.StringVar(value=str(self.settings["cards_per_player"]))
         deck_var = tk.StringVar(value=str(self.settings["deck_path"]))
-        save_var = tk.BooleanVar(value=bool(self.settings["save_discard_on_exit"]))
         custom_names_var = tk.BooleanVar(value=bool(self.settings["use_custom_player_names"]))
         add_tooltip(tk.Label(basic, text="Players:"), "Number of players in each new game.").grid(row=0, column=0, sticky="w", pady=4)
         add_tooltip(tk.Spinbox(basic, from_=1, to=20, textvariable=players_var, width=8), "Choose between 1 and 20 players.").grid(row=0, column=1, sticky="w")
         add_tooltip(tk.Label(basic, text="Starting hand:"), "Cards dealt to each player when a new game starts.").grid(row=1, column=0, sticky="w", pady=4)
         add_tooltip(tk.Spinbox(basic, from_=0, to=1000, textvariable=cards_var, width=8), "Number of cards dealt to each player at the start.").grid(row=1, column=1, sticky="w")
-        add_tooltip(tk.Label(basic, text="Deck file (JSON):"), "The deck definition used for new games.").grid(row=2, column=0, sticky="w", pady=4)
-        add_tooltip(tk.Entry(basic, textvariable=deck_var, width=38), "Path to a JSON deck file. Relative paths start from the project folder.").grid(row=2, column=1, sticky="ew")
-        add_tooltip(tk.Button(basic, text="Browse…", command=lambda: self.browse_deck(deck_var)), "Browse for a deck JSON file.").grid(row=2, column=2, padx=(6, 0))
+        deck_section = CollapsibleSection(
+            frame, "Deck", lambda: self._fit_window_to_frame(frame)
+        )
+        deck_section.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(8, 0))
+        deck_controls = deck_section.content
+        deck_controls.columnconfigure(1, weight=1)
+        add_tooltip(tk.Label(deck_controls, text="Deck file (JSON):"), "The deck definition used for new games.").grid(row=0, column=0, sticky="w", pady=4)
+        add_tooltip(tk.Entry(deck_controls, textvariable=deck_var, width=38), "Path to a JSON deck file. Relative paths start from the project folder.").grid(row=0, column=1, sticky="ew")
+        add_tooltip(tk.Button(deck_controls, text="Browse…", command=lambda: self.browse_deck(deck_var)), "Browse for a deck JSON file.").grid(row=0, column=2, padx=(6, 0))
+        deck_buttons = tk.Frame(deck_controls)
+        deck_buttons.grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
         add_tooltip(
             tk.Button(
-                basic,
+                deck_buttons,
                 text="Check deck",
                 command=lambda: self.check_deck(deck_var, players_var, cards_var),
             ),
             "Validate the deck format and check whether it has enough cards for this setup.",
-        ).grid(row=3, column=1, sticky="w", pady=(4, 0))
+        ).pack(side="left", padx=(0, 6))
         add_tooltip(
             tk.Button(
-                basic,
+                deck_buttons,
                 text="Preview deck",
                 command=lambda: self.preview_deck(deck_var),
             ),
             "View the cards and symbols in the selected deck.",
-        ).grid(row=3, column=0, sticky="w", pady=(4, 0))
+        ).pack(side="left", padx=(0, 6))
         add_tooltip(
             tk.Button(
-                basic,
+                deck_buttons,
                 text="Create deck…",
                 command=lambda: self.create_deck(deck_var),
             ),
             "Build a custom deck, duplicate card groups, and select it for this game.",
-        ).grid(row=3, column=2, sticky="e", pady=(4, 0))
+        ).pack(side="left", padx=(0, 6))
         add_tooltip(
             tk.Button(
-                basic,
+                deck_buttons,
                 text="Manage decks…",
                 command=lambda: self.manage_decks(deck_var),
             ),
             "View available decks and quickly select, edit, or duplicate one.",
-        ).grid(row=4, column=1, sticky="w", pady=(5, 0))
-        add_tooltip(tk.Checkbutton(
-            basic,
-            text="Save discard pile when the game window closes",
-            variable=save_var,
-        ), "Save the discard pile to the app's internal data when exiting the app.").grid(row=5, column=0, columnspan=3, sticky="w", pady=(8, 2))
-
+        ).pack(side="left", padx=(0, 6))
         add_tooltip(tk.Checkbutton(
             basic,
             text="Use custom player names",
@@ -150,7 +152,7 @@ class SettingsWindow:
             buttons,
             text="Save settings",
             command=lambda: self.save_form(
-                players_var, cards_var, deck_var, save_var, custom_names_var, name_vars,
+                players_var, cards_var, deck_var, custom_names_var, name_vars,
                 game_settings, basic_settings,
             ),
         ).pack(side="left", padx=5)
@@ -254,7 +256,7 @@ class SettingsWindow:
         )
 
     def save_form(
-        self, players_var, cards_var, deck_var, save_var, custom_names_var, name_vars,
+        self, players_var, cards_var, deck_var, custom_names_var, name_vars,
         game_settings_panel, basic_settings_panel,
     ):
         try:
@@ -297,7 +299,6 @@ class SettingsWindow:
             "num_players": num_players,
             "cards_per_player": cards_per_player,
             "deck_path": deck_path,
-            "save_discard_on_exit": save_var.get(),
             "use_custom_player_names": custom_names_var.get(),
             "player_names": player_names,
             **game_settings_values,

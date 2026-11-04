@@ -15,6 +15,8 @@ class TableFrame(tk.LabelFrame):
         for widget in self.winfo_children():
             widget.destroy()
         self.card_buttons = []
+        if not self.game.enable_table:
+            return
         if self.game.allow_play_in_front_of_players:
             self._draw_player_lanes()
             self.after_idle(self._expand_window_for_table)

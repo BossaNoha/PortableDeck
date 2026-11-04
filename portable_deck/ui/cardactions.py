@@ -16,6 +16,8 @@ def draw_card(game, hand_frame, gui_log, status_panel):
 
 def draw_from_discard(game, hand_frame, gui_log, status_panel, root):
     """Take the configured card from any shared or personal discard pile."""
+    if not game.enable_discard_pile:
+        return
     piles = [(name, pile) for name, pile in game.all_discard_piles() if pile]
     if not piles:
         messagebox.showinfo("Discard pile is empty", "There are no cards to take.", parent=root)
@@ -110,6 +112,8 @@ def _take_discard_card(game, pile, index, hand_frame, gui_log, status_panel, pil
 
 def discard_selected(game, hand_frame, gui_log, status_panel):
     """Discard the currently selected card."""
+    if not game.enable_discard_pile:
+        return
     selected = hand_frame.selected_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a card first!")

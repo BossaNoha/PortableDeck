@@ -1,4 +1,9 @@
 {
+  "enable_personal_piles": false,
+  "personal_pile_count": 1,
+  "personal_pile_settings": [],
+  "enable_table": true,
+  "enable_discard_pile": true,
   "autosave_enabled": true,
   "autosave_count": 5,
   "require_exit_confirmation": true,

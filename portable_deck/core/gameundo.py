@@ -7,6 +7,7 @@ class GameUndoActions:
     def capture_undo_state(self):
         """Return the mutable game state needed to reverse one action."""
         return {
+            "personal_piles": copy.deepcopy(self.personal_piles),
             "remaining_deck": copy.deepcopy(self.deck.flat_deck),
             "players": [
                 {"name": player.name, "hand": copy.deepcopy(player.hand)}
@@ -32,6 +33,7 @@ class GameUndoActions:
         if not self.enable_undo or not self.undo_stack:
             return False
         state = self.undo_stack.pop()
+        self.personal_piles = copy.deepcopy(state.get("personal_piles", self.personal_piles))
         self.deck.flat_deck = copy.deepcopy(state["remaining_deck"])
         self.players = []
         for saved_player in state["players"]:

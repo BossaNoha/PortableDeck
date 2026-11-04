@@ -10,6 +10,8 @@ class GameGUIActions:
     def run_action(self, action, *args):
         undo_state = self.game.capture_undo_state() if self.game.enable_undo else None
         action(*args)
+        if hasattr(self, "personal_piles_ui"):
+            self.personal_piles_ui.update()
         self._record_undo_state(undo_state)
         self.update_undo_button()
         self.checkpoint()
@@ -83,6 +85,8 @@ class GameGUIActions:
             self.point_button.config(state=state)
 
     def handle_turn_start(self):
+        if hasattr(self, "personal_piles_ui"):
+            self.personal_piles_ui.update()
         self.table_frame.selected_index = None
         self.table_frame.selected_position = None
         self.table_frame.update_table()
@@ -136,6 +140,8 @@ class GameGUIActions:
         buttons.extend(self.chip_bank_ui.buttons)
         buttons.extend(self.positioned_play_buttons)
         buttons.extend(self.table_action_buttons)
+        if hasattr(self, "personal_pile_button"):
+            buttons.append(self.personal_pile_button)
         if hasattr(self, "play_face_down_button"):
             buttons.append(self.play_face_down_button)
         if getattr(self, "recycle_discard_button", None) is not None:

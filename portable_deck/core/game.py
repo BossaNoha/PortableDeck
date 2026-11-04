@@ -6,8 +6,9 @@ from .gamechipactions import ChipBankActions
 from .gametable import GameTableActions
 from .gamescoring import GameScoringActions
 from .gameundo import GameUndoActions
+from .personalpiles import PersonalPileActions
 
-class Game(GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
+class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
     def __init__(
         self,
         num_players,
@@ -35,6 +36,11 @@ class Game(GameScoringActions, GameUndoActions, ChipBankActions, GameTableAction
         minimum_bet=1,
         starting_balance=100,
         require_pot_withdrawal_confirmation=False,
+        enable_table=True,
+        enable_discard_pile=True,
+        enable_personal_piles=False,
+        personal_pile_count=1,
+        personal_pile_settings=None,
     ):
         if not isinstance(num_players, int) or isinstance(num_players, bool) or num_players < 1:
             raise ValueError("num_players must be a positive integer")
@@ -49,6 +55,8 @@ class Game(GameScoringActions, GameUndoActions, ChipBankActions, GameTableAction
                 raise ValueError(f"{label} must be an integer between 0 and 20")
         if shared_discard_pile_count == 0 and personal_discard_pile_count == 0:
             shared_discard_pile_count = 1
+        self.enable_table = bool(enable_table)
+        self.enable_discard_pile = bool(enable_discard_pile)
         self.players = [
             Player(player_names[i] if player_names is not None else f"Player{i+1}")
             for i in range(num_players)
@@ -97,6 +105,23 @@ class Game(GameScoringActions, GameUndoActions, ChipBankActions, GameTableAction
             occupied_slot_action if occupied_slot_action in {"invalid", "swap"} else "invalid"
         )
 
+        self.initialize_personal_piles(enable_personal_piles, personal_pile_count, personal_pile_settings)
+        self.apply_feature_settings()
+
+    def apply_feature_settings(self):
+        if not self.enable_table:
+            for option in ("allow_take_from_table", "allow_move_table_card_to_discard",
+                           "allow_manual_table_cleanup", "clear_table_on_round_end",
+                           "allow_positioned_play", "allow_move_cards_on_table",
+                           "allow_play_in_front_of_players", "allow_face_down_table_cards",
+                           "allow_move_table_sequences"):
+                setattr(self, option, False)
+        if not self.enable_discard_pile:
+            for option in ("allow_draw_from_discard", "allow_recycle_discard_to_deck",
+                           "allow_move_table_card_to_discard", "allow_manual_table_cleanup",
+                           "clear_table_on_round_end"):
+                setattr(self, option, False)
+
     def start(self, cards_per_player=5):
         if not isinstance(cards_per_player, int) or isinstance(cards_per_player, bool) or cards_per_player < 0:
             raise ValueError("cards_per_player must be a non-negative integer")
@@ -120,6 +145,11 @@ class Game(GameScoringActions, GameUndoActions, ChipBankActions, GameTableAction
         """Create a fresh game with the same setup, optionally retaining scores."""
         restarted = Game(
             num_players=len(self.players),
+            enable_table=self.enable_table,
+            enable_personal_piles=self.enable_personal_piles,
+            personal_pile_count=self.personal_pile_count,
+            personal_pile_settings=self.personal_pile_settings,
+            enable_discard_pile=self.enable_discard_pile,
             deck_path=self.deck.path,
             player_names=[player.name for player in self.players],
             score_enabled=self.score_enabled,
@@ -214,6 +244,8 @@ class Game(GameScoringActions, GameUndoActions, ChipBankActions, GameTableAction
         return piles
 
     def discard_from_current(self, index, pile_index=0, personal=False):
+        if not self.enable_discard_pile:
+            return None
         player = self.players[self.current_player_index]
         card = player.play_card(index)
 

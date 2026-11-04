@@ -51,11 +51,10 @@ class MainMenu:
         # frame to the dimensions used by the game session.
         frame.pack()
         tk.Label(frame, text="Portable Deck", font=("TkDefaultFont", 20, "bold")).pack(pady=(0, 20))
-        tk.Button(frame, text="Play", width=24, command=self.play).pack(pady=5)
+        tk.Button(frame, text="New game", width=24, command=self.play).pack(pady=5)
         resume_state = "normal" if os.path.isfile(AUTOSAVE_PATH) else "disabled"
-        tk.Button(frame, text="Resume", width=24, state=resume_state, command=self.resume_game).pack(pady=5)
-        tk.Button(frame, text="Load", width=24, command=self.load_game).pack(pady=5)
-        tk.Button(frame, text="Autosaves", width=24, command=self.load_autosave).pack(pady=5)
+        tk.Button(frame, text="Resume game", width=24, state=resume_state, command=self.resume_game).pack(pady=5)
+        tk.Button(frame, text="Load save", width=24, command=self.load_game).pack(pady=5)
         tk.Button(frame, text="Settings", width=24, command=self.show_settings).pack(pady=5)
         tk.Button(frame, text="Quit", width=24, command=self.quit_app).pack(pady=5)
         self.root.update_idletasks()
@@ -71,18 +70,6 @@ class MainMenu:
             return
         self.root.destroy()
 
-    def load_autosave(self):
-        path = SessionBrowser(self.root, os.path.join(SAVES_DIR, "autosaves")).show()
-        if not path:
-            return
-        try:
-            game = Game.load_session(path)
-        except (OSError, ValueError, KeyError, TypeError) as error:
-            messagebox.showerror("Could not load game", str(error), parent=self.root)
-            return
-        self.clear_window()
-        self.show_game(game)
-
     def show_settings(self):
         SettingsWindow(self).show_settings()
 
@@ -93,6 +80,8 @@ class MainMenu:
             game = Game(
                 self.settings["num_players"],
                 deck_path,
+                enable_table=self.settings.get("enable_table", True),
+                enable_discard_pile=self.settings.get("enable_discard_pile", True),
                 player_names=names,
                 score_enabled=self.settings.get("enable_score_counter", False),
                 require_point_confirmation=self.settings.get("require_point_confirmation", False),
@@ -115,7 +104,9 @@ class MainMenu:
                 allow_move_table_sequences=self.settings.get("allow_move_table_sequences", False),
                 allow_recycle_discard_to_deck=self.settings.get("allow_recycle_discard_to_deck", False),
                 shared_discard_pile_count=self.settings.get("shared_discard_pile_count", 1),
-                personal_discard_pile_count=self.settings.get("personal_discard_pile_count", 0),
+                enable_personal_piles=self.settings.get("enable_personal_piles", False),
+                personal_pile_count=self.settings.get("personal_pile_count", 1),
+                personal_pile_settings=self.settings.get("personal_pile_settings", []),
                 enable_chip_accounts=self.settings.get("enable_chip_accounts", False),
                 minimum_bet=self.settings.get("minimum_bet", 1),
                 starting_balance=self.settings.get("starting_balance", 100),
@@ -202,7 +193,7 @@ class MainMenu:
     def exit_to_desktop(self, game, should_save):
         if should_save and not self.save_manager.save_session(game):
             return
-        if self.settings["save_discard_on_exit"] and hasattr(game, "save_discard_pile"):
+        if game.enable_discard_pile and self.settings["save_discard_on_exit"] and hasattr(game, "save_discard_pile"):
             try:
                 game.save_discard_pile(DISCARD_PATH)
             except OSError as error:

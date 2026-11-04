@@ -2,10 +2,16 @@
 import tkinter as tk
 from ..ui.tooltip import add_tooltip
 from ..ui.collapsiblesection import CollapsibleSection
+from .personalpilesettings import PersonalPileSettings
 
 
 class GameSettingsPanel:
-    def __init__(self, parent, root, settings, fit_window):
+    def __init__(self, parent, root, settings, fit_window, players_var=None):
+        self.settings = settings
+        self.players_var = players_var or tk.StringVar(value=str(settings.get("num_players", 3)))
+        self.table_enabled_var = tk.BooleanVar(value=settings.get("enable_table", True))
+        self.discard_enabled_var = tk.BooleanVar(value=settings.get("enable_discard_pile", True))
+        self.save_discard_var = tk.BooleanVar(value=settings.get("save_discard_on_exit", True))
         self.root = root
         self.fit_window = fit_window
         self.score_var = tk.BooleanVar(value=bool(settings.get("enable_score_counter", False)))
@@ -49,17 +55,15 @@ class GameSettingsPanel:
         self.occupied_slot_action_var = tk.StringVar(
             value=settings.get("occupied_slot_action", "invalid")
         )
-        self.undo_var = tk.BooleanVar(value=bool(settings.get("enable_undo", False)))
         self.face_down_var = tk.BooleanVar(value=bool(settings.get("allow_face_down_table_cards", False)))
         self.move_sequences_var = tk.BooleanVar(value=bool(settings.get("allow_move_table_sequences", False)))
         self.recycle_discard_var = tk.BooleanVar(value=bool(settings.get("allow_recycle_discard_to_deck", False)))
         self.shared_discard_count_var = tk.StringVar(value=str(settings.get("shared_discard_pile_count", 1)))
-        self.personal_discard_count_var = tk.StringVar(value=str(settings.get("personal_discard_pile_count", 0)))
         self.expanded_var = tk.BooleanVar(value=False)
 
         self.button = add_tooltip(
             tk.Button(parent, text="Game Settings ▸", command=self.toggle),
-            "Expand optional scoring, table, undo, and chip-account settings.",
+            "Expand optional scoring, table, discard pile, and chip-account settings.",
         )
         self.button.grid(row=7, column=0, columnspan=3, sticky="w", pady=(8, 2))
         self.frame = tk.LabelFrame(parent, text="Game Settings", padx=8, pady=5)
@@ -77,18 +81,17 @@ class GameSettingsPanel:
 
         def section(title):
             panel = CollapsibleSection(columns, title, self.fit_window)
-            row, column = ((0, 0), (0, 1), (1, 1), (1, 0))[len(self.sections)]
+            row, column = ((0, 0), (0, 1), (1, 1), (1, 0), (2, 0))[len(self.sections)]
             panel.grid(row=row, column=column, sticky="new", padx=4, pady=(0, 4))
             self.sections.append(panel)
             return panel.content
 
-        scoring = section("Scoring and turn tools")
+        scoring = section("Scoring")
         add_tooltip(tk.Checkbutton(
             scoring,
             text="Enable score counters and point requests",
             variable=self.score_var,
         ), "Show each player's score and allow point requests.").pack(anchor="w")
-        add_tooltip(tk.Checkbutton(scoring, text="Enable Undo", variable=self.undo_var), "Show Undo during a game and keep reversible action history.").pack(anchor="w")
         self.confirmation_check = tk.Checkbutton(
             scoring,
             text="Require approval from the other players for a point",
@@ -98,7 +101,18 @@ class GameSettingsPanel:
 
         chips = section("Chip accounts")
 
-        discard_pile = section("Discard pile")
+        discard_section = section("Discard pile")
+        tk.Checkbutton(discard_section, text="Enable discard pile", variable=self.discard_enabled_var,
+                       command=self.update_feature_controls).pack(anchor="w")
+        self.discard_options = tk.Frame(discard_section)
+        self.discard_options.pack(fill="x")
+        discard_pile = self.discard_options
+        add_tooltip(tk.Checkbutton(
+            discard_pile,
+            text="Save discard pile when the game window closes",
+            variable=self.save_discard_var,
+            wraplength=280, justify="left", anchor="w",
+        ), "Save the discard pile to the app's internal data when exiting the app.").pack(anchor="w")
         draw_toggle = tk.Checkbutton(
             discard_pile,
             text="Allow drawing from the discard pile",
@@ -112,13 +126,18 @@ class GameSettingsPanel:
         )
         self.discard_draw_mode_menu.pack(anchor="w", padx=(20, 0))
 
-        table = section("Table settings")
+        table_section = section("Table settings")
+        tk.Checkbutton(table_section, text="Enable table", variable=self.table_enabled_var,
+                       command=self.update_feature_controls).pack(anchor="w")
+        self.table_options = tk.Frame(table_section)
+        self.table_options.pack(fill="x")
+        table = self.table_options
         table_options = tk.Frame(table)
         table_options.pack(fill="x")
         table_options.columnconfigure(0, weight=1, uniform="table-settings")
         table_options.columnconfigure(1, weight=1, uniform="table-settings")
         self._add_check(table_options, "Take a selected table card into the current hand", self.take_table_var, "Move a selected table card into the current player's hand.", row=0, column=0)
-        self._add_check(table_options, "Move a selected table card to discard", self.table_to_discard_var, "Move a selected table card directly to the discard pile.", row=1, column=0)
+        self.table_to_discard_check = self._add_check(table_options, "Discard a selected table card to discard pile", self.table_to_discard_var, "Move a selected table card directly to the discard pile.", row=1, column=0)
         self._add_check(table_options, "Let the current player clear the table", self.manual_cleanup_var, "Add an action that sends all table cards to the discard pile.", row=2, column=0)
         self._add_check(table_options, "Clear the table at round end", self.round_cleanup_var, "Automatically discard all table cards when the last player ends the round.", row=3, column=0)
         self._add_check(table_options, "Play cards at specific table positions", self.positioned_play_var, "Choose an available empty position on the table when playing a card.", row=0, column=1)
@@ -140,8 +159,7 @@ class GameSettingsPanel:
         discard_counts.pack(anchor="w", fill="x", pady=(5, 0))
         add_tooltip(tk.Label(discard_counts, text="Shared discard piles:"), "Number of discard piles accessible to all players.").grid(row=0, column=0, sticky="w")
         tk.Spinbox(discard_counts, from_=1, to=20, width=5, textvariable=self.shared_discard_count_var).grid(row=0, column=1, padx=(6, 12))
-        add_tooltip(tk.Label(discard_counts, text="Personal piles per player:"), "Each player gets this many private discard piles in addition to the shared piles.").grid(row=1, column=0, sticky="w")
-        tk.Spinbox(discard_counts, from_=0, to=20, width=5, textvariable=self.personal_discard_count_var).grid(row=1, column=1, padx=(6, 12))
+
 
         occupied_row = tk.Frame(table_options)
         occupied_row.grid(row=3, column=1, sticky="w", pady=(3, 0))
@@ -152,7 +170,7 @@ class GameSettingsPanel:
             chips,
             text="Enable Chip Accounts",
             variable=self.chip_accounts_var,
-            command=self.update_chip_settings_visibility,
+            command=self.update_chip_settings_controls,
         )
         add_tooltip(chip_toggle, "Enable per-player chip balances and a shared pot for betting-style play.").pack(anchor="w")
         self.chip_settings_frame = tk.Frame(chips)
@@ -182,34 +200,53 @@ class GameSettingsPanel:
             variable=self.pot_confirmation_var,
         ), "Require approval from every other player before the pot can be collected.").grid(row=2, column=0, columnspan=2, sticky="w", pady=(5, 0))
 
+        personal = section("Personal piles on table")
+        self.sections[-1].grid_configure(columnspan=2)
+        self.personal_piles = PersonalPileSettings(personal, self.settings, self.players_var, self.fit_window)
+
         self.score_var.trace_add("write", self.update_confirmation_control)
         self.update_confirmation_control()
         self.update_discard_draw_controls()
-        self.update_chip_settings_visibility()
+        self.update_chip_settings_controls()
+        self.update_feature_controls()
+
+    def update_feature_controls(self):
+        for frame, enabled in ((self.table_options, self.table_enabled_var.get()),
+                               (self.discard_options, self.discard_enabled_var.get())):
+            self._set_controls_enabled(frame, enabled)
+        self.update_discard_draw_controls()
+        self.table_to_discard_check.configure(
+            state="normal" if self.table_enabled_var.get() and self.discard_enabled_var.get() else "disabled"
+        )
+
+    def _set_controls_enabled(self, frame, enabled):
+        for widget in frame.winfo_children():
+            if "state" in widget.keys():
+                widget.configure(state="normal" if enabled else "disabled")
+            self._set_controls_enabled(widget, enabled)
 
     def _add_check(self, parent, label, variable, help_text="", row=0, column=0):
-        add_tooltip(
+        check = add_tooltip(
             tk.Checkbutton(
                 parent, text=label, variable=variable, wraplength=260,
                 justify="left", anchor="w",
             ),
             help_text,
-        ).grid(row=row, column=column, sticky="w", padx=3, pady=2)
+        )
+        check.grid(row=row, column=column, sticky="w", padx=3, pady=2)
+        return check
 
     def update_confirmation_control(self, *_):
         self.confirmation_check.config(state="normal" if self.score_var.get() else "disabled")
 
     def update_discard_draw_controls(self):
         self.discard_draw_mode_menu.config(
-            state="normal" if self.draw_from_discard_var.get() else "disabled"
+            state="normal" if self.discard_enabled_var.get() and self.draw_from_discard_var.get() else "disabled"
         )
 
-    def update_chip_settings_visibility(self):
-        if self.chip_accounts_var.get():
-            self.chip_settings_frame.pack(anchor="w", padx=(22, 0))
-        else:
-            self.chip_settings_frame.pack_forget()
-        self.root.after_idle(self.fit_window)
+    def update_chip_settings_controls(self):
+        self.chip_settings_frame.pack(anchor="w", padx=(22, 0))
+        self._set_controls_enabled(self.chip_settings_frame, self.chip_accounts_var.get())
 
     def toggle(self):
         expanded = not self.expanded_var.get()
@@ -226,10 +263,12 @@ class GameSettingsPanel:
         minimum_bet = int(self.minimum_bet_var.get())
         starting_balance = int(self.starting_balance_var.get())
         shared_discard_count = int(self.shared_discard_count_var.get())
-        personal_discard_count = int(self.personal_discard_count_var.get())
-        if minimum_bet < 1 or starting_balance < 0 or not 1 <= shared_discard_count <= 20 or not 0 <= personal_discard_count <= 20:
+        if minimum_bet < 1 or starting_balance < 0 or not 1 <= shared_discard_count <= 20:
             raise ValueError
         return {
+            "enable_table": self.table_enabled_var.get(),
+            "enable_discard_pile": self.discard_enabled_var.get(),
+            "save_discard_on_exit": self.save_discard_var.get(),
             "enable_score_counter": self.score_var.get(),
             "require_point_confirmation": self.score_var.get() and self.confirmation_var.get(),
             "allow_take_from_table": self.take_table_var.get(),
@@ -242,7 +281,8 @@ class GameSettingsPanel:
             "allow_face_down_table_cards": self.face_down_var.get(),
             "allow_recycle_discard_to_deck": self.recycle_discard_var.get(),
             "shared_discard_pile_count": shared_discard_count,
-            "personal_discard_pile_count": personal_discard_count,
+            "personal_discard_pile_count": 0,
+            **self.personal_piles.values(),
             "allow_play_in_front_of_players": self.play_in_front_var.get(),
             "allow_draw_from_discard": self.draw_from_discard_var.get(),
             "draw_from_discard_mode": (
@@ -255,5 +295,4 @@ class GameSettingsPanel:
                 self.chip_accounts_var.get() and self.pot_confirmation_var.get()
             ),
             "occupied_slot_action": self.occupied_slot_action_var.get(),
-            "enable_undo": self.undo_var.get(),
         }

@@ -3,6 +3,8 @@
 class TablePlacementActions:
 
     def play_to_table(self, index, position=None, face_up=True):
+        if not self.enable_table:
+            return None
         if not face_up and not self.allow_face_down_table_cards:
             return None
         if self.allow_play_in_front_of_players:

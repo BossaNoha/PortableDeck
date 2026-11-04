@@ -4,6 +4,7 @@ from .handframe import HandFrame
 from .statuspanel import StatusPanel
 from .tableframe import TableFrame
 from .chipbankui import ChipBankUI
+from .personalpilesui import PersonalPilesUI
 from ..app.deckpreview import show_deck_preview
 from .cardactions import (
     clear_table, draw_card, discard_selected, end_turn,
@@ -42,7 +43,10 @@ class GameGUIBuilder:
         self.log_text.pack(fill="both", expand=True)
 
         self.table_frame = TableFrame(self.right_frame, self.game)
-        self.table_frame.pack(fill="both", expand=True)
+        if self.game.enable_table:
+            self.table_frame.pack(fill="both", expand=True)
+        else:
+            self.right_frame.pack_forget()
 
         # ----- Action buttons -----
         self.draw_button = tk.Button(
@@ -85,7 +89,8 @@ class GameGUIBuilder:
                 discard_selected, self.game, self.hand_frame, self.log, self.status_panel
             ),
         )
-        self.discard_button.pack(side="left", padx=5)
+        if self.game.enable_discard_pile:
+            self.discard_button.pack(side="left", padx=5)
 
         self.play_button = tk.Button(
             self.card_actions_frame,
@@ -94,7 +99,8 @@ class GameGUIBuilder:
                 play_selected, self.game, self.hand_frame, self.table_frame, self.log, self.status_panel
             ),
         )
-        self.play_button.pack(side="left", padx=5)
+        if self.game.enable_table:
+            self.play_button.pack(side="left", padx=5)
 
         if self.game.allow_face_down_table_cards:
             self.play_face_down_button = tk.Button(
@@ -229,6 +235,14 @@ class GameGUIBuilder:
                 command=self.request_current_point,
             )
             self.point_button.pack(side="left", padx=5)
+
+        self.personal_piles_ui = PersonalPilesUI(self)
+        if self.game.enable_table and self.game.enable_personal_piles:
+            self.personal_pile_button = tk.Button(
+                self.card_actions_frame, text="Play to Personal Pile",
+                command=self.personal_piles_ui.choose_destination,
+            )
+            self.personal_pile_button.pack(side="left", padx=5)
 
         # Initialize GUI
         self.hand_frame.update_hand()

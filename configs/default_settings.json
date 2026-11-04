@@ -29,5 +29,10 @@
   "enable_undo": false,
   "autosave_enabled": true,
   "autosave_count": 5,
-  "require_exit_confirmation": true
+  "require_exit_confirmation": true,
+  "enable_table": true,
+  "enable_discard_pile": true,
+  "enable_personal_piles": false,
+  "personal_pile_count": 1,
+  "personal_pile_settings": []
 }
