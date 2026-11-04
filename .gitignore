@@ -1,0 +1,11 @@
+# Python-generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local game sessions
+saves/
+
+# Temporary save files
+*.json.tmp

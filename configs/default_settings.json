@@ -26,5 +26,8 @@
   "starting_balance": 100,
   "require_pot_withdrawal_confirmation": false,
   "occupied_slot_action": "invalid",
-  "enable_undo": false
+  "enable_undo": false,
+  "autosave_enabled": true,
+  "autosave_count": 5,
+  "require_exit_confirmation": true
 }

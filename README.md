@@ -27,14 +27,14 @@ On Windows, `py main.py` can be used if the Python launcher is installed.
 ## In a game
 
 Players can draw, discard, play cards onto the table, and end their turn. The
-table and action buttons depend on the options enabled in **Settings → Advanced
-Settings → Table actions**. These options include taking table cards, moving
+table and action buttons depend on the options enabled in **Settings → Game
+Settings → Table settings**. These options include taking table cards, moving
 cards to the discard pile, clearing the table, placing cards in table positions,
 moving cards between positions, and showing a separate card row in front of each
 player. If player rows are enabled, **Play Selected Card** plays in front of the
 current player; **Play at Selected Spot** can target another player's row.
 
-In **Advanced Settings → Deck actions**, enable **Allow drawing from the discard
+In **Game Settings → Discard pile**, enable **Allow drawing from the discard
 pile** to add **Take from Discard** during a game. Choose whether the action
 always takes the top card or lets the current player choose any card.
 Set the number of shared discard piles and the number of personal piles each
@@ -47,7 +47,7 @@ When enabled, **Play Selected Face Down** places a hidden card on the table and
 Card** can move a face-up card together with the cards below it in its column.
 **Recycle Discard into Deck** becomes available when the draw deck is empty.
 
-Advanced Settings also provide general card-handling options for flexible table
+Game Settings also provide general card-handling options for flexible table
 layouts: play cards face down and reveal them, move face-up sequences together,
 and recycle the discard pile into an empty draw deck. These are individual
 actions for custom games. Portable Deck currently has no preconfigured game
@@ -57,7 +57,7 @@ rules or game presets.
 already dealt or drawn. The preview uses the deck's symbol order and sorts card
 values within each symbol.
 
-Advanced settings also offer optional score counters and point confirmation.
+Game settings also offer optional score counters and point confirmation.
 When **Enable Undo** is checked, the Undo button reverses the latest action that
 changed the game state. Undo history is included in game saves and checkpoints.
 
@@ -83,11 +83,11 @@ The app asks before replacing an existing save.
 Sessions can be loaded, renamed, or deleted from this list; Browse can select a
 JSON save outside the saves folder.
 
-The app also updates `saves/last_session.json` automatically when a game starts,
+When Autosave is enabled, the app updates `saves/last_session.json` when a game starts,
 after game actions, and when leaving a game. **Resume** loads this checkpoint,
 including the game log and available Undo history. It is separate from named
-saves. The exit actions ask whether to create a named save; choosing No still
-leaves the automatic checkpoint available for Resume.
+saves. With Require exit confirmation enabled, exit actions ask whether to create a named save; choosing No still
+leaves the latest automatic checkpoint available for Resume if Autosave is enabled.
 
 ## Settings files
 
@@ -140,3 +140,15 @@ import, or export one.
 - `configs/`, `decks/`, and `saves/` remain at the project root for user data.
 - `portable_deck_documentation.txt` contains the longer project guide.
 
+
+## Basic Settings
+
+**Autosave** enables automatic checkpoints after game actions and when leaving a
+session. **Autosaves to keep** (1–1000, default 5) includes the latest checkpoint
+used by Resume. Earlier versions are available through **Autosaves** in the main
+menu. Unchanged checkpoints do not create another version. Disabling Autosave
+stops new automatic saves and keeps existing saves available.
+
+**Require exit confirmation** controls the save/confirmation dialog when leaving
+a game and the confirmation when quitting from the main menu. When disabled,
+leaving is immediate; use **Save** during a game to create a named save manually.

@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+from time import time_ns
 import tkinter as tk
 from tkinter import messagebox
 
@@ -21,7 +23,7 @@ class MainMenu:
         os.makedirs(SAVES_DIR, exist_ok=True)
         self.save_manager = SaveManager(self.root, SAVES_DIR)
         self.root.title("Portable Deck")
-        self.root.protocol("WM_DELETE_WINDOW", self.root.destroy)
+        self.root.protocol("WM_DELETE_WINDOW", self.quit_app)
         self.show_main_menu()
 
     def migrate_discard_data(self):
@@ -43,7 +45,7 @@ class MainMenu:
     def show_main_menu(self):
         self.clear_window()
         self.root.minsize(1, 1)
-        self.root.protocol("WM_DELETE_WINDOW", self.root.destroy)
+        self.root.protocol("WM_DELETE_WINDOW", self.quit_app)
         frame = tk.Frame(self.root, padx=32, pady=28)
         # Let the menu determine the window size instead of stretching the
         # frame to the dimensions used by the game session.
@@ -53,13 +55,33 @@ class MainMenu:
         resume_state = "normal" if os.path.isfile(AUTOSAVE_PATH) else "disabled"
         tk.Button(frame, text="Resume", width=24, state=resume_state, command=self.resume_game).pack(pady=5)
         tk.Button(frame, text="Load", width=24, command=self.load_game).pack(pady=5)
+        tk.Button(frame, text="Autosaves", width=24, command=self.load_autosave).pack(pady=5)
         tk.Button(frame, text="Settings", width=24, command=self.show_settings).pack(pady=5)
-        tk.Button(frame, text="Quit", width=24, command=self.root.destroy).pack(pady=5)
+        tk.Button(frame, text="Quit", width=24, command=self.quit_app).pack(pady=5)
         self.root.update_idletasks()
         width = frame.winfo_reqwidth()
         height = frame.winfo_reqheight()
         self.root.minsize(width, height)
         self.root.geometry(f"{width}x{height}")
+
+    def quit_app(self):
+        if self.settings.get("require_exit_confirmation", True) and not messagebox.askyesno(
+            "Quit Portable Deck?", "Close the application?", parent=self.root
+        ):
+            return
+        self.root.destroy()
+
+    def load_autosave(self):
+        path = SessionBrowser(self.root, os.path.join(SAVES_DIR, "autosaves")).show()
+        if not path:
+            return
+        try:
+            game = Game.load_session(path)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            messagebox.showerror("Could not load game", str(error), parent=self.root)
+            return
+        self.clear_window()
+        self.show_game(game)
 
     def show_settings(self):
         SettingsWindow(self).show_settings()
@@ -139,11 +161,26 @@ class MainMenu:
             on_exit_desktop=self.exit_to_desktop,
             on_restart=self.restart_game,
             on_checkpoint=self.checkpoint_game,
+            require_exit_confirmation=self.settings.get("require_exit_confirmation", True),
         )
 
     def checkpoint_game(self, game):
+        if not self.settings.get("autosave_enabled", True):
+            return None
         try:
+            count = int(self.settings.get("autosave_count", 5))
+            if not 1 <= count <= 1000:
+                raise ValueError("Autosaves to keep must be between 1 and 1000.")
+            latest = Path(AUTOSAVE_PATH)
+            previous = latest.read_bytes() if latest.exists() else None
             game.save_session(AUTOSAVE_PATH)
+            archive = Path(SAVES_DIR) / "autosaves"
+            archive.mkdir(exist_ok=True)
+            if count > 1 and previous is not None and previous != latest.read_bytes():
+                (archive / f"autosave_{time_ns()}.json").write_bytes(previous)
+            versions = sorted(archive.glob("autosave_*.json"), key=lambda path: path.name, reverse=True)
+            for old in versions[count - 1:]:
+                old.unlink()
             return None
         except (OSError, TypeError, ValueError) as error:
             return str(error)

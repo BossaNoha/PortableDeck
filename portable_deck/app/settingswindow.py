@@ -4,7 +4,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 
 from .settings import BASE_DIR, load_default_settings, load_settings, resolve_deck_path, save_settings
-from .advancedsettings import AdvancedSettingsPanel
+from .gamesettings import GameSettingsPanel
+from .basicsettings import BasicSettingsPanel
 from .deckbuilder import DeckBuilder
 from .decklibrary import DeckLibrary
 from .deckpreview import show_deck_preview
@@ -133,7 +134,10 @@ class SettingsWindow:
         custom_names_var.trace_add("write", refresh_name_inputs)
         refresh_name_inputs()
 
-        advanced = AdvancedSettingsPanel(
+        basic_settings = BasicSettingsPanel(
+            frame, self.settings, lambda: self._fit_window_to_frame(frame)
+        )
+        game_settings = GameSettingsPanel(
             frame, self.root, self.settings,
             lambda: self._fit_window_to_frame(frame),
         )
@@ -147,7 +151,7 @@ class SettingsWindow:
             text="Save settings",
             command=lambda: self.save_form(
                 players_var, cards_var, deck_var, save_var, custom_names_var, name_vars,
-                advanced,
+                game_settings, basic_settings,
             ),
         ).pack(side="left", padx=5)
         frame.columnconfigure(1, weight=1)
@@ -251,12 +255,13 @@ class SettingsWindow:
 
     def save_form(
         self, players_var, cards_var, deck_var, save_var, custom_names_var, name_vars,
-        advanced_panel,
+        game_settings_panel, basic_settings_panel,
     ):
         try:
             num_players = int(players_var.get())
             cards_per_player = int(cards_var.get())
-            advanced_values = advanced_panel.values()
+            game_settings_values = game_settings_panel.values()
+            basic_settings_values = basic_settings_panel.values()
             deck_path = deck_var.get().strip()
             if num_players < 1 or cards_per_player < 0:
                 raise ValueError
@@ -283,7 +288,7 @@ class SettingsWindow:
         except ValueError:
             messagebox.showerror(
                 "Invalid settings",
-                "Players must be at least 1 and cards per player 0 or more. Advanced numeric settings must also be valid.",
+                "Players must be at least 1 and cards per player 0 or more. Numeric settings must also be valid.",
                 parent=self.root,
             )
             return
@@ -295,7 +300,8 @@ class SettingsWindow:
             "save_discard_on_exit": save_var.get(),
             "use_custom_player_names": custom_names_var.get(),
             "player_names": player_names,
-            **advanced_values,
+            **game_settings_values,
+            **basic_settings_values,
         }
         try:
             save_settings(self.settings)

@@ -10,6 +10,9 @@ DEFAULT_CONFIG_PATH = os.path.join(CONFIG_DIR, "default_settings.json")
 APP_DATA_DIR = os.path.join(BASE_DIR, "portable_deck", "data")
 DISCARD_PATH = os.path.join(APP_DATA_DIR, "discard.json")
 DEFAULT_SETTINGS = {
+    "autosave_enabled": True,
+    "autosave_count": 5,
+    "require_exit_confirmation": True,
     "num_players": 3,
     "cards_per_player": 5,
     "deck_path": os.path.join("decks", "demodeck.json"),

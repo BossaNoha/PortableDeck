@@ -6,7 +6,7 @@ from .gameguibuilder import GameGUIBuilder
 class GameGUI(GameGUIBuilder, GameGUIActions):
     def __init__(
         self, root, game, on_save=None, on_exit_menu=None, on_exit_desktop=None,
-        on_restart=None, on_checkpoint=None,
+        on_restart=None, on_checkpoint=None, require_exit_confirmation=True,
     ):
         self.root = root
         self.game = game
@@ -15,6 +15,7 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         self.on_exit_desktop = on_exit_desktop
         self.on_restart = on_restart
         self.on_checkpoint = on_checkpoint
+        self.require_exit_confirmation = require_exit_confirmation
         self.root.title("Portable Deck - Game")
         self.root.minsize(900, 560)
         self.root.protocol("WM_DELETE_WINDOW", self.close)

@@ -30,7 +30,7 @@ GAME WINDOW
 The game window shows the current player's hand, card counts, and a game log.
 Available actions are:
 - Draw Card: draw one card from the draw deck.
-- Take from Discard: when enabled in Advanced Settings, take either the top
+- Take from Discard: when enabled in Game Settings, take either the top
   discard card or choose any card from the discard pile.
 - Discard Selected: move the selected hand card to the discard pile.
 - Play Selected Card: append the selected hand card to the table, or to the
@@ -42,7 +42,7 @@ Available actions are:
 - Move Selected Table Card: when table-card movement is enabled, select a table
   card and an empty destination slot, then move the card there.
 - Next Turn: pass the turn to the next player.
-- Undo: when enabled in Advanced Settings, reverse the most recent action that
+- Undo: when enabled in Game Settings, reverse the most recent action that
   changed the game state. Available undo history is preserved in saved games.
 - Save: save the current game without leaving it.
 - View Full Deck: preview every card in the original deck definition, including

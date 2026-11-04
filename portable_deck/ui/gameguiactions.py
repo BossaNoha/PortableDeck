@@ -145,6 +145,8 @@ class GameGUIActions:
         return buttons
 
     def _ask_to_save(self):
+        if not self.require_exit_confirmation:
+            return False
         return messagebox.askyesnocancel(
             "Save game?",
             "Save the current game before leaving?",

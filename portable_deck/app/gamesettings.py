@@ -1,9 +1,10 @@
-"""Advanced options panel for the settings window."""
+"""Game options panel for the settings window."""
 import tkinter as tk
 from ..ui.tooltip import add_tooltip
+from ..ui.collapsiblesection import CollapsibleSection
 
 
-class AdvancedSettingsPanel:
+class GameSettingsPanel:
     def __init__(self, parent, root, settings, fit_window):
         self.root = root
         self.fit_window = fit_window
@@ -57,11 +58,11 @@ class AdvancedSettingsPanel:
         self.expanded_var = tk.BooleanVar(value=False)
 
         self.button = add_tooltip(
-            tk.Button(parent, text="Advanced Settings ▸", command=self.toggle),
+            tk.Button(parent, text="Game Settings ▸", command=self.toggle),
             "Expand optional scoring, table, undo, and chip-account settings.",
         )
         self.button.grid(row=7, column=0, columnspan=3, sticky="w", pady=(8, 2))
-        self.frame = tk.LabelFrame(parent, text="Advanced Settings", padx=8, pady=5)
+        self.frame = tk.LabelFrame(parent, text="Game Settings", padx=8, pady=5)
         self.frame.grid(row=8, column=0, columnspan=3, sticky="ew", pady=4)
         self.frame.grid_remove()
         self._build_controls()
@@ -69,11 +70,19 @@ class AdvancedSettingsPanel:
     def _build_controls(self):
         columns = tk.Frame(self.frame)
         columns.grid(row=0, column=0, sticky="nsew")
-        columns.columnconfigure(0, weight=1, uniform="advanced")
-        columns.columnconfigure(1, weight=1, uniform="advanced")
+        columns.columnconfigure(0, weight=1, uniform="game-settings")
+        columns.columnconfigure(1, weight=1, uniform="game-settings")
+        self.frame.columnconfigure(0, weight=1)
+        self.sections = []
 
-        scoring = tk.LabelFrame(columns, text="Scoring and turn tools", padx=8, pady=5)
-        scoring.grid(row=0, column=0, sticky="nsew", padx=(0, 4), pady=(0, 6))
+        def section(title):
+            panel = CollapsibleSection(columns, title, self.fit_window)
+            row, column = ((0, 0), (0, 1), (1, 1), (1, 0))[len(self.sections)]
+            panel.grid(row=row, column=column, sticky="new", padx=4, pady=(0, 4))
+            self.sections.append(panel)
+            return panel.content
+
+        scoring = section("Scoring and turn tools")
         add_tooltip(tk.Checkbutton(
             scoring,
             text="Enable score counters and point requests",
@@ -87,30 +96,27 @@ class AdvancedSettingsPanel:
         )
         add_tooltip(self.confirmation_check, "Other players must approve a point request before it is awarded.").pack(anchor="w")
 
-        chips = tk.LabelFrame(columns, text="Chip accounts", padx=8, pady=5)
-        chips.grid(row=0, column=1, sticky="nsew", padx=(4, 0), pady=(0, 6))
+        chips = section("Chip accounts")
 
-        deck_actions = tk.LabelFrame(columns, text="Deck actions", padx=8, pady=5)
-        deck_actions.grid(row=1, column=1, sticky="nsew", padx=(4, 0), pady=(0, 6))
+        discard_pile = section("Discard pile")
         draw_toggle = tk.Checkbutton(
-            deck_actions,
+            discard_pile,
             text="Allow drawing from the discard pile",
             variable=self.draw_from_discard_var,
             command=self.update_discard_draw_controls,
         )
         add_tooltip(draw_toggle, "Add an action that takes a card from the discard pile into the current hand.").pack(anchor="w")
         self.discard_draw_mode_menu = tk.OptionMenu(
-            deck_actions, self.discard_draw_mode_var,
+            discard_pile, self.discard_draw_mode_var,
             "Take only the top card", "Take any card",
         )
         self.discard_draw_mode_menu.pack(anchor="w", padx=(20, 0))
 
-        table = tk.LabelFrame(columns, text="Table actions", padx=8, pady=5)
-        table.grid(row=1, column=0, sticky="nsew", padx=(0, 4), pady=(0, 6))
+        table = section("Table settings")
         table_options = tk.Frame(table)
         table_options.pack(fill="x")
-        table_options.columnconfigure(0, weight=1, uniform="table-actions")
-        table_options.columnconfigure(1, weight=1, uniform="table-actions")
+        table_options.columnconfigure(0, weight=1, uniform="table-settings")
+        table_options.columnconfigure(1, weight=1, uniform="table-settings")
         self._add_check(table_options, "Take a selected table card into the current hand", self.take_table_var, "Move a selected table card into the current player's hand.", row=0, column=0)
         self._add_check(table_options, "Move a selected table card to discard", self.table_to_discard_var, "Move a selected table card directly to the discard pile.", row=1, column=0)
         self._add_check(table_options, "Let the current player clear the table", self.manual_cleanup_var, "Add an action that sends all table cards to the discard pile.", row=2, column=0)
@@ -122,7 +128,7 @@ class AdvancedSettingsPanel:
         self._add_check(table_options, "Move face-up card sequences", self.move_sequences_var, "Move a face-up card and the cards below it together in the same column.", row=4, column=1)
 
         deck_recycle = tk.Checkbutton(
-            deck_actions,
+            discard_pile,
             text="Recycle discard pile when draw deck is empty",
             variable=self.recycle_discard_var,
             wraplength=280,
@@ -130,7 +136,7 @@ class AdvancedSettingsPanel:
             anchor="w",
         )
         add_tooltip(deck_recycle, "Add an action that returns the whole discard pile to the draw deck when it runs out.").pack(anchor="w", pady=(5, 0))
-        discard_counts = tk.Frame(deck_actions)
+        discard_counts = tk.Frame(discard_pile)
         discard_counts.pack(anchor="w", fill="x", pady=(5, 0))
         add_tooltip(tk.Label(discard_counts, text="Shared discard piles:"), "Number of discard piles accessible to all players.").grid(row=0, column=0, sticky="w")
         tk.Spinbox(discard_counts, from_=1, to=20, width=5, textvariable=self.shared_discard_count_var).grid(row=0, column=1, padx=(6, 12))
@@ -210,10 +216,10 @@ class AdvancedSettingsPanel:
         self.expanded_var.set(expanded)
         if expanded:
             self.frame.grid()
-            self.button.config(text="Advanced Settings ▾")
+            self.button.config(text="Game Settings ▾")
         else:
             self.frame.grid_remove()
-            self.button.config(text="Advanced Settings ▸")
+            self.button.config(text="Game Settings ▸")
         self.root.after_idle(self.fit_window)
 
     def values(self):
