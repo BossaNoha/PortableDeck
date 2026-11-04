@@ -41,6 +41,8 @@ class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankAct
         enable_personal_piles=False,
         personal_pile_count=1,
         personal_pile_settings=None,
+        unequal_personal_piles=False,
+        personal_pile_counts=None,
     ):
         if not isinstance(num_players, int) or isinstance(num_players, bool) or num_players < 1:
             raise ValueError("num_players must be a positive integer")
@@ -105,7 +107,8 @@ class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankAct
             occupied_slot_action if occupied_slot_action in {"invalid", "swap"} else "invalid"
         )
 
-        self.initialize_personal_piles(enable_personal_piles, personal_pile_count, personal_pile_settings)
+        self.initialize_personal_piles(enable_personal_piles, personal_pile_count, personal_pile_settings,
+                                       unequal_personal_piles, personal_pile_counts)
         self.apply_feature_settings()
 
     def apply_feature_settings(self):
@@ -148,6 +151,8 @@ class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankAct
             enable_table=self.enable_table,
             enable_personal_piles=self.enable_personal_piles,
             personal_pile_count=self.personal_pile_count,
+            unequal_personal_piles=self.unequal_personal_piles,
+            personal_pile_counts=self.personal_pile_counts,
             personal_pile_settings=self.personal_pile_settings,
             enable_discard_pile=self.enable_discard_pile,
             deck_path=self.deck.path,

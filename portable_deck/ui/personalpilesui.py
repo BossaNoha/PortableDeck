@@ -64,10 +64,14 @@ class PersonalPilesUI:
         choices.pack(fill="both", expand=True, padx=10, pady=10)
         destinations = []
         for owner, player in enumerate(game.players):
-            for pile in range(game.personal_pile_count):
+            for pile in range(game.personal_pile_counts[owner]):
                 if game.can_access_personal_pile(owner, pile):
                     destinations.append((owner, pile))
                     choices.insert("end", f"{player.name} — Pile {pile + 1}")
+        if not destinations:
+            dialog.destroy()
+            messagebox.showinfo("No accessible piles", "There are no personal piles available to this player.", parent=self.gui.root)
+            return
         choices.selection_set(0)
 
         def play():

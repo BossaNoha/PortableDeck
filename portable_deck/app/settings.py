@@ -10,6 +10,8 @@ DEFAULT_CONFIG_PATH = os.path.join(CONFIG_DIR, "default_settings.json")
 APP_DATA_DIR = os.path.join(BASE_DIR, "portable_deck", "data")
 DISCARD_PATH = os.path.join(APP_DATA_DIR, "discard.json")
 DEFAULT_SETTINGS = {
+    "unequal_personal_piles": False,
+    "personal_pile_counts": [],
     "enable_personal_piles": False,
     "personal_pile_count": 1,
     "personal_pile_settings": [],

@@ -68,7 +68,8 @@ class ContentScrollArea(tk.Frame):
         if self.wheel_tag not in tags:
             widget.bindtags((self.wheel_tag,) + tags)
         for child in widget.winfo_children():
-            self.add_wheel_tags(child)
+            if not isinstance(child, ContentScrollArea):
+                self.add_wheel_tags(child)
 
     def on_mousewheel(self, event):
         # Keep the native scroll behaviour of a card list within the area.

@@ -12,6 +12,8 @@ def save_session(game, path):
     state = {
         "enable_personal_piles": game.enable_personal_piles,
         "personal_pile_count": game.personal_pile_count,
+        "unequal_personal_piles": game.unequal_personal_piles,
+        "personal_pile_counts": game.personal_pile_counts,
         "personal_pile_settings": game.personal_pile_settings,
         "personal_piles": game.personal_piles,
         "enable_table": game.enable_table,
@@ -204,6 +206,8 @@ def load_session(game_class, path):
         state.get("enable_personal_piles", legacy_count > 0),
         state.get("personal_pile_count", legacy_count or 1),
         state.get("personal_pile_settings", []),
+        state.get("unequal_personal_piles", False),
+        state.get("personal_pile_counts"),
     )
     if "personal_piles" in state:
         game.personal_piles = state["personal_piles"]
@@ -215,9 +219,9 @@ def load_session(game_class, path):
             snapshot["personal_piles"] = snapshot.get("personal_discard_piles", game.personal_piles)
             snapshot["personal_discard_piles"] = [[] for _ in game.players]
     if (not isinstance(game.personal_piles, list) or len(game.personal_piles) != len(game.players)
-            or any(not isinstance(group, list) or len(group) != game.personal_pile_count
+            or any(not isinstance(group, list) or len(group) != game.personal_pile_counts[owner]
                    or any(not isinstance(pile, list) or any(not isinstance(card, str) for card in pile)
-                          for pile in group) for group in game.personal_piles)):
+                          for pile in group) for owner, group in enumerate(game.personal_piles))):
         raise ValueError("Saved personal piles do not match the player and pile counts.")
     game.apply_feature_settings()
     return game

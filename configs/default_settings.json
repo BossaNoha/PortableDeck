@@ -34,5 +34,7 @@
   "enable_discard_pile": true,
   "enable_personal_piles": false,
   "personal_pile_count": 1,
-  "personal_pile_settings": []
+  "personal_pile_settings": [],
+  "unequal_personal_piles": false,
+  "personal_pile_counts": []
 }

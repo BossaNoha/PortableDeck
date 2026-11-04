@@ -2,18 +2,24 @@
 
 
 class PersonalPileActions:
-    def initialize_personal_piles(self, enabled=False, count=1, configurations=None):
+    def initialize_personal_piles(self, enabled=False, count=1, configurations=None, unequal=False, counts=None):
         if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 20:
             raise ValueError("Personal pile count must be between 1 and 20.")
         self.enable_personal_piles = bool(enabled)
         self.personal_pile_count = count
+        self.unequal_personal_piles = bool(unequal)
+        self.personal_pile_counts = list(counts) if unequal and counts is not None else [count] * len(self.players)
+        if (len(self.personal_pile_counts) != len(self.players)
+                or any(not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 20
+                       for value in self.personal_pile_counts)):
+            raise ValueError("Provide a personal pile count between 0 and 20 for each player.")
         self.personal_pile_settings = []
         configurations = configurations or []
         if not isinstance(configurations, list) or any(not isinstance(group, list) for group in configurations):
             raise ValueError("Personal pile settings must be grouped by player.")
         for owner in range(len(self.players)):
             group = []
-            for pile in range(count):
+            for pile in range(self.personal_pile_counts[owner]):
                 config = (configurations[owner][pile] if owner < len(configurations)
                           and pile < len(configurations[owner]) else {})
                 if not isinstance(config, dict):
@@ -25,12 +31,12 @@ class PersonalPileActions:
                     raise ValueError("Invalid personal pile settings.")
                 group.append(rule)
             self.personal_pile_settings.append(group)
-        self.personal_piles = [[[] for _ in range(count)] for _ in self.players]
+        self.personal_piles = [[[] for _ in range(amount)] for amount in self.personal_pile_counts]
 
     def can_access_personal_pile(self, owner, pile):
         if not self.enable_personal_piles or not self.enable_table:
             return False
-        if not 0 <= owner < len(self.players) or not 0 <= pile < self.personal_pile_count:
+        if not 0 <= owner < len(self.players) or not 0 <= pile < self.personal_pile_counts[owner]:
             return False
         return (owner == self.current_player_index
                 or self.personal_pile_settings[owner][pile]["access"] == "everyone")

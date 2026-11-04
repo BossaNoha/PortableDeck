@@ -2,11 +2,13 @@
 import tkinter as tk
 from ..ui.tooltip import add_tooltip
 from ..ui.collapsiblesection import CollapsibleSection
+from ..ui.responsivesections import ResponsiveSections
 from .personalpilesettings import PersonalPileSettings
 
 
 class GameSettingsPanel:
-    def __init__(self, parent, root, settings, fit_window, players_var=None):
+    def __init__(self, parent, root, settings, fit_window, players_var=None, player_name=None):
+        self.player_name = player_name
         self.settings = settings
         self.players_var = players_var or tk.StringVar(value=str(settings.get("num_players", 3)))
         self.table_enabled_var = tk.BooleanVar(value=settings.get("enable_table", True))
@@ -72,18 +74,14 @@ class GameSettingsPanel:
         self._build_controls()
 
     def _build_controls(self):
-        columns = tk.Frame(self.frame)
-        columns.grid(row=0, column=0, sticky="nsew")
-        columns.columnconfigure(0, weight=1, uniform="game-settings")
-        columns.columnconfigure(1, weight=1, uniform="game-settings")
+        self.category_layout = ResponsiveSections(self.frame)
+        self.category_layout.grid(row=0, column=0, sticky="ew")
         self.frame.columnconfigure(0, weight=1)
-        self.sections = []
+        self.sections = self.category_layout.sections
 
         def section(title):
-            panel = CollapsibleSection(columns, title, self.fit_window)
-            row, column = ((0, 0), (0, 1), (1, 1), (1, 0), (2, 0))[len(self.sections)]
-            panel.grid(row=row, column=column, sticky="new", padx=4, pady=(0, 4))
-            self.sections.append(panel)
+            panel = CollapsibleSection(self.category_layout, title, self.category_changed)
+            self.category_layout.add(panel)
             return panel.content
 
         scoring = section("Scoring")
@@ -201,14 +199,20 @@ class GameSettingsPanel:
         ), "Require approval from every other player before the pot can be collected.").grid(row=2, column=0, columnspan=2, sticky="w", pady=(5, 0))
 
         personal = section("Personal piles on table")
-        self.sections[-1].grid_configure(columnspan=2)
-        self.personal_piles = PersonalPileSettings(personal, self.settings, self.players_var, self.fit_window)
+        self.personal_piles = PersonalPileSettings(personal, self.settings, self.players_var, self.category_layout.schedule_layout, self.player_name)
 
         self.score_var.trace_add("write", self.update_confirmation_control)
         self.update_confirmation_control()
         self.update_discard_draw_controls()
         self.update_chip_settings_controls()
         self.update_feature_controls()
+
+    def category_changed(self):
+        self.category_layout.schedule_layout()
+        self.root.after_idle(self.fit_window)
+
+    def preferred_width(self):
+        return self.category_layout.preferred_width() + 20
 
     def update_feature_controls(self):
         for frame, enabled in ((self.table_options, self.table_enabled_var.get()),

@@ -11,6 +11,7 @@ from .decklibrary import DeckLibrary
 from .deckpreview import show_deck_preview
 from ..ui.tooltip import add_tooltip
 from ..ui.collapsiblesection import CollapsibleSection
+from ..ui.contentscrollarea import ContentScrollArea
 from ..core.deck import Deck
 
 
@@ -31,8 +32,10 @@ class SettingsWindow:
         self.menu.clear_window()
         self.root.minsize(1, 1)
         self.root.resizable(True, True)
-        frame = tk.Frame(self.root, padx=20, pady=18)
-        frame.pack(fill="both", expand=True)
+        self.viewport = ContentScrollArea(self.root, width=700)
+        self.viewport.pack(fill="both", expand=True)
+        frame = tk.Frame(self.viewport.contents, padx=20, pady=18)
+        frame.pack(fill="x")
         tk.Label(frame, text="Settings", font=("TkDefaultFont", 16, "bold")).grid(
             row=0, column=0, columnspan=3, pady=(0, 14)
         )
@@ -50,7 +53,7 @@ class SettingsWindow:
         deck_section = CollapsibleSection(
             frame, "Deck", lambda: self._fit_window_to_frame(frame)
         )
-        deck_section.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(8, 0))
+        deck_section.grid(row=3, column=0, columnspan=3, sticky="ew", pady=(8, 0))
         deck_controls = deck_section.content
         deck_controls.columnconfigure(1, weight=1)
         add_tooltip(tk.Label(deck_controls, text="Deck file (JSON):"), "The deck definition used for new games.").grid(row=0, column=0, sticky="w", pady=4)
@@ -97,8 +100,18 @@ class SettingsWindow:
         ), "Show a separate name field for every player.").grid(row=6, column=0, columnspan=3, sticky="w", pady=3)
 
         names_frame = tk.LabelFrame(frame, text="Player names", padx=8, pady=5)
-        names_frame.grid(row=5, column=0, columnspan=3, sticky="ew", pady=5)
+        names_frame.grid(row=2, column=0, columnspan=3, sticky="ew", pady=5)
         name_vars = []
+        game_settings = None
+
+        def player_name(owner):
+            if custom_names_var.get() and owner < len(name_vars):
+                return name_vars[owner].get().strip() or f"Player {owner + 1}"
+            return f"Player {owner + 1}"
+
+        def update_pile_names(*_):
+            if game_settings is not None:
+                game_settings.personal_piles.update_names()
 
         def refresh_name_inputs(*_):
             old_values = [var.get() for var in name_vars]
@@ -107,6 +120,7 @@ class SettingsWindow:
             name_vars.clear()
             if not custom_names_var.get():
                 names_frame.grid_remove()
+                update_pile_names()
                 self.root.after_idle(lambda: self._fit_window_to_frame(frame))
                 return
             names_frame.grid()
@@ -123,12 +137,14 @@ class SettingsWindow:
                 )
                 var = tk.StringVar(value=default_name)
                 name_vars.append(var)
+                var.trace_add("write", update_pile_names)
                 add_tooltip(tk.Label(names_frame, text=f"Player {index + 1}:"), "Name shown for this player during the game.").grid(
                     row=index, column=0, sticky="w", padx=(0, 8), pady=2
                 )
                 add_tooltip(tk.Entry(names_frame, textvariable=var, width=28), "Enter a non-empty display name for this player.").grid(
                     row=index, column=1, sticky="ew", pady=2
                 )
+            update_pile_names()
             names_frame.columnconfigure(1, weight=1)
             self.root.after_idle(lambda: self._fit_window_to_frame(frame))
 
@@ -142,7 +158,10 @@ class SettingsWindow:
         game_settings = GameSettingsPanel(
             frame, self.root, self.settings,
             lambda: self._fit_window_to_frame(frame),
+            players_var=players_var, player_name=player_name,
         )
+
+        self.game_settings_panel = game_settings
 
         buttons = tk.Frame(frame)
         buttons.grid(row=9, column=0, columnspan=3, sticky="e", pady=(12, 0))
@@ -160,13 +179,29 @@ class SettingsWindow:
         self.root.after_idle(lambda: self._fit_window_to_frame(frame))
 
     def _fit_window_to_frame(self, frame):
-        if not frame.winfo_exists():
+        if not frame.winfo_exists() or getattr(self, "fitting_window", False):
             return
-        self.root.update_idletasks()
-        width = frame.winfo_reqwidth()
-        height = frame.winfo_reqheight()
-        self.root.minsize(width, height)
-        self.root.geometry(f"{width}x{height}")
+        self.fitting_window = True
+        try:
+            self.root.update_idletasks()
+            screen_width = self.root.winfo_screenwidth() - 80
+            screen_height = self.root.winfo_screenheight() - 100
+            desired_width = max(720, frame.winfo_reqwidth())
+            panel = getattr(self, "game_settings_panel", None)
+            if panel is not None and panel.frame.winfo_manager():
+                desired_width = max(desired_width, panel.preferred_width() + 60)
+            width = min(desired_width, screen_width)
+            self.root.minsize(min(720, screen_width), min(300, screen_height))
+            self.root.geometry(f"{width}x{min(max(300, frame.winfo_reqheight()), screen_height)}")
+            self.root.update_idletasks()
+            # Width changes may wrap categories onto a different number of rows.
+            height = min(max(300, frame.winfo_reqheight()), screen_height)
+            x = max(0, min(self.root.winfo_x(), self.root.winfo_screenwidth() - width - 40))
+            y = max(0, min(self.root.winfo_y(), self.root.winfo_screenheight() - height - 60))
+            self.root.geometry(f"{width}x{height}+{x}+{y}")
+            self.viewport.schedule_resize()
+        finally:
+            self.fitting_window = False
 
     def restore_defaults(self):
         if not messagebox.askyesno(

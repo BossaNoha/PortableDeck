@@ -106,6 +106,8 @@ class MainMenu:
                 shared_discard_pile_count=self.settings.get("shared_discard_pile_count", 1),
                 enable_personal_piles=self.settings.get("enable_personal_piles", False),
                 personal_pile_count=self.settings.get("personal_pile_count", 1),
+                unequal_personal_piles=self.settings.get("unequal_personal_piles", False),
+                personal_pile_counts=self.settings.get("personal_pile_counts", []),
                 personal_pile_settings=self.settings.get("personal_pile_settings", []),
                 enable_chip_accounts=self.settings.get("enable_chip_accounts", False),
                 minimum_bet=self.settings.get("minimum_bet", 1),

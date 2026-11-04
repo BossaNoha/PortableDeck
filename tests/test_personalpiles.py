@@ -94,6 +94,28 @@ class PersonalPileTests(unittest.TestCase):
             self.assertEqual(loaded.personal_piles, [[["3 of Test"]], [[]]])
             self.assertEqual(loaded.personal_discard_piles, [[], []])
 
+    def test_unequal_counts_roundtrip_and_restart(self):
+        game = Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
+                    enable_personal_piles=True, unequal_personal_piles=True,
+                    personal_pile_counts=[0, 3])
+        self.assertEqual([len(group) for group in game.personal_piles], [0, 3])
+        self.assertFalse(game.can_access_personal_pile(0, 0))
+        game.current_player_index = 1
+        game.players[1].hand = ["2 of Test"]
+        self.assertEqual(game.play_to_personal_pile(1, 1, 2), "2 of Test")
+        with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
+            path = str(Path(directory) / "save.json")
+            game.save_session(path)
+            loaded = Game.load_session(path)
+            self.assertEqual(loaded.personal_pile_counts, [0, 3])
+            self.assertEqual(loaded.personal_piles, game.personal_piles)
+            self.assertEqual(loaded.restart().personal_pile_counts, [0, 3])
+
+    def test_invalid_unequal_counts_are_rejected(self):
+        for counts in ([1], [1, -1], [1, 21], [True, 2]):
+            with self.subTest(counts=counts), self.assertRaises(ValueError):
+                self.game().initialize_personal_piles(True, 1, unequal=True, counts=counts)
+
     def test_disabled_table_blocks_personal_actions(self):
         game = self.game()
         game.enable_table = False

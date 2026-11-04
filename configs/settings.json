@@ -1,7 +1,28 @@
 {
-  "enable_personal_piles": false,
+  "unequal_personal_piles": false,
+  "personal_pile_counts": [],
+  "enable_personal_piles": true,
   "personal_pile_count": 1,
-  "personal_pile_settings": [],
+  "personal_pile_settings": [
+    [
+      {
+        "access": "owner",
+        "ordered": false,
+        "order_by": "time",
+        "new_card": "top",
+        "size_order": "up"
+      }
+    ],
+    [
+      {
+        "access": "owner",
+        "ordered": false,
+        "order_by": "time",
+        "new_card": "top",
+        "size_order": "up"
+      }
+    ]
+  ],
   "enable_table": true,
   "enable_discard_pile": true,
   "autosave_enabled": true,
@@ -11,8 +32,11 @@
   "cards_per_player": 3,
   "deck_path": "decks/demodeck.json",
   "save_discard_on_exit": true,
-  "use_custom_player_names": false,
-  "player_names": [],
+  "use_custom_player_names": true,
+  "player_names": [
+    "Baf",
+    "Player2"
+  ],
   "enable_score_counter": true,
   "require_point_confirmation": false,
   "allow_take_from_table": false,

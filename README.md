@@ -175,3 +175,7 @@ play and **Take top card** to draw from an accessible pile.
 Personal piles require an enabled table and remain separate from discard piles.
 Discard recycling and table cleanup do not empty them. State, access rules and
 ordering are included in saves, restart settings and Undo.
+
+Enable **Unequal amount of personal piles** to set a separate count (0-20)
+for each player. Disabling it returns to the shared count. Individual counts
+and pile preferences remain available when switching back.
