@@ -140,6 +140,8 @@ class GameGUIActions:
         buttons.extend(self.chip_bank_ui.buttons)
         buttons.extend(self.positioned_play_buttons)
         buttons.extend(self.table_action_buttons)
+        if hasattr(self, "interactions_ui"):
+            buttons.append(self.interactions_ui.button)
         if hasattr(self, "personal_pile_button"):
             buttons.append(self.personal_pile_button)
         if hasattr(self, "play_face_down_button"):

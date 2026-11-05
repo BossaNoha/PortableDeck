@@ -36,5 +36,11 @@
   "personal_pile_count": 1,
   "personal_pile_settings": [],
   "unequal_personal_piles": false,
-  "personal_pile_counts": []
+  "personal_pile_counts": [],
+  "enable_roles_teams": false,
+  "enable_dealer": false,
+  "enable_teams": false,
+  "team_count": 1,
+  "team_names": [],
+  "player_teams": []
 }

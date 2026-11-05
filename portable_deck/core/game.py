@@ -7,8 +7,10 @@ from .gametable import GameTableActions
 from .gamescoring import GameScoringActions
 from .gameundo import GameUndoActions
 from .personalpiles import PersonalPileActions
+from .roleteams import RolesTeams
+from .interactions import PlayerInteractions
 
-class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
+class Game(PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
     def __init__(
         self,
         num_players,
@@ -43,6 +45,18 @@ class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankAct
         personal_pile_settings=None,
         unequal_personal_piles=False,
         personal_pile_counts=None,
+        enable_roles_teams=False,
+        enable_dealer=False,
+        enable_teams=False,
+        team_count=1,
+        team_names=None,
+        player_teams=None,
+        dealer_players=None,
+        share_team_chips=False,
+        share_team_score=False,
+        enable_team_score=False,
+        enable_interactions=False,
+        interaction_options=None,
     ):
         if not isinstance(num_players, int) or isinstance(num_players, bool) or num_players < 1:
             raise ValueError("num_players must be a positive integer")
@@ -109,6 +123,9 @@ class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankAct
 
         self.initialize_personal_piles(enable_personal_piles, personal_pile_count, personal_pile_settings,
                                        unequal_personal_piles, personal_pile_counts)
+        self.initialize_roles_teams(enable_roles_teams, enable_dealer, enable_teams, team_count, team_names, player_teams, dealer_players)
+        self.initialize_interactions(enable_interactions, interaction_options)
+        self.initialize_team_resources(share_team_chips, share_team_score, enable_team_score, pool=True)
         self.apply_feature_settings()
 
     def apply_feature_settings(self):
@@ -148,6 +165,18 @@ class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankAct
         """Create a fresh game with the same setup, optionally retaining scores."""
         restarted = Game(
             num_players=len(self.players),
+            enable_interactions=self.enable_interactions,
+            interaction_options=self.interaction_options,
+            share_team_chips=self.share_team_chips,
+            share_team_score=self.share_team_score,
+            enable_team_score=self.enable_team_score,
+            enable_roles_teams=self.enable_roles_teams,
+            enable_dealer=self.enable_dealer,
+            enable_teams=self.enable_teams,
+            team_count=self.team_count,
+            team_names=self.team_names,
+            player_teams=self.player_teams,
+            dealer_players=self.dealer_players,
             enable_table=self.enable_table,
             enable_personal_piles=self.enable_personal_piles,
             personal_pile_count=self.personal_pile_count,
@@ -183,6 +212,7 @@ class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankAct
         restarted.start(self.cards_per_player)
         if keep_scores:
             restarted.scores = self.scores.copy()
+            restarted.team_scores = self.team_scores.copy()
         return restarted
 
     def log_draws_for_turn(self):
@@ -247,6 +277,19 @@ class Game(PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankAct
             name = self.players[player_index].name
             piles.extend((f"{name}'s discard {index + 1}", pile) for index, pile in enumerate(player_piles))
         return piles
+
+    def play_back_to_draw_pile(self, index):
+        """Play publicly and shuffle back when both destination areas are disabled."""
+        if self.enable_table or self.enable_discard_pile or self.enable_interactions:
+            return None
+        player = self.players[self.current_player_index]
+        card = player.play_card(index)
+        if card is None:
+            return None
+        self.deck.flat_deck.append(card)
+        self.deck.shuffle()
+        self.log_action(player.name, "play_back_to_draw_pile", card)
+        return card
 
     def discard_from_current(self, index, pile_index=0, personal=False):
         if not self.enable_discard_pile:

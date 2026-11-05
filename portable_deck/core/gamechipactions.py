@@ -12,13 +12,13 @@ class ChipBankActions:
             or amount < 1
         ):
             return None
-        self.chip_balances[player_index] += amount
+        self.chip_balances[self.chip_account_index(player_index)] += amount
         self.history.append({
             "player": self.players[player_index].name,
             "action": "buy_chips",
             "amount": amount,
         })
-        return self.chip_balances[player_index]
+        return self.chip_balances[self.chip_account_index(player_index)]
 
     def play_chips(self, amount):
         """Put chips from the current player's account into the shared pot."""
@@ -29,9 +29,9 @@ class ChipBankActions:
         if not isinstance(amount, int) or isinstance(amount, bool) or amount < self.minimum_bet:
             return False, f"The minimum bet is {self.minimum_bet} chips."
         player = self.players[self.current_player_index]
-        if amount > self.chip_balances[self.current_player_index]:
+        if amount > self.chip_balances[self.chip_account_index(self.current_player_index)]:
             return False, f"{player.name} does not have enough chips."
-        self.chip_balances[self.current_player_index] -= amount
+        self.chip_balances[self.chip_account_index(self.current_player_index)] -= amount
         self.chip_pot += amount
         self.history.append({"player": player.name, "action": "play_chips", "amount": amount})
         return True, f"{player.name} put {amount} chips into the pot. Pot: {self.chip_pot}."
@@ -95,7 +95,7 @@ class ChipBankActions:
 
     def _complete_pot_withdrawal(self, requester_index, recipient_index):
         amount = self.chip_pot
-        self.chip_balances[recipient_index] += amount
+        self.chip_balances[self.chip_account_index(recipient_index)] += amount
         self.chip_pot = 0
         self.pending_pot_withdrawal = None
         recipient_name = self.players[recipient_index].name

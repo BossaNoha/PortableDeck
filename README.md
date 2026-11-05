@@ -179,3 +179,31 @@ ordering are included in saves, restart settings and Undo.
 Enable **Unequal amount of personal piles** to set a separate count (0-20)
 for each player. Disabling it returns to the shared count. Individual counts
 and pile preferences remain available when switching back.
+
+## Roles/teams
+
+In **Game Settings -> Roles/teams**, enable the category to activate its
+controls. **Enable dealer** creates the fixed **Dealer** team; assigned players
+receive the dealer role without additional privileges. **Enable teams** allows
+a total team count, including Dealer, up to the number of players. Each player
+can belong to one regular team or remain unassigned. Dealer membership is
+independent, so a dealer can also belong to a regular team. Dealer is listed first. With **Custom player names** on,
+regular teams can also have custom names. Roles and memberships appear in game
+status and survive save/load and restart.
+
+## Player interactions
+
+**Game Settings -> Player interactions -> Enable interactions** enables the
+category. Allow each action separately: take a random card from a chosen player,
+discard a random card from another randomly selected player, give the selected
+hand card to a chosen player, steal a chosen amount of chips, or privately view
+a random card/all cards of a chosen player. Discarding requires a discard pile;
+stealing requires chip accounts. Players sharing an account cannot steal from
+each other. Private card views are not included in logs or saved history.
+Use **Player interactions** during a session. Permissions survive save/load and
+restart; state-changing actions support Undo.
+
+**Use current settings** applies the form for playing. **Save settings** stores
+a named configuration (including player/team names) under `configs/presets/`
+by default. **Load settings** fills the form from a saved configuration; apply
+it with **Use current settings**. These files are separate from game saves.

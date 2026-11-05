@@ -10,6 +10,19 @@ def save_session(game, path):
     """Save the complete state needed to continue a game later."""
     game.ensure_discard_pile_state()
     state = {
+        "enable_interactions": game.enable_interactions,
+        "interaction_options": game.interaction_options,
+        "share_team_chips": game.share_team_chips,
+        "share_team_score": game.share_team_score,
+        "enable_team_score": game.enable_team_score,
+        "team_scores": game.team_scores,
+        "enable_roles_teams": game.enable_roles_teams,
+        "enable_dealer": game.enable_dealer,
+        "enable_teams": game.enable_teams,
+        "team_count": game.team_count,
+        "team_names": game.team_names,
+        "player_teams": game.player_teams,
+        "dealer_players": game.dealer_players,
         "enable_personal_piles": game.enable_personal_piles,
         "personal_pile_count": game.personal_pile_count,
         "unequal_personal_piles": game.unequal_personal_piles,
@@ -223,5 +236,11 @@ def load_session(game_class, path):
                    or any(not isinstance(pile, list) or any(not isinstance(card, str) for card in pile)
                           for pile in group) for owner, group in enumerate(game.personal_piles))):
         raise ValueError("Saved personal piles do not match the player and pile counts.")
+    game.initialize_roles_teams(state.get("enable_roles_teams", False), state.get("enable_dealer", False),
+                                state.get("enable_teams", False), state.get("team_count", 1),
+                                state.get("team_names", []), state.get("player_teams"), state.get("dealer_players"))
+    game.initialize_interactions(state.get("enable_interactions", False), state.get("interaction_options", {}))
+    game.initialize_team_resources(state.get("share_team_chips", False), state.get("share_team_score", False), state.get("enable_team_score", False))
+    game.team_scores.update(state.get("team_scores", {}))
     game.apply_feature_settings()
     return game

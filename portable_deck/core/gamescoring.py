@@ -11,14 +11,14 @@ class GameScoringActions:
         requester = self.current_player_index
         if not self.require_point_confirmation:
             player_name = self.players[requester].name
-            self.scores[requester] += 1
+            self.award_point(requester)
             self.log_action(player_name, "point_awarded")
             return True, f"{player_name} received a point."
 
         other_players = [index for index in range(len(self.players)) if index != requester]
         if not other_players:
             player_name = self.players[requester].name
-            self.scores[requester] += 1
+            self.award_point(requester)
             self.log_action(player_name, "point_awarded")
             return True, f"{player_name} received a point (no other players to confirm)."
 
@@ -48,7 +48,7 @@ class GameScoringActions:
         self.log_action(voter_name, "point_confirmed")
         other_players = [index for index in range(len(self.players)) if index != request["requester"]]
         if all(index in request["confirmed_by"] for index in other_players):
-            self.scores[request["requester"]] += 1
+            self.award_point(request["requester"])
             self.log_action(requester_name, "point_awarded")
             self.pending_point_request = None
             return True, f"All players approved. {requester_name} received a point."

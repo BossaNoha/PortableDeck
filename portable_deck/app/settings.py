@@ -10,6 +10,18 @@ DEFAULT_CONFIG_PATH = os.path.join(CONFIG_DIR, "default_settings.json")
 APP_DATA_DIR = os.path.join(BASE_DIR, "portable_deck", "data")
 DISCARD_PATH = os.path.join(APP_DATA_DIR, "discard.json")
 DEFAULT_SETTINGS = {
+    "enable_interactions": False,
+    "interaction_options": {},
+    "share_team_chips": False,
+    "share_team_score": False,
+    "enable_team_score": False,
+    "enable_roles_teams": False,
+    "enable_dealer": False,
+    "enable_teams": False,
+    "team_count": 1,
+    "team_names": [],
+    "player_teams": [],
+    "dealer_players": [],
     "unequal_personal_piles": False,
     "personal_pile_counts": [],
     "enable_personal_piles": False,

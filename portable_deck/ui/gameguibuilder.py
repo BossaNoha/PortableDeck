@@ -5,6 +5,7 @@ from .statuspanel import StatusPanel
 from .tableframe import TableFrame
 from .chipbankui import ChipBankUI
 from .personalpilesui import PersonalPilesUI
+from .interactionsui import InteractionsUI
 from ..app.deckpreview import show_deck_preview
 from .cardactions import (
     clear_table, draw_card, discard_selected, end_turn,
@@ -99,7 +100,7 @@ class GameGUIBuilder:
                 play_selected, self.game, self.hand_frame, self.table_frame, self.log, self.status_panel
             ),
         )
-        if self.game.enable_table:
+        if self.game.enable_table or (not self.game.enable_discard_pile and not self.game.enable_interactions):
             self.play_button.pack(side="left", padx=5)
 
         if self.game.allow_face_down_table_cards:
@@ -243,6 +244,9 @@ class GameGUIBuilder:
                 command=self.personal_piles_ui.choose_destination,
             )
             self.personal_pile_button.pack(side="left", padx=5)
+
+        if self.game.enable_interactions:
+            self.interactions_ui = InteractionsUI(self)
 
         # Initialize GUI
         self.hand_frame.update_hand()

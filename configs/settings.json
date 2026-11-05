@@ -1,7 +1,37 @@
 {
+  "enable_interactions": false,
+  "interaction_options": {},
+  "share_team_chips": false,
+  "share_team_score": false,
+  "enable_team_score": false,
+  "enable_roles_teams": false,
+  "enable_dealer": false,
+  "enable_teams": false,
+  "team_count": 1,
+  "team_names": [],
+  "player_teams": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "dealer_players": [
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
   "unequal_personal_piles": false,
-  "personal_pile_counts": [],
-  "enable_personal_piles": true,
+  "personal_pile_counts": [
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "enable_personal_piles": false,
   "personal_pile_count": 1,
   "personal_pile_settings": [
     [
@@ -21,23 +51,47 @@
         "new_card": "top",
         "size_order": "up"
       }
+    ],
+    [
+      {
+        "access": "owner",
+        "ordered": false,
+        "order_by": "time",
+        "new_card": "top",
+        "size_order": "up"
+      }
+    ],
+    [
+      {
+        "access": "owner",
+        "ordered": false,
+        "order_by": "time",
+        "new_card": "top",
+        "size_order": "up"
+      }
+    ],
+    [
+      {
+        "access": "owner",
+        "ordered": false,
+        "order_by": "time",
+        "new_card": "top",
+        "size_order": "up"
+      }
     ]
   ],
-  "enable_table": true,
-  "enable_discard_pile": true,
+  "enable_table": false,
+  "enable_discard_pile": false,
   "autosave_enabled": true,
   "autosave_count": 5,
   "require_exit_confirmation": true,
-  "num_players": 2,
+  "num_players": 5,
   "cards_per_player": 3,
   "deck_path": "decks/demodeck.json",
   "save_discard_on_exit": true,
-  "use_custom_player_names": true,
-  "player_names": [
-    "Baf",
-    "Player2"
-  ],
-  "enable_score_counter": true,
+  "use_custom_player_names": false,
+  "player_names": [],
+  "enable_score_counter": false,
   "require_point_confirmation": false,
   "allow_take_from_table": false,
   "allow_move_table_card_to_discard": false,
@@ -46,8 +100,8 @@
   "allow_positioned_play": false,
   "allow_move_cards_on_table": false,
   "allow_play_in_front_of_players": false,
-  "allow_draw_from_discard": true,
-  "draw_from_discard_mode": "any",
+  "allow_draw_from_discard": false,
+  "draw_from_discard_mode": "top",
   "allow_face_down_table_cards": false,
   "allow_move_table_sequences": false,
   "allow_recycle_discard_to_deck": false,
@@ -58,5 +112,5 @@
   "starting_balance": 100,
   "require_pot_withdrawal_confirmation": false,
   "occupied_slot_action": "invalid",
-  "enable_undo": true
+  "enable_undo": false
 }

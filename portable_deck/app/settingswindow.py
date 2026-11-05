@@ -22,11 +22,12 @@ class SettingsWindow:
 
     @property
     def settings(self):
-        return self.menu.settings
+        return self.form_settings if getattr(self, "form_settings", None) is not None else self.menu.settings
 
     @settings.setter
     def settings(self, value):
         self.menu.settings = value
+        self.form_settings = None
 
     def show_settings(self):
         self.menu.clear_window()
@@ -95,7 +96,7 @@ class SettingsWindow:
         ).pack(side="left", padx=(0, 6))
         add_tooltip(tk.Checkbutton(
             basic,
-            text="Use custom player names",
+            text="Custom player names",
             variable=custom_names_var,
         ), "Show a separate name field for every player.").grid(row=6, column=0, columnspan=3, sticky="w", pady=3)
 
@@ -112,6 +113,7 @@ class SettingsWindow:
         def update_pile_names(*_):
             if game_settings is not None:
                 game_settings.personal_piles.update_names()
+                game_settings.roles_teams.update_names()
 
         def refresh_name_inputs(*_):
             old_values = [var.get() for var in name_vars]
@@ -158,7 +160,7 @@ class SettingsWindow:
         game_settings = GameSettingsPanel(
             frame, self.root, self.settings,
             lambda: self._fit_window_to_frame(frame),
-            players_var=players_var, player_name=player_name,
+            players_var=players_var, player_name=player_name, custom_names_var=custom_names_var,
         )
 
         self.game_settings_panel = game_settings
@@ -167,16 +169,44 @@ class SettingsWindow:
         buttons.grid(row=9, column=0, columnspan=3, sticky="e", pady=(12, 0))
         tk.Button(buttons, text="Back", command=self.menu.show_main_menu).pack(side="left", padx=5)
         tk.Button(buttons, text="Restore Defaults", command=self.restore_defaults).pack(side="left", padx=5)
-        tk.Button(
-            buttons,
-            text="Save settings",
-            command=lambda: self.save_form(
-                players_var, cards_var, deck_var, custom_names_var, name_vars,
-                game_settings, basic_settings,
-            ),
-        ).pack(side="left", padx=5)
+        def submit(mode="use"):
+            self.save_form(players_var, cards_var, deck_var, custom_names_var, name_vars,
+                           game_settings, basic_settings, mode=mode)
+        tk.Button(buttons, text="Use current settings", command=submit).pack(side="left", padx=5)
+        tk.Button(buttons, text="Save settings", command=lambda: submit("named")).pack(side="left", padx=5)
+        tk.Button(buttons, text="Load settings", command=self.load_named_settings).pack(side="left", padx=5)
         frame.columnconfigure(1, weight=1)
         self.root.after_idle(lambda: self._fit_window_to_frame(frame))
+
+    def save_named_settings(self, selected_settings):
+        from .settingspresets import PRESETS_DIR, write_preset
+        os.makedirs(PRESETS_DIR, exist_ok=True)
+        path = filedialog.asksaveasfilename(title="Save settings", initialdir=PRESETS_DIR,
+                                          initialfile="My settings.json", defaultextension=".json",
+                                          filetypes=(("Settings", "*.json"),), parent=self.root)
+        if not path:
+            return
+        try:
+            write_preset(path, selected_settings)
+        except (OSError, ValueError, TypeError) as error:
+            messagebox.showerror("Could not save settings", str(error), parent=self.root)
+            return
+        messagebox.showinfo("Settings saved", f"Saved as {os.path.splitext(os.path.basename(path))[0]}.", parent=self.root)
+
+    def load_named_settings(self):
+        from .settingspresets import PRESETS_DIR, read_preset
+        os.makedirs(PRESETS_DIR, exist_ok=True)
+        path = filedialog.askopenfilename(title="Load settings", initialdir=PRESETS_DIR,
+                                         filetypes=(("Settings", "*.json"),), parent=self.root)
+        if not path:
+            return
+        try:
+            selected_settings = read_preset(path)
+        except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
+            messagebox.showerror("Could not load settings", str(error), parent=self.root)
+            return
+        self.form_settings = selected_settings
+        self.show_settings()
 
     def _fit_window_to_frame(self, frame):
         if not frame.winfo_exists() or getattr(self, "fitting_window", False):
@@ -292,7 +322,7 @@ class SettingsWindow:
 
     def save_form(
         self, players_var, cards_var, deck_var, custom_names_var, name_vars,
-        game_settings_panel, basic_settings_panel,
+        game_settings_panel, basic_settings_panel, mode="use",
     ):
         try:
             num_players = int(players_var.get())
@@ -322,15 +352,15 @@ class SettingsWindow:
             if custom_names_var.get() and (len(player_names) != num_players or any(not name for name in player_names)):
                 messagebox.showerror("Invalid names", "Enter a name for every player.", parent=self.root)
                 return
-        except ValueError:
+        except ValueError as error:
             messagebox.showerror(
                 "Invalid settings",
-                "Players must be at least 1 and cards per player 0 or more. Numeric settings must also be valid.",
+                str(error) or "Players must be at least 1 and cards per player 0 or more. Numeric settings must also be valid.",
                 parent=self.root,
             )
             return
 
-        self.settings = {
+        selected_settings = {
             "num_players": num_players,
             "cards_per_player": cards_per_player,
             "deck_path": deck_path,
@@ -339,10 +369,14 @@ class SettingsWindow:
             **game_settings_values,
             **basic_settings_values,
         }
+        if mode == "named":
+            self.save_named_settings(selected_settings)
+            return
         try:
-            save_settings(self.settings)
+            save_settings(selected_settings)
         except OSError as error:
             messagebox.showerror("Could not save", str(error), parent=self.root)
             return
+        self.settings = selected_settings
         self.menu.show_main_menu()
 

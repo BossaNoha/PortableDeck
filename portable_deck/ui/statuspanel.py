@@ -48,7 +48,14 @@ class StatusPanel(tk.LabelFrame):
             if self.game.score_enabled:
                 display += f"  |  Score: {self.game.scores[i]}"
             if self.game.enable_chip_accounts:
-                display += f"  |  Chips: {self.game.chip_balances[i]}"
+                display += f"  |  Chips: {self.game.chip_balance(i)}"
+            team_name = self.game.player_team_name(i)
+            if team_name:
+                display += f"  |  Team: {team_name}"
+            if self.game.enable_team_score and self.game.player_teams[i]:
+                display += f"  |  Team score: {self.game.team_scores[self.game.player_teams[i]]}"
+            if self.game.player_is_dealer(i):
+                display += "  |  Role: Dealer"
             self.player_labels[i].config(text=f"{player.name}: {display}")
 
         # Update draw deck

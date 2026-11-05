@@ -178,7 +178,21 @@ def _current_player_discard_destinations(game):
 
 
 def play_selected(game, hand_frame, table_frame, gui_log, status_panel):
-    """Play the selected hand card at the end of the table's original line."""
+    """Play onto the table or return the card to the draw pile."""
+    if not game.enable_table and not game.enable_discard_pile:
+        selected = hand_frame.selected_index
+        if selected is None:
+            messagebox.showwarning("No selection", "Select a card from your hand first!")
+            return
+        card = game.play_back_to_draw_pile(selected + 1)
+        if card is None:
+            messagebox.showwarning("Invalid", "Invalid card selection!")
+            return
+        hand_frame.selected_index = None
+        hand_frame.update_hand()
+        status_panel.update_status()
+        gui_log(f"{game.players[game.current_player_index].name} played {card}; it was shuffled into the draw pile.")
+        return
     _play_from_hand_at(game, hand_frame, table_frame, None, gui_log, status_panel)
 
 

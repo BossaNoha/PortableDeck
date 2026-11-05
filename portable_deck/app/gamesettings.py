@@ -4,10 +4,16 @@ from ..ui.tooltip import add_tooltip
 from ..ui.collapsiblesection import CollapsibleSection
 from ..ui.responsivesections import ResponsiveSections
 from .personalpilesettings import PersonalPileSettings
+from .rolesteamssettings import RolesTeamsSettings
+from .interactionsettings import InteractionSettings
 
 
 class GameSettingsPanel:
-    def __init__(self, parent, root, settings, fit_window, players_var=None, player_name=None):
+    def __init__(self, parent, root, settings, fit_window, players_var=None, player_name=None, custom_names_var=None):
+        self.custom_names_var = custom_names_var if custom_names_var is not None else tk.BooleanVar(value=settings.get("use_custom_player_names", False))
+        self.shared_chips_var = tk.BooleanVar(value=settings.get("share_team_chips", False))
+        self.shared_score_var = tk.BooleanVar(value=settings.get("share_team_score", False))
+        self.team_score_var = tk.BooleanVar(value=settings.get("enable_team_score", False))
         self.player_name = player_name
         self.settings = settings
         self.players_var = players_var or tk.StringVar(value=str(settings.get("num_players", 3)))
@@ -97,6 +103,10 @@ class GameSettingsPanel:
         )
         add_tooltip(self.confirmation_check, "Other players must approve a point request before it is awarded.").pack(anchor="w")
 
+        self.shared_score_check = tk.Checkbutton(scoring, text="Shared score within team", variable=self.shared_score_var)
+        self.shared_score_check.pack(anchor="w")
+        self.team_score_check = tk.Checkbutton(scoring, text="Score for team", variable=self.team_score_var)
+        self.team_score_check.pack(anchor="w")
         chips = section("Chip accounts")
 
         discard_section = section("Discard pile")
@@ -132,17 +142,16 @@ class GameSettingsPanel:
         table = self.table_options
         table_options = tk.Frame(table)
         table_options.pack(fill="x")
-        table_options.columnconfigure(0, weight=1, uniform="table-settings")
-        table_options.columnconfigure(1, weight=1, uniform="table-settings")
+        table_options.columnconfigure(0, weight=1)
         self._add_check(table_options, "Take a selected table card into the current hand", self.take_table_var, "Move a selected table card into the current player's hand.", row=0, column=0)
         self.table_to_discard_check = self._add_check(table_options, "Discard a selected table card to discard pile", self.table_to_discard_var, "Move a selected table card directly to the discard pile.", row=1, column=0)
         self._add_check(table_options, "Let the current player clear the table", self.manual_cleanup_var, "Add an action that sends all table cards to the discard pile.", row=2, column=0)
         self._add_check(table_options, "Clear the table at round end", self.round_cleanup_var, "Automatically discard all table cards when the last player ends the round.", row=3, column=0)
-        self._add_check(table_options, "Play cards at specific table positions", self.positioned_play_var, "Choose an available empty position on the table when playing a card.", row=0, column=1)
-        self._add_check(table_options, "Move cards between table positions", self.move_table_cards_var, "Move a card already on the table to another empty position.", row=1, column=1)
-        self._add_check(table_options, "Play cards in front of any player", self.play_in_front_var, "Show a separate card row for each player and allow targeted plays.", row=2, column=1)
-        self._add_check(table_options, "Allow face-down cards and flipping", self.face_down_var, "Play a card face down, then reveal it when it is the last face-down card in its column.", row=4, column=0)
-        self._add_check(table_options, "Move face-up card sequences", self.move_sequences_var, "Move a face-up card and the cards below it together in the same column.", row=4, column=1)
+        self._add_check(table_options, "Play cards at specific table positions", self.positioned_play_var, "Choose an available empty position on the table when playing a card.", row=4, column=0)
+        self._add_check(table_options, "Move cards between table positions", self.move_table_cards_var, "Move a card already on the table to another empty position.", row=5, column=0)
+        self._add_check(table_options, "Play cards in front of any player", self.play_in_front_var, "Show a separate card row for each player and allow targeted plays.", row=6, column=0)
+        self._add_check(table_options, "Allow face-down cards and flipping", self.face_down_var, "Play a card face down, then reveal it when it is the last face-down card in its column.", row=7, column=0)
+        self._add_check(table_options, "Move face-up card sequences", self.move_sequences_var, "Move a face-up card and the cards below it together in the same column.", row=8, column=0)
 
         deck_recycle = tk.Checkbutton(
             discard_pile,
@@ -160,7 +169,7 @@ class GameSettingsPanel:
 
 
         occupied_row = tk.Frame(table_options)
-        occupied_row.grid(row=3, column=1, sticky="w", pady=(3, 0))
+        occupied_row.grid(row=9, column=0, sticky="w", pady=(3, 0))
         add_tooltip(tk.Label(occupied_row, text="Occupied spot:"), "Choose what happens if a selected table position already contains a card.").pack(side="left")
         add_tooltip(tk.OptionMenu(occupied_row, self.occupied_slot_action_var, "invalid", "swap"), "Invalid blocks the play; swap exchanges the hand card with the table card.").pack(side="left")
 
@@ -171,6 +180,8 @@ class GameSettingsPanel:
             command=self.update_chip_settings_controls,
         )
         add_tooltip(chip_toggle, "Enable per-player chip balances and a shared pot for betting-style play.").pack(anchor="w")
+        self.shared_chips_check = tk.Checkbutton(chips, text="Shared chips within team", variable=self.shared_chips_var)
+        self.shared_chips_check.pack(anchor="w")
         self.chip_settings_frame = tk.Frame(chips)
         add_tooltip(tk.Label(self.chip_settings_frame, text="Minimum bet:"), "Reference minimum amount for a chip bet.").grid(
             row=0, column=0, sticky="w", padx=(0, 8)
@@ -201,11 +212,29 @@ class GameSettingsPanel:
         personal = section("Personal piles on table")
         self.personal_piles = PersonalPileSettings(personal, self.settings, self.players_var, self.category_layout.schedule_layout, self.player_name)
 
+        roles = section("Roles/teams")
+        self.roles_teams = RolesTeamsSettings(roles, self.settings, self.players_var,
+                                             self.custom_names_var, self.player_name,
+                                             self.category_layout.schedule_layout)
+
+        interactions = section("Player interactions")
+        self.interactions = InteractionSettings(interactions, self.settings, self.chip_accounts_var, self.discard_enabled_var)
+
+        for variable in (self.roles_teams.enabled_var, self.roles_teams.teams_var,
+                         self.score_var, self.chip_accounts_var):
+            variable.trace_add("write", self.update_team_options)
+        self.update_team_options()
         self.score_var.trace_add("write", self.update_confirmation_control)
         self.update_confirmation_control()
         self.update_discard_draw_controls()
         self.update_chip_settings_controls()
         self.update_feature_controls()
+
+    def update_team_options(self, *_):
+        teams = self.roles_teams.enabled_var.get() and self.roles_teams.teams_var.get()
+        self.shared_chips_check.configure(state="normal" if teams and self.chip_accounts_var.get() else "disabled")
+        for check in (self.shared_score_check, self.team_score_check):
+            check.configure(state="normal" if teams and self.score_var.get() else "disabled")
 
     def category_changed(self):
         self.category_layout.schedule_layout()
@@ -270,6 +299,9 @@ class GameSettingsPanel:
         if minimum_bet < 1 or starting_balance < 0 or not 1 <= shared_discard_count <= 20:
             raise ValueError
         return {
+            "share_team_chips": self.shared_chips_var.get(),
+            "share_team_score": self.shared_score_var.get(),
+            "enable_team_score": self.team_score_var.get(),
             "enable_table": self.table_enabled_var.get(),
             "enable_discard_pile": self.discard_enabled_var.get(),
             "save_discard_on_exit": self.save_discard_var.get(),
@@ -287,6 +319,8 @@ class GameSettingsPanel:
             "shared_discard_pile_count": shared_discard_count,
             "personal_discard_pile_count": 0,
             **self.personal_piles.values(),
+            **self.roles_teams.values(),
+            **self.interactions.values(),
             "allow_play_in_front_of_players": self.play_in_front_var.get(),
             "allow_draw_from_discard": self.draw_from_discard_var.get(),
             "draw_from_discard_mode": (

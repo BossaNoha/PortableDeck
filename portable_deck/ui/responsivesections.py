@@ -27,17 +27,21 @@ class ResponsiveSections(tk.Frame):
         if not self.winfo_exists():
             return
         available = max(1, self.winfo_width())
-        x, y, row_height = 0, 0, 0
+        if not self.sections:
+            return
+        gap = 10
+        # Independent columns prevent a tall category leaving empty space
+        # beneath all the shorter categories alongside it.
+        natural_width = max(section.winfo_reqwidth() for section in self.sections)
+        columns = max(1, min(len(self.sections), (available + gap) // (natural_width + gap)))
+        column_width = max(1, (available - gap * (columns - 1)) // columns)
+        bottoms = [0] * columns
         for section in self.sections:
-            width = min(section.winfo_reqwidth(), available)
+            column = min(range(columns), key=lambda index: (bottoms[index], index))
             height = section.winfo_reqheight()
-            if x and x + width > available:
-                x = 0
-                y += row_height + 6
-                row_height = 0
-            section.place(x=x, y=y, width=width, height=height)
-            x += width + 8
-            row_height = max(row_height, height)
-        height = max(1, y + row_height)
+            section.place(x=column * (column_width + gap), y=bottoms[column],
+                          width=column_width, height=height)
+            bottoms[column] += height + gap
+        height = max(1, max(bottoms) - gap)
         if self.winfo_reqheight() != height:
             self.configure(height=height)

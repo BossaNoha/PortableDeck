@@ -46,7 +46,7 @@ class ChipBankUI:
 
     def play_chips(self):
         game = self.gui.game
-        balance = game.chip_balances[game.current_player_index]
+        balance = game.chip_balance(game.current_player_index)
         if balance < game.minimum_bet:
             messagebox.showwarning(
                 "Not enough chips",
@@ -110,7 +110,7 @@ class ChipBankUI:
         game = self.gui.game
         can_play = (
             game.pending_pot_withdrawal is None
-            and game.chip_balances[game.current_player_index] >= game.minimum_bet
+            and game.chip_balance(game.current_player_index) >= game.minimum_bet
         )
         self.play_button.config(state="normal" if can_play else "disabled")
         can_take = game.chip_pot > 0 and game.pending_pot_withdrawal is None
