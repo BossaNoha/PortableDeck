@@ -6,12 +6,15 @@ from ..ui.responsivesections import ResponsiveSections
 from .personalpilesettings import PersonalPileSettings
 from .rolesteamssettings import RolesTeamsSettings
 from .interactionsettings import InteractionSettings
+from .cardsvisibilitysettings import CardsVisibilitySettings
+from .scorelimitssettings import ScoreLimitsSettings
 
 
 class GameSettingsPanel:
     def __init__(self, parent, root, settings, fit_window, players_var=None, player_name=None, custom_names_var=None):
         self.custom_names_var = custom_names_var if custom_names_var is not None else tk.BooleanVar(value=settings.get("use_custom_player_names", False))
         self.shared_chips_var = tk.BooleanVar(value=settings.get("share_team_chips", False))
+        self.reduce_score_var = tk.BooleanVar(value=settings.get("allow_reduce_score", False))
         self.shared_score_var = tk.BooleanVar(value=settings.get("share_team_score", False))
         self.team_score_var = tk.BooleanVar(value=settings.get("enable_team_score", False))
         self.player_name = player_name
@@ -103,10 +106,13 @@ class GameSettingsPanel:
         )
         add_tooltip(self.confirmation_check, "Other players must approve a point request before it is awarded.").pack(anchor="w")
 
+        self.reduce_score_check = tk.Checkbutton(scoring, text="Enable Reduce score", variable=self.reduce_score_var)
+        self.reduce_score_check.pack(anchor="w")
         self.shared_score_check = tk.Checkbutton(scoring, text="Shared score within team", variable=self.shared_score_var)
         self.shared_score_check.pack(anchor="w")
         self.team_score_check = tk.Checkbutton(scoring, text="Score for team", variable=self.team_score_var)
         self.team_score_check.pack(anchor="w")
+        self.score_limits = ScoreLimitsSettings(scoring, self.settings, self.score_var)
         chips = section("Chip accounts")
 
         discard_section = section("Discard pile")
@@ -220,6 +226,9 @@ class GameSettingsPanel:
         interactions = section("Player interactions")
         self.interactions = InteractionSettings(interactions, self.settings, self.chip_accounts_var, self.discard_enabled_var)
 
+        visibility = section("Cards visibility")
+        self.cards_visibility = CardsVisibilitySettings(visibility, self.settings, self.players_var, self.player_name, self.roles_teams)
+
         for variable in (self.roles_teams.enabled_var, self.roles_teams.teams_var,
                          self.score_var, self.chip_accounts_var):
             variable.trace_add("write", self.update_team_options)
@@ -271,6 +280,7 @@ class GameSettingsPanel:
 
     def update_confirmation_control(self, *_):
         self.confirmation_check.config(state="normal" if self.score_var.get() else "disabled")
+        self.reduce_score_check.config(state="normal" if self.score_var.get() else "disabled")
 
     def update_discard_draw_controls(self):
         self.discard_draw_mode_menu.config(
@@ -299,6 +309,8 @@ class GameSettingsPanel:
         if minimum_bet < 1 or starting_balance < 0 or not 1 <= shared_discard_count <= 20:
             raise ValueError
         return {
+            **self.score_limits.values(),
+            "allow_reduce_score": self.reduce_score_var.get(),
             "share_team_chips": self.shared_chips_var.get(),
             "share_team_score": self.shared_score_var.get(),
             "enable_team_score": self.team_score_var.get(),
@@ -321,6 +333,7 @@ class GameSettingsPanel:
             **self.personal_piles.values(),
             **self.roles_teams.values(),
             **self.interactions.values(),
+            **self.cards_visibility.values(),
             "allow_play_in_front_of_players": self.play_in_front_var.get(),
             "allow_draw_from_discard": self.draw_from_discard_var.get(),
             "draw_from_discard_mode": (

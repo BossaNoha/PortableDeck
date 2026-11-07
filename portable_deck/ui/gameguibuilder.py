@@ -6,6 +6,7 @@ from .tableframe import TableFrame
 from .chipbankui import ChipBankUI
 from .personalpilesui import PersonalPilesUI
 from .interactionsui import InteractionsUI
+from .handsvisibilityui import show_visible_hands
 from ..app.deckpreview import show_deck_preview
 from .cardactions import (
     clear_table, draw_card, discard_selected, end_turn,
@@ -204,6 +205,8 @@ class GameGUIBuilder:
 
         self.save_button = tk.Button(self.turn_actions_frame, text="Save", command=self.save)
         self.save_button.pack(side="left", padx=5)
+        self.save_as_button = tk.Button(self.turn_actions_frame, text="Save as", command=self.save_as)
+        self.save_as_button.pack(side="left", padx=5)
 
         self.view_deck_button = tk.Button(
             self.turn_actions_frame,
@@ -236,6 +239,9 @@ class GameGUIBuilder:
                 command=self.request_current_point,
             )
             self.point_button.pack(side="left", padx=5)
+            if self.game.allow_reduce_score:
+                self.reduce_score_button = tk.Button(self.turn_actions_frame, text="Reduce score", command=self.reduce_current_score)
+                self.reduce_score_button.pack(side="left", padx=5)
 
         self.personal_piles_ui = PersonalPilesUI(self)
         if self.game.enable_table and self.game.enable_personal_piles:
@@ -247,6 +253,10 @@ class GameGUIBuilder:
 
         if self.game.enable_interactions:
             self.interactions_ui = InteractionsUI(self)
+
+        if self.game.enable_cards_visibility:
+            self.visible_hands_button = tk.Button(self.turn_actions_frame, text="View hands", command=lambda: show_visible_hands(self))
+            self.visible_hands_button.pack(side="left", padx=5)
 
         # Initialize GUI
         self.hand_frame.update_hand()

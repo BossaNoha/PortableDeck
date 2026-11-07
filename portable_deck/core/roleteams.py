@@ -63,11 +63,11 @@ class RolesTeams:
     def chip_balance(self, player):
         return self.chip_balances[self.chip_account_index(player)]
 
-    def award_point(self, player):
+    def award_point(self, player, delta=1):
         team = self.player_teams[player] if self.enable_roles_teams and self.enable_teams else None
         members = ([i for i, value in enumerate(self.player_teams) if value == team]
                    if team and self.share_team_score else [player])
         for member in members:
-            self.scores[member] += 1
+            self.scores[member] += delta
         if team and self.enable_team_score:
-            self.team_scores[team] += 1
+            self.team_scores[team] += delta

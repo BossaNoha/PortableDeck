@@ -6,11 +6,12 @@ from .gameguibuilder import GameGUIBuilder
 class GameGUI(GameGUIBuilder, GameGUIActions):
     def __init__(
         self, root, game, on_save=None, on_exit_menu=None, on_exit_desktop=None,
-        on_restart=None, on_checkpoint=None, require_exit_confirmation=True,
+        on_restart=None, on_checkpoint=None, require_exit_confirmation=True, on_save_as=None,
     ):
         self.root = root
         self.game = game
         self.on_save = on_save
+        self.on_save_as = on_save_as
         self.on_exit_menu = on_exit_menu
         self.on_exit_desktop = on_exit_desktop
         self.on_restart = on_restart
@@ -43,6 +44,11 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         self.log_text.insert("end", "\n".join(self.game.gui_log) + "\n")
         self.log_text.see("end")
         self.log_text.config(state="disabled")
+
+    def save_as(self):
+        callback = self.on_save_as or self.on_save
+        if callback:
+            callback(self.game)
 
     def save(self):
         if self.on_save:

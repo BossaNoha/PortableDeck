@@ -174,6 +174,7 @@ class SettingsWindow:
                            game_settings, basic_settings, mode=mode)
         tk.Button(buttons, text="Use current settings", command=submit).pack(side="left", padx=5)
         tk.Button(buttons, text="Save settings", command=lambda: submit("named")).pack(side="left", padx=5)
+        self.current_app_settings = lambda: {**basic_settings.values(), "num_players": int(players_var.get())}
         tk.Button(buttons, text="Load settings", command=self.load_named_settings).pack(side="left", padx=5)
         frame.columnconfigure(1, weight=1)
         self.root.after_idle(lambda: self._fit_window_to_frame(frame))
@@ -191,6 +192,10 @@ class SettingsWindow:
         except (OSError, ValueError, TypeError) as error:
             messagebox.showerror("Could not save settings", str(error), parent=self.root)
             return
+        from .configurationinfo import configuration_values
+        self.form_settings = dict(selected_settings)
+        self.form_settings["configuration_name"] = os.path.splitext(os.path.basename(path))[0]
+        self.form_settings["configuration_baseline"] = configuration_values(selected_settings)
         messagebox.showinfo("Settings saved", f"Saved as {os.path.splitext(os.path.basename(path))[0]}.", parent=self.root)
 
     def load_named_settings(self):
@@ -201,7 +206,7 @@ class SettingsWindow:
         if not path:
             return
         try:
-            selected_settings = read_preset(path)
+            selected_settings = read_preset(path, {**self.settings, **self.current_app_settings()})
         except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
             messagebox.showerror("Could not load settings", str(error), parent=self.root)
             return
@@ -369,6 +374,8 @@ class SettingsWindow:
             **game_settings_values,
             **basic_settings_values,
         }
+        selected_settings["configuration_name"] = self.settings.get("configuration_name", "Default")
+        selected_settings["configuration_baseline"] = self.settings.get("configuration_baseline", {})
         if mode == "named":
             self.save_named_settings(selected_settings)
             return

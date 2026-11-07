@@ -30,11 +30,12 @@ class SessionBrowser:
         for label, value in (("Saved games", "saves"), ("Autosaves", "autosaves")):
             tk.Radiobutton(sources, text=label, variable=self.source, value=value,
                            indicatoron=False, command=self.change_source).pack(side="left", padx=(0, 5))
-        columns = ("name", "players", "turn", "saved")
+        columns = ("name", "players", "turn", "configuration", "modified", "saved")
         self.tree = ttk.Treeview(container, columns=columns, show="headings", selectmode="browse")
         for key, title, width in (
             ("name", "Session", 180), ("players", "Players", 220),
-            ("turn", "Next turn", 120), ("saved", "Saved", 145),
+            ("turn", "Next turn", 120), ("configuration", "Configuration", 160),
+            ("modified", "Modified preset", 110), ("saved", "Saved", 145),
         ):
             self.tree.heading(key, text=title)
             self.tree.column(key, width=width, anchor="w")
@@ -45,8 +46,12 @@ class SessionBrowser:
         self.tree.bind("<Double-1>", lambda _event: self.load_selected())
         self.tree.bind("<Return>", lambda _event: self.load_selected())
 
+        horizontal = ttk.Scrollbar(container, orient="horizontal", command=self.tree.xview)
+        horizontal.grid(row=2, column=0, sticky="ew")
+        self.tree.configure(xscrollcommand=horizontal.set)
+
         actions = tk.Frame(container)
-        actions.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        actions.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         tk.Button(actions, text="Load", command=self.load_selected).pack(side="left")
         tk.Button(actions, text="Rename", command=self.rename_selected).pack(side="left", padx=5)
         tk.Button(actions, text="Delete", command=self.delete_selected).pack(side="left")
@@ -77,9 +82,13 @@ class SessionBrowser:
             filenames.insert(0, "last_session.json")
         for filename in filenames:
             path = self.session_path(filename)
+            configuration, modified = "Unknown", "Unknown"
             try:
                 with open(path, "r", encoding="utf-8") as session_file:
                     state = json.load(session_file)
+                info = state.get("configuration_info", {})
+                configuration = info.get("name", "Unknown")
+                modified = {True: "Yes", False: "No"}.get(info.get("modified"), "Unknown")
                 players = state.get("players", [])
                 names = ", ".join(player.get("name", "Player") for player in players)
                 current = state.get("current_player_index", 0)
@@ -87,7 +96,7 @@ class SessionBrowser:
             except (OSError, ValueError, TypeError, AttributeError):
                 names, next_turn = "Could not read session", "Unavailable"
             saved_at = datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M")
-            self.tree.insert("", "end", iid=filename, values=(filename, names, next_turn, saved_at))
+            self.tree.insert("", "end", iid=filename, values=(filename, names, next_turn, configuration, modified, saved_at))
         if select_name and self.tree.exists(select_name):
             self.tree.selection_set(select_name)
             self.tree.focus(select_name)

@@ -9,14 +9,20 @@ from .gameundo import GameUndoActions
 from .personalpiles import PersonalPileActions
 from .roleteams import RolesTeams
 from .interactions import PlayerInteractions
+from .cardsvisibility import CardsVisibility
 
-class Game(PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
+class Game(CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
     def __init__(
         self,
         num_players,
         deck_path,
         player_names=None,
         score_enabled=False,
+        allow_reduce_score=False,
+        enable_target_score=False,
+        target_score=100,
+        enable_score_warning=False,
+        score_warning=80,
         require_point_confirmation=False,
         allow_take_from_table=False,
         allow_move_table_card_to_discard=False,
@@ -57,6 +63,8 @@ class Game(PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActio
         enable_team_score=False,
         enable_interactions=False,
         interaction_options=None,
+        enable_cards_visibility=False,
+        cards_visibility=None,
     ):
         if not isinstance(num_players, int) or isinstance(num_players, bool) or num_players < 1:
             raise ValueError("num_players must be a positive integer")
@@ -109,6 +117,7 @@ class Game(PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActio
         self.cards_drawn_this_turn = 0
         self.cards_per_player = 0
         self.score_enabled = score_enabled
+        self.allow_reduce_score = bool(allow_reduce_score)
         self.require_point_confirmation = require_point_confirmation and score_enabled
         self.scores = [0 for _ in self.players]
         self.pending_point_request = None
@@ -124,6 +133,9 @@ class Game(PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActio
         self.initialize_personal_piles(enable_personal_piles, personal_pile_count, personal_pile_settings,
                                        unequal_personal_piles, personal_pile_counts)
         self.initialize_roles_teams(enable_roles_teams, enable_dealer, enable_teams, team_count, team_names, player_teams, dealer_players)
+        self.initialize_score_limits(enable_target_score, target_score, enable_score_warning, score_warning)
+        self.configuration_info = {"name": "Unknown", "modified": None}
+        self.initialize_cards_visibility(enable_cards_visibility, cards_visibility)
         self.initialize_interactions(enable_interactions, interaction_options)
         self.initialize_team_resources(share_team_chips, share_team_score, enable_team_score, pool=True)
         self.apply_feature_settings()
@@ -165,6 +177,8 @@ class Game(PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActio
         """Create a fresh game with the same setup, optionally retaining scores."""
         restarted = Game(
             num_players=len(self.players),
+            enable_cards_visibility=self.enable_cards_visibility,
+            cards_visibility=self.cards_visibility,
             enable_interactions=self.enable_interactions,
             interaction_options=self.interaction_options,
             share_team_chips=self.share_team_chips,
@@ -187,6 +201,9 @@ class Game(PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActio
             deck_path=self.deck.path,
             player_names=[player.name for player in self.players],
             score_enabled=self.score_enabled,
+            allow_reduce_score=self.allow_reduce_score,
+            enable_target_score=self.enable_target_score, target_score=self.target_score,
+            enable_score_warning=self.enable_score_warning, score_warning=self.score_warning,
             require_point_confirmation=self.require_point_confirmation,
             allow_take_from_table=self.allow_take_from_table,
             allow_move_table_card_to_discard=self.allow_move_table_card_to_discard,
@@ -209,6 +226,7 @@ class Game(PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActio
             starting_balance=self.starting_balance,
             require_pot_withdrawal_confirmation=self.require_pot_withdrawal_confirmation,
         )
+        restarted.configuration_info = self.configuration_info.copy()
         restarted.start(self.cards_per_player)
         if keep_scores:
             restarted.scores = self.scores.copy()

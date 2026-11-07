@@ -207,3 +207,7 @@ restart; state-changing actions support Undo.
 a named configuration (including player/team names) under `configs/presets/`
 by default. **Load settings** fills the form from a saved configuration; apply
 it with **Use current settings**. These files are separate from game saves.
+
+Game-rule presets exclude Basic Settings (Autosave, retained autosaves, exit
+confirmation and Undo) and the player count. Loading a preset preserves these
+current values, and changing them does not mark the rule preset as modified.

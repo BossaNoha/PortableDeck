@@ -1,7 +1,7 @@
 """Named save management and save-name validation."""
 import os
 import re
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, filedialog
 
 
 class SaveManager:
@@ -10,30 +10,34 @@ class SaveManager:
         self.saves_dir = saves_dir
 
     def save_session(self, game):
-        name = simpledialog.askstring(
-            "Save game",
-            "Save name:",
-            initialvalue=f"session{self.next_session_number()}",
+        path = getattr(game, "named_save_path", None)
+        if not path:
+            return self.save_session_as(game)
+        try:
+            game.save_session(path)
+            messagebox.showinfo("Game saved", f"Saved as {os.path.basename(path)}.", parent=self.root)
+            return True
+        except (OSError, TypeError, ValueError) as error:
+            messagebox.showerror("Could not save game", str(error), parent=self.root)
+            return False
+
+    def save_session_as(self, game):
+        os.makedirs(self.saves_dir, exist_ok=True)
+        path = filedialog.asksaveasfilename(
+            title="Save as",
+            initialdir=self.saves_dir,
+            initialfile=f"session{self.next_session_number()}.json",
+            defaultextension=".json",
+            filetypes=(("Saved sessions", "*.json"), ("All files", "*.*")),
+            confirmoverwrite=False,
             parent=self.root,
         )
-        if name is None:
+        if not path:
             return False
-        name = name.strip()
-        if (
-            not name
-            or name in {".", ".."}
-            or os.path.basename(name) != name
-            or re.search(r'[<>:"/\\|?*]', name)
-        ):
-            messagebox.showerror(
-                "Invalid name",
-                "Enter a file name without a folder path or special characters.",
-                parent=self.root,
-            )
+        name = os.path.basename(path)
+        if name.lower() == "last_session.json" or os.path.basename(os.path.dirname(os.path.abspath(path))).lower() == "autosaves":
+            messagebox.showerror("Reserved save", "Choose a named session outside the automatic checkpoint files.", parent=self.root)
             return False
-        if not name.lower().endswith(".json"):
-            name += ".json"
-        path = os.path.join(self.saves_dir, name)
         if os.path.exists(path) and not messagebox.askyesno(
             "Replace save?",
             f"A save named '{name}' already exists. Replace it?",
@@ -42,6 +46,7 @@ class SaveManager:
             return False
         try:
             game.save_session(path)
+            game.named_save_path = path
             messagebox.showinfo("Game saved", f"Saved as {name}.", parent=self.root)
             return True
         except (OSError, TypeError, ValueError) as error:

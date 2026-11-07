@@ -10,6 +10,13 @@ def save_session(game, path):
     """Save the complete state needed to continue a game later."""
     game.ensure_discard_pile_state()
     state = {
+        "enable_target_score": game.enable_target_score, "target_score": game.target_score,
+        "enable_score_warning": game.enable_score_warning, "score_warning": game.score_warning,
+        "score_alerts_seen": game.score_alerts_seen,
+        "allow_reduce_score": game.allow_reduce_score,
+        "configuration_info": game.configuration_info,
+        "enable_cards_visibility": game.enable_cards_visibility,
+        "cards_visibility": game.cards_visibility,
         "enable_interactions": game.enable_interactions,
         "interaction_options": game.interaction_options,
         "share_team_chips": game.share_team_chips,
@@ -135,6 +142,7 @@ def load_session(game_class, path):
     game.gui_log = state.get("gui_log", [])
     game.cards_drawn_this_turn = state["cards_drawn_this_turn"]
     game.cards_per_player = state.get("cards_per_player")
+    game.allow_reduce_score = state.get("allow_reduce_score", False)
     game.score_enabled = state.get("score_enabled", False)
     game.require_point_confirmation = state.get("require_point_confirmation", False)
     game.scores = state.get("scores", [0 for _ in game.players])
@@ -239,8 +247,15 @@ def load_session(game_class, path):
     game.initialize_roles_teams(state.get("enable_roles_teams", False), state.get("enable_dealer", False),
                                 state.get("enable_teams", False), state.get("team_count", 1),
                                 state.get("team_names", []), state.get("player_teams"), state.get("dealer_players"))
+    game.initialize_cards_visibility(state.get("enable_cards_visibility", False), state.get("cards_visibility", []))
     game.initialize_interactions(state.get("enable_interactions", False), state.get("interaction_options", {}))
     game.initialize_team_resources(state.get("share_team_chips", False), state.get("share_team_score", False), state.get("enable_team_score", False))
     game.team_scores.update(state.get("team_scores", {}))
+    game.initialize_score_limits(state.get("enable_target_score", False), state.get("target_score", 100),
+                                 state.get("enable_score_warning", False), state.get("score_warning", 80))
+    game.score_alerts_seen = state.get("score_alerts_seen", {})
+    game.configuration_info = state.get("configuration_info", {"name": "Unknown", "modified": None})
     game.apply_feature_settings()
+    if os.path.basename(path).lower() != "last_session.json" and os.path.basename(os.path.dirname(os.path.abspath(path))).lower() != "autosaves":
+        game.named_save_path = os.path.abspath(path)
     return game

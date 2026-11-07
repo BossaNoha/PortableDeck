@@ -43,6 +43,8 @@ def validate_settings(values):
 
 def write_preset(path, settings):
     settings = validate_settings(settings)
+    from .configurationinfo import preset_values
+    settings = preset_values(settings)
     target = Path(path)
     temporary = target.with_name(target.name + ".tmp")
     try:
@@ -53,6 +55,34 @@ def write_preset(path, settings):
             temporary.unlink()
 
 
-def read_preset(path):
+def read_preset(path, current_settings=None):
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    return validate_settings(data.get("settings", data) if isinstance(data, dict) else data)
+    from .configurationinfo import APP_SETTINGS, preset_values, configuration_values
+    raw = data.get("settings", data) if isinstance(data, dict) else data
+    if not isinstance(raw, dict):
+        raise ValueError("The settings file must contain a settings object.")
+    current = current_settings or DEFAULT_SETTINGS
+    merged = preset_values(raw)
+    merged.update({key: copy.deepcopy(current.get(key, DEFAULT_SETTINGS[key])) for key in APP_SETTINGS})
+    count = merged["num_players"]
+    for key, default in (("player_names", None), ("player_teams", None), ("dealer_players", False),
+                         ("personal_pile_counts", merged.get("personal_pile_count", 1))):
+        values = merged.get(key, [])
+        if values:
+            merged[key] = (values[:count] + [f"Player{i + 1}" if key == "player_names" else default
+                                           for i in range(len(values), count)])
+    merged["personal_pile_settings"] = merged.get("personal_pile_settings", [])[:count]
+    visibility = merged.get("cards_visibility", [])[:count]
+    for rule in visibility:
+        rule["players"] = [i for i in rule["players"] if i < count]
+    merged["cards_visibility"] = visibility
+    merged["team_count"] = min(merged.get("team_count", 1), count)
+    regular = merged["team_count"] - int(merged.get("enable_dealer", False)) if merged.get("enable_teams", False) else 0
+    valid = {f"team_{i + 1}" for i in range(regular)}
+    if merged.get("enable_dealer", False):
+        valid.add("dealer")
+    merged["player_teams"] = [team if team in valid else None for team in merged.get("player_teams", [])]
+    settings = validate_settings(merged)
+    settings["configuration_name"] = data.get("name", Path(path).stem)
+    settings["configuration_baseline"] = configuration_values(settings)
+    return settings

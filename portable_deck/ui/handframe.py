@@ -23,7 +23,7 @@ class HandFrame(tk.LabelFrame):
         for i, card in enumerate(player.hand):
             btn = tk.Button(
                 self,
-                text=card,
+                text=card if self.game_gui.game.can_view_hand(self.game_gui.game.current_player_index, self.game_gui.game.current_player_index) else f"Hidden card {i + 1}",
                 width=18,
                 command=lambda idx=i: self.select_card(idx)
             )

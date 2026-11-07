@@ -80,6 +80,8 @@ class MainMenu:
             game = Game(
                 self.settings["num_players"],
                 deck_path,
+                enable_cards_visibility=self.settings.get("enable_cards_visibility", False),
+                cards_visibility=self.settings.get("cards_visibility", []),
                 enable_interactions=self.settings.get("enable_interactions", False),
                 interaction_options=self.settings.get("interaction_options", {}),
                 share_team_chips=self.settings.get("share_team_chips", False),
@@ -95,6 +97,11 @@ class MainMenu:
                 enable_table=self.settings.get("enable_table", True),
                 enable_discard_pile=self.settings.get("enable_discard_pile", True),
                 player_names=names,
+                enable_target_score=self.settings.get("enable_target_score", False),
+                target_score=self.settings.get("target_score", 100),
+                enable_score_warning=self.settings.get("enable_score_warning", False),
+                score_warning=self.settings.get("score_warning", 80),
+                allow_reduce_score=self.settings.get("allow_reduce_score", False),
                 score_enabled=self.settings.get("enable_score_counter", False),
                 require_point_confirmation=self.settings.get("require_point_confirmation", False),
                 allow_take_from_table=self.settings.get("allow_take_from_table", False),
@@ -128,6 +135,8 @@ class MainMenu:
                     "require_pot_withdrawal_confirmation", False
                 ),
             )
+            from .configurationinfo import configuration_info
+            game.configuration_info = configuration_info(self.settings)
             game.start(self.settings["cards_per_player"])
         except (OSError, ValueError, KeyError, TypeError) as error:
             messagebox.showerror("Could not start game", str(error), parent=self.root)
@@ -162,6 +171,7 @@ class MainMenu:
             self.root,
             game,
             on_save=self.save_manager.save_session,
+            on_save_as=self.save_manager.save_session_as,
             on_exit_menu=self.exit_to_menu,
             on_exit_desktop=self.exit_to_desktop,
             on_restart=self.restart_game,

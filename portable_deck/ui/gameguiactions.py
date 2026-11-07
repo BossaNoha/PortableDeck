@@ -79,12 +79,25 @@ class GameGUIActions:
         )
         self.update_point_button()
 
+    def reduce_current_score(self):
+        def action():
+            _, message = self.game.reduce_score()
+            self.log(message)
+            self.status_panel.update_status()
+        self.run_action(action)
+        self.update_point_button()
+
     def update_point_button(self):
         if hasattr(self, "point_button"):
             state = "disabled" if self.game.pending_point_request else "normal"
             self.point_button.config(state=state)
+            if hasattr(self, "reduce_score_button"):
+                self.reduce_score_button.config(state=state)
 
     def handle_turn_start(self):
+        alerts = self.game.turn_score_alerts()
+        if alerts:
+            messagebox.showinfo("Score notice", "\n\n".join(alerts), parent=self.root)
         if hasattr(self, "personal_piles_ui"):
             self.personal_piles_ui.update()
         self.table_frame.selected_index = None
@@ -105,8 +118,8 @@ class GameGUIActions:
             voter_name = self.current_player_name()
             approved = messagebox.askyesno(
                 "Confirm point request",
-                f"{requester_name} requested a point.\n\n"
-                f"As {voter_name}, should {requester_name} receive it?",
+                f"{requester_name} requested a score change of {self.game.pending_point_request.get('delta', 1):+d}.\n\n"
+                f"As {voter_name}, do you approve this score change?",
                 parent=self.root,
             )
             _, result = self.game.confirm_point_request(approved)
@@ -140,6 +153,8 @@ class GameGUIActions:
         buttons.extend(self.chip_bank_ui.buttons)
         buttons.extend(self.positioned_play_buttons)
         buttons.extend(self.table_action_buttons)
+        if hasattr(self, "visible_hands_button"):
+            buttons.append(self.visible_hands_button)
         if hasattr(self, "interactions_ui"):
             buttons.append(self.interactions_ui.button)
         if hasattr(self, "personal_pile_button"):
@@ -150,6 +165,8 @@ class GameGUIActions:
             buttons.append(self.recycle_discard_button)
         if hasattr(self, "point_button"):
             buttons.append(self.point_button)
+        if hasattr(self, "reduce_score_button"):
+            buttons.append(self.reduce_score_button)
         return buttons
 
     def _ask_to_save(self):

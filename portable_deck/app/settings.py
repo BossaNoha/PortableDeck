@@ -10,6 +10,13 @@ DEFAULT_CONFIG_PATH = os.path.join(CONFIG_DIR, "default_settings.json")
 APP_DATA_DIR = os.path.join(BASE_DIR, "portable_deck", "data")
 DISCARD_PATH = os.path.join(APP_DATA_DIR, "discard.json")
 DEFAULT_SETTINGS = {
+    "enable_target_score": False, "target_score": 100,
+    "enable_score_warning": False, "score_warning": 80,
+    "allow_reduce_score": False,
+    "configuration_name": "Default",
+    "configuration_baseline": {},
+    "enable_cards_visibility": False,
+    "cards_visibility": [],
     "enable_interactions": False,
     "interaction_options": {},
     "share_team_chips": False,
