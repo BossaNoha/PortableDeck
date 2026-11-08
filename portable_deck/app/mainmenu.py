@@ -184,6 +184,7 @@ class MainMenu:
             on_restart=self.restart_game,
             on_checkpoint=self.checkpoint_game,
             require_exit_confirmation=self.settings.get("require_exit_confirmation", True),
+            show_game_log=self.settings.get("show_game_log", True),
         )
 
     def checkpoint_game(self, game):

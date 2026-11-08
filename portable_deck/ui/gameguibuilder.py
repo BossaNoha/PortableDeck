@@ -18,6 +18,19 @@ from .cardactions import (
 
 class GameGUIBuilder:
     def build_game_interface(self):
+        self.options_bar = tk.Frame(self.root)
+        self.options_bar.pack(fill="x", padx=10, pady=(6, 0))
+        self.options_button = tk.Menubutton(self.options_bar, text="Options", relief="raised")
+        self.options_menu = tk.Menu(self.options_button, tearoff=False)
+        self.options_menu.add_command(label="Save", command=self.save)
+        self.options_menu.add_command(label="Save as", command=self.save_as)
+        self.options_menu.add_separator()
+        self.options_menu.add_command(label="Restart Game", command=self.restart)
+        self.options_menu.add_separator()
+        self.options_menu.add_command(label="Exit to Main Menu", command=self.exit_to_menu)
+        self.options_menu.add_command(label="Exit to Desktop", command=self.exit_to_desktop)
+        self.options_button.configure(menu=self.options_menu)
+        self.options_button.pack(side="left")
         self.layout_frame = tk.Frame(self.root)
         self.layout_frame.pack(fill="both", expand=True)
         self.left_frame = tk.Frame(self.layout_frame)
@@ -40,7 +53,8 @@ class GameGUIBuilder:
         self.turn_actions_frame.pack(fill="x")
 
         self.log_frame = tk.LabelFrame(self.left_frame, text="Game Log", padx=5, pady=5)
-        self.log_frame.pack(padx=10, pady=5, fill="both", expand=True)
+        if self.show_game_log:
+            self.log_frame.pack(padx=10, pady=5, fill="both", expand=True)
 
         self.log_text = tk.Text(self.log_frame, height=10, state="disabled")
         self.log_text.pack(fill="both", expand=True)
@@ -204,11 +218,6 @@ class GameGUIBuilder:
             )
             self.undo_button.pack(side="left", padx=5)
 
-        self.save_button = tk.Button(self.turn_actions_frame, text="Save", command=self.save)
-        self.save_button.pack(side="left", padx=5)
-        self.save_as_button = tk.Button(self.turn_actions_frame, text="Save as", command=self.save_as)
-        self.save_as_button.pack(side="left", padx=5)
-
         self.view_deck_button = tk.Button(
             self.turn_actions_frame,
             text="View Full Deck",
@@ -217,21 +226,6 @@ class GameGUIBuilder:
         self.view_deck_button.pack(side="left", padx=5)
 
         self.chip_bank_ui = ChipBankUI(self, self.turn_actions_frame)
-
-        self.menu_button = tk.Button(
-            self.turn_actions_frame, text="Exit to Main Menu", command=self.exit_to_menu
-        )
-        self.menu_button.pack(side="left", padx=5)
-
-        self.desktop_button = tk.Button(
-            self.turn_actions_frame, text="Exit to Desktop", command=self.exit_to_desktop
-        )
-        self.desktop_button.pack(side="left", padx=5)
-
-        self.restart_button = tk.Button(
-            self.turn_actions_frame, text="Restart Game", command=self.restart
-        )
-        self.restart_button.pack(side="left", padx=5)
 
         if self.game.score_enabled:
             self.point_button = tk.Button(
