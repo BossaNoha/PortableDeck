@@ -1,14 +1,18 @@
 """Table placement and position calculations for the Game model."""
 
 class TablePlacementActions:
-    def initialize_table_limits(self, enabled=False, rows=3, columns=5):
+    def initialize_table_limits(self, enabled=False, rows=3, columns=5, limit_rows=True, limit_columns=True):
         if any(not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= 20 for value in (rows, columns)):
             raise ValueError("Maximum table rows and columns must be between 1 and 20.")
+        self.limit_table_rows = bool(limit_rows)
+        self.limit_table_columns = bool(limit_columns)
         self.enable_table_limits = bool(enabled)
         self.max_table_rows, self.max_table_columns = rows, columns
 
     def within_table_limits(self, position):
-        return not self.enable_table_limits or (0 <= position[0] < self.max_table_rows and 0 <= position[1] < self.max_table_columns)
+        return (not self.enable_table_limits
+                or ((not self.limit_table_rows or 0 <= position[0] < self.max_table_rows)
+                    and (not self.limit_table_columns or 0 <= position[1] < self.max_table_columns)))
 
 
     def play_to_table(self, index, position=None, face_up=True):
@@ -41,13 +45,12 @@ class TablePlacementActions:
         elif self.allow_move_cards_on_table:
             position = list(self.default_table_position())
         else:
-            position = None
+            position = list(self.default_table_position())
         player = self.players[self.current_player_index]
         card = player.play_card(index)
         if card:
             entry = {"player": player.name, "card": card, "face_up": bool(face_up)}
-            if self.allow_positioned_play or self.allow_move_cards_on_table or self.allow_play_in_front_of_players:
-                entry["position"] = position
+            entry["position"] = position
             self.table_cards.append(entry)
             self.log_action(player.name, "play", card)
             return card
@@ -59,42 +62,19 @@ class TablePlacementActions:
             for entry in self.table_cards
             if isinstance(entry.get("position"), (tuple, list)) and len(entry["position"]) == 2
         }
-        if self.enable_table_limits:
-            return {(row, column) for row in range(self.max_table_rows)
-                    for column in range(self.max_table_columns)
-                    if (row, column) not in occupied and (not self.allow_play_in_front_of_players or row < len(self.players))}
         if not occupied:
-            if self.allow_play_in_front_of_players:
-                return {(index, 0) for index in range(len(self.players))}
-            return {(0, 0)}
-        if self.allow_play_in_front_of_players:
-            positions = set()
-            for player_index in range(len(self.players)):
-                columns = [column for row, column in occupied if row == player_index]
-                positions.add((player_index, max(columns) + 1 if columns else 0))
-            return positions
+            positions = ({(i, 0) for i in range(len(self.players))}
+                         if self.allow_play_in_front_of_players else {(0, 0)})
+            return {spot for spot in positions if self.within_table_limits(spot)}
         available = set()
         for row, column in occupied:
-            for neighbor in (
-                (row - 1, column),
-                (row + 1, column),
-                (row, column - 1),
-                (row, column + 1),
-            ):
-                if neighbor not in occupied:
-                    available.add(neighbor)
-        # Keep the original horizontal line compact and expose just one
-        # continuation slot at its right edge. Vertical rows still get the
-        # adjacent slots needed for spatial play.
-        main_line_columns = [column for row, column in occupied if row == 0]
-        if main_line_columns:
-            next_column = max(main_line_columns) + 1
-            available = {spot for spot in available if spot[0] != 0}
-            if (0, next_column) not in occupied:
-                available.add((0, next_column))
-        else:
-            available = {spot for spot in available if spot[0] != 0}
-            available.add((0, 0))
+            neighbors = ((row, column - 1), (row, column + 1)) if self.allow_play_in_front_of_players else (
+                (row - 1, column), (row + 1, column), (row, column - 1), (row, column + 1))
+            available.update(spot for spot in neighbors if spot not in occupied and self.within_table_limits(spot))
+        if self.allow_play_in_front_of_players:
+            for owner in range(len(self.players)):
+                if not any(row == owner for row, _ in occupied) and self.within_table_limits((owner, 0)):
+                    available.add((owner, 0))
         return available
 
     def _compact_main_line(self):
@@ -185,7 +165,7 @@ class TablePlacementActions:
             available = self.available_table_positions()
             if self.allow_play_in_front_of_players:
                 available = {spot for spot in available if spot[0] == self.current_player_index}
-            return min(available) if available else None
+            return min(available, key=lambda spot: (spot[0] < 0 or spot[1] < 0, spot)) if available else None
         if self.allow_play_in_front_of_players:
             player_index = self.current_player_index
             columns = [

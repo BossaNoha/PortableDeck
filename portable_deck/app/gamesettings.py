@@ -25,6 +25,8 @@ class GameSettingsPanel:
         self.settings = settings
         self.players_var = players_var or tk.StringVar(value=str(settings.get("num_players", 3)))
         self.table_limits_var = tk.BooleanVar(value=settings.get("enable_table_limits", False))
+        self.limit_rows_var = tk.BooleanVar(value=settings.get("limit_table_rows", True))
+        self.limit_columns_var = tk.BooleanVar(value=settings.get("limit_table_columns", True))
         self.table_rows_var = tk.StringVar(value=str(settings.get("max_table_rows", 3)))
         self.table_columns_var = tk.StringVar(value=str(settings.get("max_table_columns", 5)))
         self.table_enabled_var = tk.BooleanVar(value=settings.get("enable_table", True))
@@ -157,10 +159,14 @@ class GameSettingsPanel:
                        command=self.update_feature_controls).pack(anchor="w")
         self.table_dimensions = tk.Frame(table)
         self.table_dimensions.pack(anchor="w", padx=18, pady=(0, 5))
-        for row, (label, variable) in enumerate((("Maximum rows:", self.table_rows_var),
-                                                ("Maximum columns:", self.table_columns_var))):
-            tk.Label(self.table_dimensions, text=label).grid(row=row, column=0, sticky="w")
-            tk.Spinbox(self.table_dimensions, from_=1, to=20, width=5, textvariable=variable).grid(row=row, column=1)
+        self.dimension_inputs = []
+        for row, (label, variable, enabled) in enumerate((("Maximum rows:", self.table_rows_var, self.limit_rows_var),
+                                                        ("Maximum columns:", self.table_columns_var, self.limit_columns_var))):
+            tk.Checkbutton(self.table_dimensions, text=label, variable=enabled,
+                           command=self.update_feature_controls).grid(row=row, column=0, sticky="w")
+            entry = tk.Spinbox(self.table_dimensions, from_=1, to=20, width=5, textvariable=variable)
+            entry.grid(row=row, column=1)
+            self.dimension_inputs.append((entry, enabled))
         table_options = tk.Frame(table)
         table_options.pack(fill="x")
         table_options.columnconfigure(0, weight=1)
@@ -304,6 +310,8 @@ class GameSettingsPanel:
                                (self.discard_options, self.discard_enabled_var.get())):
             self._set_controls_enabled(frame, enabled)
         self._set_controls_enabled(self.table_dimensions, self.table_enabled_var.get() and self.table_limits_var.get())
+        for entry, enabled in self.dimension_inputs:
+            entry.configure(state="normal" if self.table_enabled_var.get() and self.table_limits_var.get() and enabled.get() else "disabled")
         self.update_discard_draw_controls()
         self.table_to_discard_check.configure(
             state="normal" if self.table_enabled_var.get() and self.discard_enabled_var.get() else "disabled"
@@ -360,6 +368,8 @@ class GameSettingsPanel:
         if not 1 <= rows <= 20 or not 1 <= columns <= 20:
             raise ValueError("Maximum table rows and columns must be between 1 and 20.")
         return {
+            "limit_table_rows": self.limit_rows_var.get(),
+            "limit_table_columns": self.limit_columns_var.get(),
             "enable_table_limits": self.table_limits_var.get(),
             "max_table_rows": rows, "max_table_columns": columns,
             **self.score_limits.values(),

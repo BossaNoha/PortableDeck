@@ -67,16 +67,11 @@ class TableFrame(tk.LabelFrame):
             self._draw_player_lanes()
             self.after_idle(self._expand_window_for_table)
             return
-        if self.game.allow_positioned_play or self.game.allow_move_cards_on_table or self.game.allow_move_table_sequences:
-            self._draw_spatial_table()
-            self.after_idle(self._expand_window_for_table)
-            return
-        if not self.game.table_cards:
-            tk.Label(self.contents, text="No cards on the table.").pack(anchor="w")
-            self.after_idle(self._expand_window_for_table)
-            return
+        # Legacy saves may contain table cards without explicit positions.
         for index, entry in enumerate(self.game.table_cards):
-            self._draw_card(index)
+            if not isinstance(entry.get("position"), (tuple, list)):
+                entry["position"] = [0, index]
+        self._draw_spatial_table()
         self.after_idle(self._expand_window_for_table)
 
     def _draw_player_lanes(self):

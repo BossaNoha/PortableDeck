@@ -55,6 +55,7 @@ class Game(SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, R
         require_pot_withdrawal_confirmation=False,
         enable_table=True,
         enable_table_limits=False,
+        limit_table_rows=True, limit_table_columns=True,
         max_table_rows=3, max_table_columns=5,
         enable_discard_pile=True,
         enable_personal_piles=False,
@@ -145,7 +146,7 @@ class Game(SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, R
         self.initialize_personal_piles(enable_personal_piles, personal_pile_count, personal_pile_settings,
                                        unequal_personal_piles, personal_pile_counts)
         self.initialize_roles_teams(enable_roles_teams, enable_dealer, enable_teams, team_count, team_names, player_teams, dealer_players)
-        self.initialize_table_limits(enable_table_limits, max_table_rows, max_table_columns)
+        self.initialize_table_limits(enable_table_limits, max_table_rows, max_table_columns, limit_table_rows, limit_table_columns)
         if self.enable_table and self.enable_table_limits:
             self.allow_positioned_play = True
         self.initialize_special_actions(enable_special_actions, allow_insert_draw_deck, allow_insert_discard_pile)
@@ -215,6 +216,7 @@ class Game(SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, R
             dealer_players=self.dealer_players,
             enable_table=self.enable_table,
             enable_table_limits=self.enable_table_limits,
+            limit_table_rows=self.limit_table_rows, limit_table_columns=self.limit_table_columns,
             max_table_rows=self.max_table_rows, max_table_columns=self.max_table_columns,
             enable_personal_piles=self.enable_personal_piles,
             personal_pile_count=self.personal_pile_count,

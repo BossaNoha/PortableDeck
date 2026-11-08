@@ -12,7 +12,7 @@ class TableLimitTests(unittest.TestCase):
     def test_capacity_bounds_and_full_table(self):
         g = self.game()
         g.players[0].hand = [str(i) for i in range(5)]
-        self.assertEqual(g.available_table_positions(), {(0,0),(0,1),(1,0),(1,1)})
+        self.assertEqual(g.available_table_positions(), {(0,0)})
         for position in ((-1,0),(2,0),(0,2)):
             self.assertIsNone(g.play_to_table(1, position))
         for _ in range(4):
@@ -21,6 +21,36 @@ class TableLimitTests(unittest.TestCase):
         self.assertIsNone(g.play_to_table(1))
         self.assertEqual(len(g.players[0].hand), 1)
         self.assertIsNone(g.move_table_card(0,(2,0)))
+
+    def test_only_one_dimension_is_limited(self):
+        for rows, columns in ((True, False), (False, True), (False, False)):
+            g = self.game(limit_table_rows=rows, limit_table_columns=columns)
+            g.players[0].hand = [str(i) for i in range(12)]
+            for _ in range(12):
+                self.assertIsNotNone(g.play_to_table(1))
+            positions = [entry["position"] for entry in g.table_cards]
+            if rows:
+                self.assertTrue(all(row < 2 for row, column in positions))
+                self.assertTrue(any(column >= 2 for row, column in positions))
+            if columns:
+                self.assertTrue(all(column < 2 for row, column in positions))
+                self.assertTrue(any(row >= 2 for row, column in positions))
+            restarted = g.restart()
+            self.assertEqual(restarted.limit_table_rows, rows)
+            self.assertEqual(restarted.limit_table_columns, columns)
+
+    def test_every_unoccupied_neighbor_has_a_slot(self):
+        for enabled, rows, columns in ((False, True, True), (True, True, True),
+                                        (True, False, True), (True, True, False)):
+            g = self.game(limit_table_rows=rows, limit_table_columns=columns)
+            g.enable_table_limits = enabled
+            g.table_cards = [{"card":"A", "player":"P", "position":[0,0]},
+                             {"card":"B", "player":"P", "position":[0,1]}]
+            occupied = {(0,0), (0,1)}
+            expected = {spot for row, column in occupied for spot in
+                        ((row-1,column),(row+1,column),(row,column-1),(row,column+1))
+                        if spot not in occupied and g.within_table_limits(spot)}
+            self.assertEqual(g.available_table_positions(), expected)
 
     def test_save_load_restart(self):
         g = self.game()

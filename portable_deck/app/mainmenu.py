@@ -94,6 +94,8 @@ class MainMenu:
                 team_names=self.settings.get("team_names", []),
                 player_teams=self.settings.get("player_teams") or None,
                 dealer_players=self.settings.get("dealer_players") or None,
+                limit_table_rows=self.settings.get("limit_table_rows", True),
+                limit_table_columns=self.settings.get("limit_table_columns", True),
                 enable_table_limits=self.settings.get("enable_table_limits", False),
                 max_table_rows=self.settings.get("max_table_rows", 3),
                 max_table_columns=self.settings.get("max_table_columns", 5),
