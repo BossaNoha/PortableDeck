@@ -24,6 +24,9 @@ class GameSettingsPanel:
         self.player_name = player_name
         self.settings = settings
         self.players_var = players_var or tk.StringVar(value=str(settings.get("num_players", 3)))
+        self.table_limits_var = tk.BooleanVar(value=settings.get("enable_table_limits", False))
+        self.table_rows_var = tk.StringVar(value=str(settings.get("max_table_rows", 3)))
+        self.table_columns_var = tk.StringVar(value=str(settings.get("max_table_columns", 5)))
         self.table_enabled_var = tk.BooleanVar(value=settings.get("enable_table", True))
         self.discard_enabled_var = tk.BooleanVar(value=settings.get("enable_discard_pile", True))
         self.save_discard_var = tk.BooleanVar(value=settings.get("save_discard_on_exit", True))
@@ -150,6 +153,14 @@ class GameSettingsPanel:
         self.table_options = tk.Frame(table_section)
         self.table_options.pack(fill="x")
         table = self.table_options
+        tk.Checkbutton(table, text="Limit table rows and columns", variable=self.table_limits_var,
+                       command=self.update_feature_controls).pack(anchor="w")
+        self.table_dimensions = tk.Frame(table)
+        self.table_dimensions.pack(anchor="w", padx=18, pady=(0, 5))
+        for row, (label, variable) in enumerate((("Maximum rows:", self.table_rows_var),
+                                                ("Maximum columns:", self.table_columns_var))):
+            tk.Label(self.table_dimensions, text=label).grid(row=row, column=0, sticky="w")
+            tk.Spinbox(self.table_dimensions, from_=1, to=20, width=5, textvariable=variable).grid(row=row, column=1)
         table_options = tk.Frame(table)
         table_options.pack(fill="x")
         table_options.columnconfigure(0, weight=1)
@@ -292,6 +303,7 @@ class GameSettingsPanel:
         for frame, enabled in ((self.table_options, self.table_enabled_var.get()),
                                (self.discard_options, self.discard_enabled_var.get())):
             self._set_controls_enabled(frame, enabled)
+        self._set_controls_enabled(self.table_dimensions, self.table_enabled_var.get() and self.table_limits_var.get())
         self.update_discard_draw_controls()
         self.table_to_discard_check.configure(
             state="normal" if self.table_enabled_var.get() and self.discard_enabled_var.get() else "disabled"
@@ -344,7 +356,12 @@ class GameSettingsPanel:
         shared_discard_count = int(self.shared_discard_count_var.get())
         if minimum_bet < 1 or starting_balance < 0 or not 1 <= shared_discard_count <= 20:
             raise ValueError
+        rows, columns = int(self.table_rows_var.get()), int(self.table_columns_var.get())
+        if not 1 <= rows <= 20 or not 1 <= columns <= 20:
+            raise ValueError("Maximum table rows and columns must be between 1 and 20.")
         return {
+            "enable_table_limits": self.table_limits_var.get(),
+            "max_table_rows": rows, "max_table_columns": columns,
             **self.score_limits.values(),
             **self.player_leaving.values(),
             **self.special_actions.values(),

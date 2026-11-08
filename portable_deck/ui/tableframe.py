@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.font as tkfont
 
 
 class TableFrame(tk.LabelFrame):
@@ -9,10 +10,55 @@ class TableFrame(tk.LabelFrame):
         self.game = game
         self.selected_index = None
         self.selected_position = None
+        self.zoom_percent = 100
+        self.base_font_size = abs(tkfont.nametofont("TkDefaultFont").actual("size"))
+        self.card_font = tkfont.Font(self, font="TkDefaultFont")
+        toolbar = tk.Frame(self)
+        toolbar.pack(fill="x", pady=(0, 4))
+        self.zoom_out_button = tk.Button(toolbar, text="Zoom out", command=lambda: self.change_zoom(-25))
+        self.zoom_out_button.pack(side="left")
+        self.zoom_label = tk.Label(toolbar, text="100%", width=6)
+        self.zoom_label.pack(side="left")
+        self.zoom_in_button = tk.Button(toolbar, text="Zoom in", command=lambda: self.change_zoom(25))
+        self.zoom_in_button.pack(side="left")
+        tk.Button(toolbar, text="Reset", command=lambda: self.change_zoom(100 - self.zoom_percent)).pack(side="left", padx=4)
+        area = tk.Frame(self)
+        area.pack(fill="both", expand=True)
+        self.canvas = tk.Canvas(area, width=420, height=300, highlightthickness=0)
+        vertical = tk.Scrollbar(area, orient="vertical", command=self.canvas.yview)
+        horizontal = tk.Scrollbar(area, orient="horizontal", command=self.canvas.xview)
+        self.canvas.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+        vertical.grid(row=0, column=1, sticky="ns")
+        horizontal.grid(row=1, column=0, sticky="ew")
+        area.rowconfigure(0, weight=1)
+        area.columnconfigure(0, weight=1)
+        self.contents = tk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.contents, anchor="nw")
+        self.contents.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.bind("<MouseWheel>", self.scroll_table)
         self.update_table()
 
+    def change_zoom(self, delta):
+        self.zoom_percent = max(50, min(200, self.zoom_percent + delta))
+        self.card_font.configure(size=max(1, round(self.base_font_size * self.zoom_percent / 100)))
+        self.zoom_label.configure(text=f"{self.zoom_percent}%")
+        self.zoom_out_button.configure(state="disabled" if self.zoom_percent == 50 else "normal")
+        self.zoom_in_button.configure(state="disabled" if self.zoom_percent == 200 else "normal")
+
+    def scroll_table(self, event):
+        if event.state & 4:
+            self.change_zoom(25 if event.delta > 0 else -25)
+        elif event.delta:
+            steps = -int(event.delta / 120) or (-1 if event.delta > 0 else 1)
+            if event.state & 1:
+                self.canvas.xview_scroll(steps, "units")
+            else:
+                self.canvas.yview_scroll(steps, "units")
+        return "break"
+
     def update_table(self):
-        for widget in self.winfo_children():
+        for widget in self.contents.winfo_children():
             widget.destroy()
         self.card_buttons = []
         if not self.game.enable_table:
@@ -26,7 +72,7 @@ class TableFrame(tk.LabelFrame):
             self.after_idle(self._expand_window_for_table)
             return
         if not self.game.table_cards:
-            tk.Label(self, text="No cards on the table.").pack(anchor="w")
+            tk.Label(self.contents, text="No cards on the table.").pack(anchor="w")
             self.after_idle(self._expand_window_for_table)
             return
         for index, entry in enumerate(self.game.table_cards):
@@ -39,7 +85,7 @@ class TableFrame(tk.LabelFrame):
             occupied.setdefault(tuple(entry["position"]), []).append((index, entry))
         available = self.game.available_table_positions()
         for player_index, player in enumerate(self.game.players):
-            lane = tk.Frame(self)
+            lane = tk.Frame(self.contents)
             lane.pack(anchor="w", fill="x", pady=2)
             tk.Label(lane, text=f"{player.name}:", width=14, anchor="w").pack(side="left")
             columns = sorted(
@@ -72,13 +118,17 @@ class TableFrame(tk.LabelFrame):
                 button.pack(side="left", padx=3, pady=3)
 
     def _expand_window_for_table(self):
-        """Grow the game window when the table needs more room for its cards."""
-        root = self.winfo_toplevel()
-        root.update_idletasks()
-        width = max(root.winfo_width(), root.winfo_reqwidth())
-        height = max(root.winfo_height(), root.winfo_reqheight())
-        if width > root.winfo_width() or height > root.winfo_height():
-            root.geometry(f"{width}x{height}")
+        """Update table controls without changing the session window size."""
+        if not self.winfo_exists():
+            return
+        def configure(widget):
+            if isinstance(widget, (tk.Button, tk.Label)):
+                widget.configure(font=self.card_font)
+            widget.bind("<MouseWheel>", self.scroll_table)
+            for child in widget.winfo_children():
+                configure(child)
+        configure(self.contents)
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def _draw_spatial_table(self):
         occupied = {}
@@ -94,7 +144,7 @@ class TableFrame(tk.LabelFrame):
             if position in occupied:
                 index, entry = occupied[position][-1]
                 button = tk.Button(
-                    self,
+                    self.contents,
                     text=self._card_text(entry),
                     width=18,
                     command=lambda card_index=index: self.select_card(card_index),
@@ -104,7 +154,7 @@ class TableFrame(tk.LabelFrame):
                     button.config(bg="lightblue")
             else:
                 button = tk.Button(
-                    self,
+                    self.contents,
                     text="Empty",
                     width=18,
                     height=2,
@@ -119,12 +169,12 @@ class TableFrame(tk.LabelFrame):
                 pady=3,
                 sticky="ew",
             )
-            self.grid_columnconfigure(column - min_column, weight=1)
+            self.contents.grid_columnconfigure(column - min_column, weight=1)
 
     def _draw_card(self, index):
         entry = self.game.table_cards[index]
         button = tk.Button(
-            self,
+            self.contents,
             text=self._card_text(entry),
             width=18,
             command=lambda card_index=index: self.select_card(card_index),

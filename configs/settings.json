@@ -1,4 +1,7 @@
 {
+  "enable_table_limits": false,
+  "max_table_rows": 3,
+  "max_table_columns": 5,
   "show_game_log": true,
   "enable_special_actions": false,
   "allow_insert_draw_deck": false,

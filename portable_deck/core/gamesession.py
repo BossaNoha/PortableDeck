@@ -10,6 +10,8 @@ def save_session(game, path):
     """Save the complete state needed to continue a game later."""
     game.ensure_discard_pile_state()
     state = {
+        "enable_table_limits": game.enable_table_limits,
+        "max_table_rows": game.max_table_rows, "max_table_columns": game.max_table_columns,
         "enable_special_actions": game.enable_special_actions,
         "allow_insert_draw_deck": game.allow_insert_draw_deck,
         "allow_insert_discard_pile": game.allow_insert_discard_pile,
@@ -259,6 +261,7 @@ def load_session(game_class, path):
     game.initialize_interactions(state.get("enable_interactions", False), state.get("interaction_options", {}))
     game.initialize_team_resources(state.get("share_team_chips", False), state.get("share_team_score", False), state.get("enable_team_score", False))
     game.team_scores.update(state.get("team_scores", {}))
+    game.initialize_table_limits(state.get("enable_table_limits", False), state.get("max_table_rows", 3), state.get("max_table_columns", 5))
     game.initialize_special_actions(state.get("enable_special_actions", False), state.get("allow_insert_draw_deck", False), state.get("allow_insert_discard_pile", False))
     game.initialize_leaving(state.get("enable_player_leaving", False), state.get("leave_conditions", {}), state.get("enable_player_return", False))
     game.left_players = state.get("left_players", [])

@@ -1,6 +1,15 @@
 """Table placement and position calculations for the Game model."""
 
 class TablePlacementActions:
+    def initialize_table_limits(self, enabled=False, rows=3, columns=5):
+        if any(not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= 20 for value in (rows, columns)):
+            raise ValueError("Maximum table rows and columns must be between 1 and 20.")
+        self.enable_table_limits = bool(enabled)
+        self.max_table_rows, self.max_table_columns = rows, columns
+
+    def within_table_limits(self, position):
+        return not self.enable_table_limits or (0 <= position[0] < self.max_table_rows and 0 <= position[1] < self.max_table_columns)
+
 
     def play_to_table(self, index, position=None, face_up=True):
         if not self.enable_table:
@@ -50,6 +59,10 @@ class TablePlacementActions:
             for entry in self.table_cards
             if isinstance(entry.get("position"), (tuple, list)) and len(entry["position"]) == 2
         }
+        if self.enable_table_limits:
+            return {(row, column) for row in range(self.max_table_rows)
+                    for column in range(self.max_table_columns)
+                    if (row, column) not in occupied and (not self.allow_play_in_front_of_players or row < len(self.players))}
         if not occupied:
             if self.allow_play_in_front_of_players:
                 return {(index, 0) for index in range(len(self.players))}
@@ -86,7 +99,7 @@ class TablePlacementActions:
 
     def _compact_main_line(self):
         """Close gaps between cards in the original row after a removal."""
-        if self.allow_face_down_table_cards or self.allow_move_table_sequences:
+        if self.enable_table_limits or self.allow_face_down_table_cards or self.allow_move_table_sequences:
             return
         if self.allow_play_in_front_of_players:
             for player_index in range(len(self.players)):
@@ -147,7 +160,7 @@ class TablePlacementActions:
                 tuple(card["position"]) for card in self.table_cards if id(card) not in moving
             }
             targets = [(target_row + offset, target_column) for offset in range(len(sequence))]
-            if any(target in occupied for target in targets):
+            if any(target in occupied or not self.within_table_limits(target) for target in targets):
                 return None
             for card, target in zip(sequence, targets):
                 card["position"] = list(target)
@@ -168,6 +181,11 @@ class TablePlacementActions:
         return entry["card"]
 
     def default_table_position(self):
+        if self.enable_table_limits:
+            available = self.available_table_positions()
+            if self.allow_play_in_front_of_players:
+                available = {spot for spot in available if spot[0] == self.current_player_index}
+            return min(available) if available else None
         if self.allow_play_in_front_of_players:
             player_index = self.current_player_index
             columns = [
