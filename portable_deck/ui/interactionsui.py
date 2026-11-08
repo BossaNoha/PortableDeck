@@ -22,7 +22,7 @@ class InteractionsUI:
         selected_action = tk.StringVar(value=INTERACTIONS[actions[0]])
         tk.OptionMenu(dialog, selected_action, *[INTERACTIONS[key] for key in actions]).pack(fill="x", padx=10, pady=8)
         tk.Label(dialog, text="Choose a player (ignored for random discard):").pack(anchor="w", padx=10)
-        targets = [i for i in range(len(game.players)) if i != game.current_player_index]
+        targets = [i for i in game.active_player_indices() if i != game.current_player_index]
         players = tk.Listbox(dialog, height=max(1, min(10, len(targets))), exportselection=False)
         players.pack(fill="both", expand=True, padx=10, pady=8)
         for target in targets:

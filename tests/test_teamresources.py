@@ -48,3 +48,25 @@ class TeamResourceTests(unittest.TestCase):
             self.assertEqual(loaded.restart(keep_scores=True).team_scores, loaded.team_scores)
             self.assertTrue(loaded.undo_last_action())
             self.assertEqual(loaded.capture_undo_state(), state)
+
+    def test_restart_reset_option_for_personal_and_shared_accounts(self):
+        for shared in (False, True):
+            for reset in (False, True):
+                with self.subTest(shared=shared, reset=reset):
+                    game = self.game(share_team_chips=shared, reset_chip_accounts_on_restart=reset)
+                    initial = game.chip_balances.copy()
+                    game.buy_chips(1, 20)
+                    game.play_chips(10)
+                    balances = game.chip_balances.copy()
+                    restarted = game.restart()
+                    self.assertEqual(restarted.chip_balances, initial if reset else balances)
+                    self.assertEqual(restarted.chip_pot, 0 if reset else 10)
+                    self.assertEqual(restarted.reset_chip_accounts_on_restart, reset)
+                    restarted.chip_balances[0] += 1
+                    self.assertEqual(game.chip_balances, balances)
+                    with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
+                        path = str(Path(folder) / "session.json")
+                        game.save_session(path)
+                        loaded = Game.load_session(path)
+                        self.assertEqual(loaded.reset_chip_accounts_on_restart, reset)
+                        self.assertEqual(loaded.restart().chip_pot, 0 if reset else 10)

@@ -56,6 +56,8 @@ class StatusPanel(tk.LabelFrame):
                 display += f"  |  Team score: {self.game.team_scores[self.game.player_teams[i]]}"
             if self.game.player_is_dealer(i):
                 display += "  |  Role: Dealer"
+            if i in self.game.left_players:
+                display += "  |  Left session"
             self.player_labels[i].config(text=f"{player.name}: {display}")
 
         # Update draw deck

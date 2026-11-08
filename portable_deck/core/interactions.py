@@ -28,12 +28,14 @@ class PlayerInteractions:
             raise ValueError("Complete the pending confirmation first.")
         actor = self.current_player_index
         if action == "discard_random_card":
-            candidates = [i for i, player in enumerate(self.players) if i != actor and player.hand]
+            candidates = [i for i, player in enumerate(self.players) if i != actor and i not in self.left_players and player.hand]
             if not candidates:
                 raise ValueError("No other player has cards to discard.")
             target = random.choice(candidates)
         if not isinstance(target, int) or isinstance(target, bool) or not 0 <= target < len(self.players) or target == actor:
             raise ValueError("Choose another player.")
+        if target in self.left_players:
+            raise ValueError("This player has left the session.")
         other = self.players[target]
         result = {"target": target}
         if action in {"take_random_card", "discard_random_card", "peek_random_card", "peek_all_cards"} and not other.hand:

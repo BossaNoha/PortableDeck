@@ -10,6 +10,13 @@ def save_session(game, path):
     """Save the complete state needed to continue a game later."""
     game.ensure_discard_pile_state()
     state = {
+        "enable_special_actions": game.enable_special_actions,
+        "allow_insert_draw_deck": game.allow_insert_draw_deck,
+        "allow_insert_discard_pile": game.allow_insert_discard_pile,
+        "reset_chip_accounts_on_restart": game.reset_chip_accounts_on_restart,
+        "enable_player_return": game.enable_player_return,
+        "enable_player_leaving": game.enable_player_leaving, "leave_conditions": game.leave_conditions,
+        "left_players": game.left_players,
         "enable_target_score": game.enable_target_score, "target_score": game.target_score,
         "enable_score_warning": game.enable_score_warning, "score_warning": game.score_warning,
         "score_alerts_seen": game.score_alerts_seen,
@@ -169,6 +176,7 @@ def load_session(game_class, path):
     game.allow_move_cards_on_table = bool(
         game.allow_move_cards_on_table or game.allow_move_table_sequences
     )
+    game.reset_chip_accounts_on_restart = state.get("reset_chip_accounts_on_restart", True)
     game.enable_chip_accounts = state.get("enable_chip_accounts", False)
     game.minimum_bet = state.get("minimum_bet", 1)
     game.starting_balance = state.get("starting_balance", 100)
@@ -251,6 +259,11 @@ def load_session(game_class, path):
     game.initialize_interactions(state.get("enable_interactions", False), state.get("interaction_options", {}))
     game.initialize_team_resources(state.get("share_team_chips", False), state.get("share_team_score", False), state.get("enable_team_score", False))
     game.team_scores.update(state.get("team_scores", {}))
+    game.initialize_special_actions(state.get("enable_special_actions", False), state.get("allow_insert_draw_deck", False), state.get("allow_insert_discard_pile", False))
+    game.initialize_leaving(state.get("enable_player_leaving", False), state.get("leave_conditions", {}), state.get("enable_player_return", False))
+    game.left_players = state.get("left_players", [])
+    if any(not isinstance(i, int) or isinstance(i, bool) or not 0 <= i < len(game.players) for i in game.left_players):
+        raise ValueError("Invalid departed player index.")
     game.initialize_score_limits(state.get("enable_target_score", False), state.get("target_score", 100),
                                  state.get("enable_score_warning", False), state.get("score_warning", 80))
     game.score_alerts_seen = state.get("score_alerts_seen", {})

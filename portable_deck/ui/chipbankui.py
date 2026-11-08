@@ -102,6 +102,7 @@ class ChipBankUI:
         self.gui.status_panel.update_status()
         self.gui.update_undo_button()
         self.update_action_buttons()
+        self.gui.update_leave_button()
         self.gui.checkpoint()
 
     def update_action_buttons(self):

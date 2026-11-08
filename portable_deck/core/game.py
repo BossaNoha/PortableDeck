@@ -10,8 +10,10 @@ from .personalpiles import PersonalPileActions
 from .roleteams import RolesTeams
 from .interactions import PlayerInteractions
 from .cardsvisibility import CardsVisibility
+from .playerleaving import PlayerLeaving
+from .specialactions import SpecialActions
 
-class Game(CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
+class Game(SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
     def __init__(
         self,
         num_players,
@@ -19,6 +21,12 @@ class Game(CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions,
         player_names=None,
         score_enabled=False,
         allow_reduce_score=False,
+        enable_player_leaving=False,
+        enable_player_return=False,
+        enable_special_actions=False,
+        allow_insert_draw_deck=False,
+        allow_insert_discard_pile=False,
+        leave_conditions=None,
         enable_target_score=False,
         target_score=100,
         enable_score_warning=False,
@@ -41,6 +49,7 @@ class Game(CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions,
         shared_discard_pile_count=1,
         personal_discard_pile_count=0,
         enable_chip_accounts=False,
+        reset_chip_accounts_on_restart=True,
         minimum_bet=1,
         starting_balance=100,
         require_pot_withdrawal_confirmation=False,
@@ -106,6 +115,7 @@ class Game(CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions,
         self.allow_face_down_table_cards = bool(allow_face_down_table_cards)
         self.allow_move_table_sequences = bool(allow_move_table_sequences)
         self.allow_recycle_discard_to_deck = bool(allow_recycle_discard_to_deck)
+        self.reset_chip_accounts_on_restart = bool(reset_chip_accounts_on_restart)
         self.enable_chip_accounts = bool(enable_chip_accounts)
         self.minimum_bet = minimum_bet
         self.starting_balance = starting_balance
@@ -133,6 +143,8 @@ class Game(CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions,
         self.initialize_personal_piles(enable_personal_piles, personal_pile_count, personal_pile_settings,
                                        unequal_personal_piles, personal_pile_counts)
         self.initialize_roles_teams(enable_roles_teams, enable_dealer, enable_teams, team_count, team_names, player_teams, dealer_players)
+        self.initialize_special_actions(enable_special_actions, allow_insert_draw_deck, allow_insert_discard_pile)
+        self.initialize_leaving(enable_player_leaving, leave_conditions, enable_player_return)
         self.initialize_score_limits(enable_target_score, target_score, enable_score_warning, score_warning)
         self.configuration_info = {"name": "Unknown", "modified": None}
         self.initialize_cards_visibility(enable_cards_visibility, cards_visibility)
@@ -177,6 +189,11 @@ class Game(CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions,
         """Create a fresh game with the same setup, optionally retaining scores."""
         restarted = Game(
             num_players=len(self.players),
+            enable_special_actions=self.enable_special_actions,
+            allow_insert_draw_deck=self.allow_insert_draw_deck,
+            allow_insert_discard_pile=self.allow_insert_discard_pile,
+            enable_player_return=self.enable_player_return,
+            enable_player_leaving=self.enable_player_leaving, leave_conditions=self.leave_conditions,
             enable_cards_visibility=self.enable_cards_visibility,
             cards_visibility=self.cards_visibility,
             enable_interactions=self.enable_interactions,
@@ -222,10 +239,14 @@ class Game(CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions,
             shared_discard_pile_count=self.shared_discard_pile_count,
             personal_discard_pile_count=self.personal_discard_pile_count,
             enable_chip_accounts=self.enable_chip_accounts,
+            reset_chip_accounts_on_restart=self.reset_chip_accounts_on_restart,
             minimum_bet=self.minimum_bet,
             starting_balance=self.starting_balance,
             require_pot_withdrawal_confirmation=self.require_pot_withdrawal_confirmation,
         )
+        if not self.reset_chip_accounts_on_restart:
+            restarted.chip_balances = self.chip_balances.copy()
+            restarted.chip_pot = self.chip_pot
         restarted.configuration_info = self.configuration_info.copy()
         restarted.start(self.cards_per_player)
         if keep_scores:
@@ -329,11 +350,15 @@ class Game(CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions,
     def finish_turn(self):
         """End a turn and report whether it ended the round and cleared the table."""
         self.log_draws_for_turn()
-        round_ended = self.current_player_index == len(self.players) - 1
+        active = self.active_player_indices()
+        if not active:
+            return True, 0
+        following = next((i for i in active if i > self.current_player_index), active[0])
+        round_ended = following <= self.current_player_index
         cleared_count = 0
         if round_ended and self.clear_table_on_round_end:
             cleared_count = self.clear_table(automatic=True)
-        self.current_player_index = (self.current_player_index + 1) % len(self.players)
+        self.current_player_index = following
         return round_ended, cleared_count
 
     def log_action(self, player_name, action, card=None):

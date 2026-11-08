@@ -8,11 +8,15 @@ from .rolesteamssettings import RolesTeamsSettings
 from .interactionsettings import InteractionSettings
 from .cardsvisibilitysettings import CardsVisibilitySettings
 from .scorelimitssettings import ScoreLimitsSettings
+from .playerleavingsettings import PlayerLeavingSettings
+from .specialactionssettings import SpecialActionsSettings
 
 
 class GameSettingsPanel:
-    def __init__(self, parent, root, settings, fit_window, players_var=None, player_name=None, custom_names_var=None):
+    def __init__(self, parent, root, settings, fit_window, players_var=None, player_name=None, custom_names_var=None, color_categories_var=None):
+        self.color_categories_var = color_categories_var if color_categories_var is not None else tk.BooleanVar(value=settings.get("color_game_settings_categories", False))
         self.custom_names_var = custom_names_var if custom_names_var is not None else tk.BooleanVar(value=settings.get("use_custom_player_names", False))
+        self.reset_chips_var = tk.BooleanVar(value=settings.get("reset_chip_accounts_on_restart", True))
         self.shared_chips_var = tk.BooleanVar(value=settings.get("share_team_chips", False))
         self.reduce_score_var = tk.BooleanVar(value=settings.get("allow_reduce_score", False))
         self.shared_score_var = tk.BooleanVar(value=settings.get("share_team_score", False))
@@ -215,6 +219,10 @@ class GameSettingsPanel:
             variable=self.pot_confirmation_var,
         ), "Require approval from every other player before the pot can be collected.").grid(row=2, column=0, columnspan=2, sticky="w", pady=(5, 0))
 
+        tk.Checkbutton(self.chip_settings_frame, text="Reset chip accounts on game restart",
+                       variable=self.reset_chips_var, wraplength=280, justify="left").grid(
+                           row=3, column=0, columnspan=2, sticky="w", pady=(5, 0))
+
         personal = section("Personal piles on table")
         self.personal_piles = PersonalPileSettings(personal, self.settings, self.players_var, self.category_layout.schedule_layout, self.player_name)
 
@@ -229,6 +237,30 @@ class GameSettingsPanel:
         visibility = section("Cards visibility")
         self.cards_visibility = CardsVisibilitySettings(visibility, self.settings, self.players_var, self.player_name, self.roles_teams)
 
+        leaving = section("Leaving session")
+        self.player_leaving = PlayerLeavingSettings(leaving, self.settings, self.score_var, self.chip_accounts_var, self.score_limits)
+
+        special = section("Special actions")
+        self.special_actions = SpecialActionsSettings(special, self.settings, self.discard_enabled_var)
+
+        self.section_states = {
+            "Special actions": (self.special_actions.enabled,),
+            "Scoring": (self.score_var,),
+            "Chip accounts": (self.chip_accounts_var,),
+            "Discard pile": (self.discard_enabled_var,),
+            "Table settings": (self.table_enabled_var,),
+            "Personal piles on table": (self.personal_piles.enabled_var,),
+            "Roles/teams": (self.roles_teams.enabled_var,),
+            "Player interactions": (self.interactions.enabled,),
+            "Cards visibility": (self.cards_visibility.enabled,),
+            "Leaving session": (self.player_leaving.enabled, self.player_leaving.allow_return),
+        }
+        for variables in self.section_states.values():
+            for variable in variables:
+                variable.trace_add("write", self.update_section_colors)
+        self.color_categories_var.trace_add("write", self.update_section_colors)
+        self.update_section_colors()
+
         for variable in (self.roles_teams.enabled_var, self.roles_teams.teams_var,
                          self.score_var, self.chip_accounts_var):
             variable.trace_add("write", self.update_team_options)
@@ -238,6 +270,10 @@ class GameSettingsPanel:
         self.update_discard_draw_controls()
         self.update_chip_settings_controls()
         self.update_feature_controls()
+
+    def update_section_colors(self, *_):
+        for section in self.sections:
+            section.set_enabled_indicator(any(variable.get() for variable in self.section_states[section.title]), self.color_categories_var.get())
 
     def update_team_options(self, *_):
         teams = self.roles_teams.enabled_var.get() and self.roles_teams.teams_var.get()
@@ -310,6 +346,8 @@ class GameSettingsPanel:
             raise ValueError
         return {
             **self.score_limits.values(),
+            **self.player_leaving.values(),
+            **self.special_actions.values(),
             "allow_reduce_score": self.reduce_score_var.get(),
             "share_team_chips": self.shared_chips_var.get(),
             "share_team_score": self.shared_score_var.get(),
@@ -339,6 +377,7 @@ class GameSettingsPanel:
             "draw_from_discard_mode": (
                 "any" if self.discard_draw_mode_var.get() == "Take any card" else "top"
             ),
+            "reset_chip_accounts_on_restart": self.reset_chips_var.get(),
             "enable_chip_accounts": self.chip_accounts_var.get(),
             "minimum_bet": minimum_bet,
             "starting_balance": starting_balance,

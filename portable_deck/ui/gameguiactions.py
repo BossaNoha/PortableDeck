@@ -1,4 +1,5 @@
 """Turn flow, confirmations, undo, and session exit controls for GameGUI."""
+import tkinter as tk
 from tkinter import messagebox
 from .cardactions import request_point
 
@@ -14,6 +15,7 @@ class GameGUIActions:
             self.personal_piles_ui.update()
         self._record_undo_state(undo_state)
         self.update_undo_button()
+        self.update_leave_button()
         self.checkpoint()
 
     def _record_undo_state(self, undo_state):
@@ -35,6 +37,9 @@ class GameGUIActions:
             self.log_text.insert("end", "\n".join(self.game.gui_log) + "\n")
         self.log_text.see("end")
         self.log_text.config(state="disabled")
+        if self.game.active_player_indices():
+            for button in self._turn_action_buttons():
+                button.configure(state="normal")
         self.handle_turn_start()
         self.update_point_button()
         self.update_undo_button()
@@ -94,7 +99,71 @@ class GameGUIActions:
             if hasattr(self, "reduce_score_button"):
                 self.reduce_score_button.config(state=state)
 
+    def update_leave_button(self):
+        if hasattr(self, "leave_session_button"):
+            self.leave_session_button.configure(state="normal" if self.game.can_leave_session() else "disabled")
+        if not self.game.active_player_indices():
+            for button in self._turn_action_buttons():
+                button.configure(state="disabled")
+
+    def choose_returning_player(self):
+        if not self.game.left_players:
+            messagebox.showinfo("Return player", "No players have left the session.", parent=self.root)
+            return
+        if self.game.pending_point_request is not None or self.game.pending_pot_withdrawal is not None:
+            messagebox.showinfo("Return player", "Complete the pending confirmation first.", parent=self.root)
+            return
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Return player back to game")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        players = list(self.game.left_players)
+        choices = tk.Listbox(dialog, height=min(10, len(players)), width=36, exportselection=False)
+        choices.pack(fill="both", expand=True, padx=10, pady=10)
+        for player in players:
+            choices.insert("end", self.game.players[player].name)
+        choices.selection_set(0)
+        def restore():
+            selected = choices.curselection()
+            if not selected:
+                return
+            player = players[selected[0]]
+            def action():
+                ok, message = self.game.return_player(player)
+                self.log(message)
+                if ok:
+                    for button in self._turn_action_buttons():
+                        button.configure(state="normal")
+                    self.hand_frame.selected_index = None
+                    self.hand_frame.update_hand()
+                    self.status_panel.update_status()
+                    self.handle_turn_start()
+                    self.update_point_button()
+            dialog.destroy()
+            self.run_action(action)
+        tk.Button(dialog, text="Return player", command=restore).pack(side="right", padx=10, pady=(0, 10))
+        tk.Button(dialog, text="Cancel", command=dialog.destroy).pack(side="right", pady=(0, 10))
+
+    def leave_current_player(self):
+        def action():
+            ok, message = self.game.leave_session()
+            self.log(message)
+            if not ok:
+                return
+            self.hand_frame.selected_index = None
+            self.hand_frame.update_hand()
+            self.status_panel.update_status()
+            if self.game.active_player_indices():
+                self.handle_turn_start()
+                self.log(f"{self.current_player_name()}'s turn starts.")
+            else:
+                self.log("All players have left the session.")
+        self.run_action(action)
+
     def handle_turn_start(self):
+        self.update_leave_button()
+        if not self.game.active_player_indices():
+            return
         alerts = self.game.turn_score_alerts()
         if alerts:
             messagebox.showinfo("Score notice", "\n\n".join(alerts), parent=self.root)
@@ -145,6 +214,7 @@ class GameGUIActions:
             button.config(state="normal")
         self.update_point_button()
         self.update_chip_action_buttons()
+        self.update_leave_button()
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
@@ -153,6 +223,8 @@ class GameGUIActions:
         buttons.extend(self.chip_bank_ui.buttons)
         buttons.extend(self.positioned_play_buttons)
         buttons.extend(self.table_action_buttons)
+        if hasattr(self, "special_actions_ui"):
+            buttons.extend(self.special_actions_ui.buttons)
         if hasattr(self, "visible_hands_button"):
             buttons.append(self.visible_hands_button)
         if hasattr(self, "interactions_ui"):
@@ -167,6 +239,8 @@ class GameGUIActions:
             buttons.append(self.point_button)
         if hasattr(self, "reduce_score_button"):
             buttons.append(self.reduce_score_button)
+        if hasattr(self, "leave_session_button"):
+            buttons.append(self.leave_session_button)
         return buttons
 
     def _ask_to_save(self):

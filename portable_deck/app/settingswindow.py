@@ -161,6 +161,7 @@ class SettingsWindow:
             frame, self.root, self.settings,
             lambda: self._fit_window_to_frame(frame),
             players_var=players_var, player_name=player_name, custom_names_var=custom_names_var,
+            color_categories_var=basic_settings.color_categories_var,
         )
 
         self.game_settings_panel = game_settings

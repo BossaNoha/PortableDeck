@@ -7,6 +7,7 @@ from .chipbankui import ChipBankUI
 from .personalpilesui import PersonalPilesUI
 from .interactionsui import InteractionsUI
 from .handsvisibilityui import show_visible_hands
+from .specialactionsui import SpecialActionsUI
 from ..app.deckpreview import show_deck_preview
 from .cardactions import (
     clear_table, draw_card, discard_selected, end_turn,
@@ -258,6 +259,17 @@ class GameGUIBuilder:
             self.visible_hands_button = tk.Button(self.turn_actions_frame, text="View hands", command=lambda: show_visible_hands(self))
             self.visible_hands_button.pack(side="left", padx=5)
 
+        if self.game.enable_player_leaving:
+            self.leave_session_button = tk.Button(self.turn_actions_frame, text="Leave session", command=self.leave_current_player)
+            self.leave_session_button.pack(side="left", padx=5)
+
+        if self.game.enable_player_return:
+            self.return_player_button = tk.Button(self.turn_actions_frame, text="Return player back to game", command=self.choose_returning_player)
+            self.return_player_button.pack(side="left", padx=5)
+
+        if self.game.enable_special_actions:
+            self.special_actions_ui = SpecialActionsUI(self)
+
         # Initialize GUI
         self.hand_frame.update_hand()
         self.status_panel.update_status()
@@ -273,5 +285,6 @@ class GameGUIBuilder:
         self.update_point_button()
         self.update_undo_button()
         self.update_chip_action_buttons()
+        self.update_leave_button()
         self.checkpoint()
 

@@ -24,7 +24,7 @@ class GameScoringActions:
             self.log_action(player_name, "point_awarded" if delta == 1 else "score_reduced")
             return True, f"{player_name} had their score changed by {delta:+d}."
 
-        other_players = [index for index in range(len(self.players)) if index != requester]
+        other_players = [index for index in self.active_player_indices() if index != requester]
         if not other_players:
             player_name = self.players[requester].name
             self.award_point(requester, delta)
@@ -56,7 +56,7 @@ class GameScoringActions:
 
         request["confirmed_by"].append(self.current_player_index)
         self.log_action(voter_name, "point_confirmed")
-        other_players = [index for index in range(len(self.players)) if index != request["requester"]]
+        other_players = [index for index in self.active_player_indices() if index != request["requester"]]
         if all(index in request["confirmed_by"] for index in other_players):
             self.award_point(request["requester"], delta)
             self.log_action(requester_name, "point_awarded" if delta == 1 else "score_reduced")

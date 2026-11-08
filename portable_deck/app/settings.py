@@ -10,6 +10,12 @@ DEFAULT_CONFIG_PATH = os.path.join(CONFIG_DIR, "default_settings.json")
 APP_DATA_DIR = os.path.join(BASE_DIR, "portable_deck", "data")
 DISCARD_PATH = os.path.join(APP_DATA_DIR, "discard.json")
 DEFAULT_SETTINGS = {
+    "enable_special_actions": False,
+    "allow_insert_draw_deck": False, "allow_insert_discard_pile": False,
+    "color_game_settings_categories": False,
+    "reset_chip_accounts_on_restart": True,
+    "enable_player_return": False,
+    "enable_player_leaving": False, "leave_conditions": {},
     "enable_target_score": False, "target_score": 100,
     "enable_score_warning": False, "score_warning": 80,
     "allow_reduce_score": False,

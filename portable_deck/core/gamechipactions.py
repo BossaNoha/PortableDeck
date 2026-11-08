@@ -50,7 +50,7 @@ class ChipBankActions:
         requester = self.current_player_index
         recipient = self.players[recipient_index].name
         if self.require_pot_withdrawal_confirmation:
-            other_players = [index for index in range(len(self.players)) if index != requester]
+            other_players = [index for index in self.active_player_indices() if index != requester]
             if other_players:
                 self.pending_pot_withdrawal = {
                     "requester": requester,
@@ -88,7 +88,7 @@ class ChipBankActions:
 
         request["confirmed_by"].append(voter)
         self.history.append({"player": voter_name, "action": "pot_withdrawal_approved"})
-        other_players = [index for index in range(len(self.players)) if index != request["requester"]]
+        other_players = [index for index in self.active_player_indices() if index != request["requester"]]
         if all(index in request["confirmed_by"] for index in other_players):
             return True, self._complete_pot_withdrawal(request["requester"], recipient_index)
         return True, f"{voter_name} approved. The remaining players will be asked on their turns."
