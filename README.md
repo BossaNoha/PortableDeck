@@ -298,3 +298,19 @@ unrelated valid settings are retained. Manual form editing and saving remain str
 Malformed JSON or a missing file still prevents loading. Basic settings, player count and configuration metadata are excluded
 from the comparison. `read_preset(..., on_warning=callback)` supplies warning text
 to another interface; without a callback it emits a Python warning.
+
+### Shared rules overview
+
+Overview rules reads a snapshot prepared by the core, including preset metadata
+and enabled rule sections. The GUI only renders these values. Other clients can
+use the structured data (`RulesOverview`, `RuleSection`, `RuleEntry`) or plain text:
+
+```python
+from portable_deck.core.rulesoverview import build_rules_overview, format_rules_overview
+
+overview = build_rules_overview(game)
+print(format_rules_overview(overview))
+```
+
+The snapshot is immutable, imports no Tkinter and does not change the session.
+It lists rules and permissions without exposing cards in players' hands.
