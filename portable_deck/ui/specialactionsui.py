@@ -10,6 +10,7 @@ class SpecialActionsUI:
             ("discard", "Place in Discard Pile…", gui.game.allow_insert_discard_pile and gui.game.enable_discard_pile)):
             if enabled:
                 button = tk.Button(gui.card_actions_frame, text=label, command=lambda d=destination: self.choose(d))
+                button.action_id = "insert_draw_deck" if destination == "draw" else "insert_discard_pile"
                 button.pack(side="left", padx=5)
                 self.buttons.append(button)
 

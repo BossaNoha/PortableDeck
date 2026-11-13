@@ -223,3 +223,20 @@ Cards can be dragged from a hand onto a permitted empty table slot, or between
 table positions when moving table cards is enabled. Empty targets highlight
 during dragging. Escape cancels; dropping outside a valid slot leaves the card
 in place. Dragging uses the usual game log, checkpoint and Undo actions.
+
+## Action availability API
+
+Action availability is independent of Tkinter and can be queried from a CLI:
+
+```python
+from portable_deck.core.actionavailability import ActionContext, action_availability
+
+result = action_availability(game, "move_table_card",
+    ActionContext(table_index=0, target_position=(0, 1)))
+print("Available" if result.allowed else result.reason)
+```
+
+Card indices are zero-based. Queries do not execute an action or change game
+state. Unknown action identifiers raise ValueError. GUI controls and tooltips
+use this same API; the GUI layer only maps widgets and selection to action IDs
+and ActionContext. Game model methods still enforce execution rules.
