@@ -35,7 +35,7 @@ class HandFrame(tk.LabelFrame):
             self.selected_index = None
         visible = game.can_view_hand(owner, owner)
         for i, card in enumerate(player.hand):
-            button = tk.Button(self.cards_frame, text=card if visible else f"Hidden card {i + 1}",
+            button = tk.Button(self.cards_frame, text=(card + " (revealed)") if i in player.revealed_indices else card if visible else f"Hidden card {i + 1}",
                                width=18, wraplength=120, command=lambda index=i: self.select_card(index))
             button.bind("<MouseWheel>", self.scroll)
             if i == self.selected_index:

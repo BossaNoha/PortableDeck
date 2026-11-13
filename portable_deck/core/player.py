@@ -3,6 +3,7 @@ class Player:
     def __init__(self, name):
         self.name = name
         self.hand = []
+        self.revealed_indices = set()
 
     def draw_card(self, card):
         if card:
@@ -10,6 +11,7 @@ class Player:
 
     def play_card(self, index):
         if 1 <= index <= len(self.hand):
+            self.revealed_indices = {i - 1 if i > index - 1 else i for i in self.revealed_indices if i != index - 1}
             return self.hand.pop(index - 1)
         return None
 

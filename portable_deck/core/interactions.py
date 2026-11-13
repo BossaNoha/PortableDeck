@@ -60,7 +60,7 @@ class PlayerInteractions:
         elif action in {"peek_random_card", "peek_all_cards"}:
             result["cards"] = [random.choice(other.hand)] if action == "peek_random_card" else list(other.hand)
         else:
-            card = other.hand.pop(random.randrange(len(other.hand)))
+            card = other.play_card(random.randrange(len(other.hand)) + 1)
             if action == "take_random_card":
                 self.players[actor].draw_card(card)
             else:

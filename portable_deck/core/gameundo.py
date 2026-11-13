@@ -13,7 +13,7 @@ class GameUndoActions:
             "personal_piles": copy.deepcopy(self.personal_piles),
             "remaining_deck": copy.deepcopy(self.deck.flat_deck),
             "players": [
-                {"name": player.name, "hand": copy.deepcopy(player.hand)}
+                {"name": player.name, "revealed_indices": sorted(player.revealed_indices), "hand": copy.deepcopy(player.hand)}
                 for player in self.players
             ],
             "discard_pile": copy.deepcopy(self.discard_pile),
@@ -44,6 +44,7 @@ class GameUndoActions:
         self.players = []
         for saved_player in state["players"]:
             player = Player(saved_player["name"])
+            player.revealed_indices = set(saved_player.get("revealed_indices", []))
             player.hand = copy.deepcopy(saved_player["hand"])
             self.players.append(player)
         self.discard_pile = copy.deepcopy(state["discard_pile"])

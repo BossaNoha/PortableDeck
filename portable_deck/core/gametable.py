@@ -6,26 +6,11 @@ from .tableplacement import TablePlacementActions
 class GameTableActions(TablePlacementActions):
 
     def flip_table_card(self, index):
-        if not self.allow_face_down_table_cards or not 0 <= index < len(self.table_cards):
+        if not self.can_flip_table_cards() or not 0 <= index < len(self.table_cards):
             return None
         entry = self.table_cards[index]
-        if entry.get("face_up", True):
-            return None
-        position = entry.get("position")
-        if isinstance(position, (tuple, list)) and len(position) == 2:
-            if any(
-                other is not entry
-                and isinstance(other.get("position"), (tuple, list))
-                and len(other["position"]) == 2
-                and other["position"][1] == position[1]
-                and other["position"][0] > position[0]
-                for other in self.table_cards
-            ):
-                return None
-        elif index != len(self.table_cards) - 1:
-            return None
-        entry["face_up"] = True
-        self.log_action(self.players[self.current_player_index].name, "flip_table_card", entry["card"])
+        entry["face_up"] = not entry.get("face_up", True)
+        self.log_action(self.players[self.current_player_index].name, "flip_table_card")
         return entry["card"]
 
     def recycle_discard_into_deck(self):

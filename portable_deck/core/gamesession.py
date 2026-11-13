@@ -10,6 +10,8 @@ def save_session(game, path):
     """Save the complete state needed to continue a game later."""
     game.ensure_discard_pile_state()
     state = {
+        "enable_flipping": game.enable_flipping, "allow_flip_hand": game.allow_flip_hand,
+        "allow_flip_table": game.allow_flip_table, "allow_flip_player_cards": game.allow_flip_player_cards,
         "limit_table_rows": game.limit_table_rows, "limit_table_columns": game.limit_table_columns,
         "enable_table_limits": game.enable_table_limits,
         "max_table_rows": game.max_table_rows, "max_table_columns": game.max_table_columns,
@@ -52,7 +54,7 @@ def save_session(game, path):
         "deck_types": game.deck.types,
         "deck_cards": game.deck.cards,
         "remaining_deck": game.deck.flat_deck,
-        "players": [{"name": player.name, "hand": player.hand} for player in game.players],
+        "players": [{"name": player.name, "revealed_indices": sorted(player.revealed_indices), "hand": player.hand} for player in game.players],
         "discard_pile": game.discard_pile,
         "discard_piles": game.discard_piles,
         "personal_discard_piles": game.personal_discard_piles,
@@ -122,6 +124,7 @@ def load_session(game_class, path):
     game.players = []
     for saved_player in state["players"]:
         player = Player(saved_player["name"])
+        player.revealed_indices = set(saved_player.get("revealed_indices", []))
         player.hand = saved_player["hand"]
         game.players.append(player)
     if not game.players:
@@ -263,6 +266,8 @@ def load_session(game_class, path):
     game.initialize_team_resources(state.get("share_team_chips", False), state.get("share_team_score", False), state.get("enable_team_score", False))
     game.team_scores.update(state.get("team_scores", {}))
     game.initialize_table_limits(state.get("enable_table_limits", False), state.get("max_table_rows", 3), state.get("max_table_columns", 5), state.get("limit_table_rows", True), state.get("limit_table_columns", True))
+    game.initialize_flipping(state.get("enable_flipping", False), state.get("allow_flip_hand", False),
+                             state.get("allow_flip_table", False), state.get("allow_flip_player_cards", False))
     game.initialize_special_actions(state.get("enable_special_actions", False), state.get("allow_insert_draw_deck", False), state.get("allow_insert_discard_pile", False))
     game.initialize_leaving(state.get("enable_player_leaving", False), state.get("leave_conditions", {}), state.get("enable_player_return", False))
     game.left_players = state.get("left_players", [])

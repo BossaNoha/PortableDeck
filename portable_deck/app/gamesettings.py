@@ -10,6 +10,7 @@ from .cardsvisibilitysettings import CardsVisibilitySettings
 from .scorelimitssettings import ScoreLimitsSettings
 from .playerleavingsettings import PlayerLeavingSettings
 from .specialactionssettings import SpecialActionsSettings
+from .flippingsettings import FlippingSettings
 
 
 class GameSettingsPanel:
@@ -184,7 +185,7 @@ class GameSettingsPanel:
         self._add_check(placement_options, "Play cards at specific table positions", self.positioned_play_var, "Choose an available empty position on the table when playing a card.", row=0, column=0)
         self._add_check(table_options, "Move cards between table positions", self.move_table_cards_var, "Move a card already on the table to another empty position.", row=5, column=0)
         self._add_check(placement_options, "Play cards in front of any player", self.play_in_front_var, "Show a separate card row for each player and allow targeted plays.", row=1, column=0)
-        self._add_check(table_options, "Allow face-down cards and flipping", self.face_down_var, "Play a card face down, then reveal it when it is the last face-down card in its column.", row=7, column=0)
+        self.face_down_check = self._add_check(table_options, "Allow playing face-down cards", self.face_down_var, "Play a card face down. Requires Flipping cards.", row=7, column=0)
         self._add_check(table_options, "Move face-up card sequences", self.move_sequences_var, "Move a face-up card and the cards below it together in the same column.", row=8, column=0)
 
         deck_recycle = tk.Checkbutton(
@@ -267,7 +268,13 @@ class GameSettingsPanel:
         special = section("Special actions")
         self.special_actions = SpecialActionsSettings(special, self.settings, self.discard_enabled_var)
 
+        flipping = section("Flipping cards")
+        self.flipping = FlippingSettings(flipping, self.settings, self.table_enabled_var, self.play_in_front_var)
+
+        self.flipping.enabled.trace_add("write", self.update_feature_controls)
+
         self.section_states = {
+            "Flipping cards": (self.flipping.enabled,),
             "Special actions": (self.special_actions.enabled,),
             "Scoring": (self.score_var,),
             "Chip accounts": (self.chip_accounts_var,),
@@ -312,7 +319,7 @@ class GameSettingsPanel:
     def preferred_width(self):
         return self.category_layout.preferred_width() + 20
 
-    def update_feature_controls(self):
+    def update_feature_controls(self, *_):
         for frame, enabled in ((self.table_settings_section.content, self.table_enabled_var.get()),
                                (self.table_actions_section.content, self.table_enabled_var.get()),
                                (self.discard_options, self.discard_enabled_var.get())):
@@ -321,6 +328,7 @@ class GameSettingsPanel:
         for entry, enabled in self.dimension_inputs:
             entry.configure(state="normal" if self.table_enabled_var.get() and self.table_limits_var.get() and enabled.get() else "disabled")
         self.update_discard_draw_controls()
+        self.face_down_check.configure(state="normal" if self.table_enabled_var.get() and self.flipping.enabled.get() else "disabled")
         self.table_to_discard_check.configure(
             state="normal" if self.table_enabled_var.get() and self.discard_enabled_var.get() else "disabled"
         )
@@ -383,6 +391,7 @@ class GameSettingsPanel:
             **self.score_limits.values(),
             **self.player_leaving.values(),
             **self.special_actions.values(),
+            **self.flipping.values(),
             "allow_reduce_score": self.reduce_score_var.get(),
             "share_team_chips": self.shared_chips_var.get(),
             "share_team_score": self.shared_score_var.get(),

@@ -84,6 +84,19 @@ class GameGUIActions:
         )
         self.update_point_button()
 
+    def flip_current_hand_card(self):
+        selected = self.hand_frame.selected_index
+        if selected is None:
+            messagebox.showwarning("No selection", "Select a card in your hand first.", parent=self.root)
+            return
+        def action():
+            card = self.game.flip_hand_card(selected)
+            if card is not None:
+                revealed = selected in self.current_player().revealed_indices
+                self.log(f"{self.current_player_name()} revealed {card}." if revealed else f"{self.current_player_name()} hid a hand card.")
+                self.hand_frame.update_hand()
+        self.run_action(action)
+
     def reduce_current_score(self):
         def action():
             _, message = self.game.reduce_score()
@@ -223,6 +236,8 @@ class GameGUIActions:
         buttons.extend(self.chip_bank_ui.buttons)
         buttons.extend(self.positioned_play_buttons)
         buttons.extend(self.table_action_buttons)
+        if hasattr(self, "flip_hand_button"):
+            buttons.append(self.flip_hand_button)
         if hasattr(self, "special_actions_ui"):
             buttons.extend(self.special_actions_ui.buttons)
         if hasattr(self, "visible_hands_button"):

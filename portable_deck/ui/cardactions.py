@@ -216,7 +216,7 @@ def play_selected_face_down(game, hand_frame, table_frame, gui_log, status_panel
 
 def flip_selected_table_card(game, table_frame, gui_log, status_panel):
     if table_frame.selected_index is None:
-        messagebox.showwarning("No selection", "Select a face-down table card first!")
+        messagebox.showwarning("No selection", "Select a table card first!")
         return
     card = game.flip_table_card(table_frame.selected_index)
     if card is None:
@@ -224,7 +224,7 @@ def flip_selected_table_card(game, table_frame, gui_log, status_panel):
         return
     table_frame.clear_selection()
     status_panel.update_status()
-    gui_log(f"A face-down card was revealed: {card}.")
+    gui_log(f"Table card flipped: {card}.")
 
 
 def recycle_discard_into_deck(game, gui_log, status_panel, root):

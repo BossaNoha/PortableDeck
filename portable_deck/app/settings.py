@@ -10,6 +10,8 @@ DEFAULT_CONFIG_PATH = os.path.join(CONFIG_DIR, "default_settings.json")
 APP_DATA_DIR = os.path.join(BASE_DIR, "portable_deck", "data")
 DISCARD_PATH = os.path.join(APP_DATA_DIR, "discard.json")
 DEFAULT_SETTINGS = {
+    "enable_flipping": False, "allow_flip_hand": False,
+    "allow_flip_table": False, "allow_flip_player_cards": False,
     "limit_table_rows": True, "limit_table_columns": True,
     "enable_table_limits": False, "max_table_rows": 3, "max_table_columns": 5,
     "show_game_log": True,

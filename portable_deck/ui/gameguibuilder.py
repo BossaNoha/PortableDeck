@@ -177,7 +177,7 @@ class GameGUIBuilder:
             )
             self.move_table_card_button.pack(side="left", padx=5)
             self.table_action_buttons.append(self.move_table_card_button)
-        if self.game.allow_face_down_table_cards:
+        if self.game.can_flip_table_cards():
             self.flip_table_card_button = tk.Button(
                 self.card_actions_frame,
                 text="Flip Selected Table Card",
@@ -249,7 +249,11 @@ class GameGUIBuilder:
         if self.game.enable_interactions:
             self.interactions_ui = InteractionsUI(self)
 
-        if self.game.enable_cards_visibility:
+        if self.game.enable_flipping and self.game.allow_flip_hand:
+            self.flip_hand_button = tk.Button(self.card_actions_frame, text="Flip Selected Hand Card", command=self.flip_current_hand_card)
+            self.flip_hand_button.pack(side="left", padx=5)
+
+        if self.game.enable_cards_visibility or (self.game.enable_flipping and self.game.allow_flip_hand):
             self.visible_hands_button = tk.Button(self.turn_actions_frame, text="View hands", command=lambda: show_visible_hands(self))
             self.visible_hands_button.pack(side="left", padx=5)
 

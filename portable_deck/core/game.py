@@ -12,8 +12,9 @@ from .interactions import PlayerInteractions
 from .cardsvisibility import CardsVisibility
 from .playerleaving import PlayerLeaving
 from .specialactions import SpecialActions
+from .flipping import FlippingCards
 
-class Game(SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
+class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
     def __init__(
         self,
         num_players,
@@ -23,6 +24,7 @@ class Game(SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, R
         allow_reduce_score=False,
         enable_player_leaving=False,
         enable_player_return=False,
+        enable_flipping=False, allow_flip_hand=False, allow_flip_table=False, allow_flip_player_cards=False,
         enable_special_actions=False,
         allow_insert_draw_deck=False,
         allow_insert_discard_pile=False,
@@ -149,6 +151,7 @@ class Game(SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, R
         self.initialize_table_limits(enable_table_limits, max_table_rows, max_table_columns, limit_table_rows, limit_table_columns)
         if self.enable_table and self.enable_table_limits:
             self.allow_positioned_play = True
+        self.initialize_flipping(enable_flipping, allow_flip_hand, allow_flip_table, allow_flip_player_cards)
         self.initialize_special_actions(enable_special_actions, allow_insert_draw_deck, allow_insert_discard_pile)
         self.initialize_leaving(enable_player_leaving, leave_conditions, enable_player_return)
         self.initialize_score_limits(enable_target_score, target_score, enable_score_warning, score_warning)
@@ -159,6 +162,8 @@ class Game(SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, R
         self.apply_feature_settings()
 
     def apply_feature_settings(self):
+        if not self.enable_flipping:
+            self.allow_face_down_table_cards = False
         if not self.enable_table:
             for option in ("allow_take_from_table", "allow_move_table_card_to_discard",
                            "allow_manual_table_cleanup", "clear_table_on_round_end",
@@ -195,6 +200,8 @@ class Game(SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, R
         """Create a fresh game with the same setup, optionally retaining scores."""
         restarted = Game(
             num_players=len(self.players),
+            enable_flipping=self.enable_flipping, allow_flip_hand=self.allow_flip_hand,
+            allow_flip_table=self.allow_flip_table, allow_flip_player_cards=self.allow_flip_player_cards,
             enable_special_actions=self.enable_special_actions,
             allow_insert_draw_deck=self.allow_insert_draw_deck,
             allow_insert_discard_pile=self.allow_insert_discard_pile,

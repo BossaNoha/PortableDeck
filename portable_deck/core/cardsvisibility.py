@@ -32,4 +32,9 @@ class CardsVisibility:
         return False
 
     def visible_hand(self, viewer, owner):
-        return list(self.players[owner].hand) if self.can_view_hand(viewer, owner) else None
+        if self.can_view_hand(viewer, owner):
+            return list(self.players[owner].hand)
+        player = self.players[owner]
+        if not player.revealed_indices:
+            return None
+        return [card if i in player.revealed_indices else "Hidden card" for i, card in enumerate(player.hand)]
