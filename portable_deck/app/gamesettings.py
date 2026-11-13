@@ -383,11 +383,7 @@ class GameSettingsPanel:
         minimum_bet = int(self.minimum_bet_var.get())
         starting_balance = int(self.starting_balance_var.get())
         shared_discard_count = int(self.shared_discard_count_var.get())
-        if minimum_bet < 1 or starting_balance < 0 or not 1 <= shared_discard_count <= 20:
-            raise ValueError
         rows, columns = int(self.table_rows_var.get()), int(self.table_columns_var.get())
-        if not 1 <= rows <= 20 or not 1 <= columns <= 20:
-            raise ValueError("Maximum table rows and columns must be between 1 and 20.")
         return {
             "limit_table_rows": self.limit_rows_var.get(),
             "limit_table_columns": self.limit_columns_var.get(),

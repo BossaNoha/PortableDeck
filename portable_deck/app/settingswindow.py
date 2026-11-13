@@ -207,7 +207,9 @@ class SettingsWindow:
         if not path:
             return
         try:
-            selected_settings = read_preset(path, {**self.settings, **self.current_app_settings()})
+            selected_settings = read_preset(
+                path, {**self.settings, **self.current_app_settings()},
+                on_warning=lambda text: messagebox.showwarning("Preset compatibility", text, parent=self.root))
         except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
             messagebox.showerror("Could not load settings", str(error), parent=self.root)
             return
@@ -336,28 +338,7 @@ class SettingsWindow:
             game_settings_values = game_settings_panel.values()
             basic_settings_values = basic_settings_panel.values()
             deck_path = deck_var.get().strip()
-            if num_players < 1 or cards_per_player < 0:
-                raise ValueError
-            if not deck_path or not os.path.isfile(resolve_deck_path(deck_path)):
-                messagebox.showerror("Invalid deck", "Choose an existing deck JSON file.", parent=self.root)
-                return
-            try:
-                deck = Deck(resolve_deck_path(deck_path))
-            except (OSError, ValueError) as error:
-                messagebox.showerror("Invalid deck", str(error), parent=self.root)
-                return
-            if len(deck.flat_deck) < num_players * cards_per_player:
-                messagebox.showerror(
-                    "Deck is too small",
-                    f"This setup needs {num_players * cards_per_player} cards, "
-                    f"but the deck contains {len(deck.flat_deck)}.",
-                    parent=self.root,
-                )
-                return
             player_names = [var.get().strip() for var in name_vars] if custom_names_var.get() else []
-            if custom_names_var.get() and (len(player_names) != num_players or any(not name for name in player_names)):
-                messagebox.showerror("Invalid names", "Enter a name for every player.", parent=self.root)
-                return
         except ValueError as error:
             messagebox.showerror(
                 "Invalid settings",
@@ -375,6 +356,12 @@ class SettingsWindow:
             **game_settings_values,
             **basic_settings_values,
         }
+        from ..core.settingsvalidation import validate_settings
+        try:
+            selected_settings = validate_settings(selected_settings)
+        except (OSError, ValueError, TypeError) as error:
+            messagebox.showerror("Invalid settings", str(error), parent=self.root)
+            return
         selected_settings["configuration_name"] = self.settings.get("configuration_name", "Default")
         selected_settings["configuration_baseline"] = self.settings.get("configuration_baseline", {})
         if mode == "named":

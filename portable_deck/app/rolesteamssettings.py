@@ -123,15 +123,12 @@ class RolesTeamsSettings:
 
     def values(self):
         players, count = int(self.players_var.get()), int(self.count_var.get())
-        if not 1 <= count <= players:
-            raise ValueError("The total number of teams, including Dealer, must not exceed the player count.")
         ids = self.team_ids(count)
         regular = len(ids) - int(self.dealer_var.get())
         names = [var.get().strip() for var in self.name_vars[:regular]] if self.custom_names_var.get() else [f"Team {i + 1}" for i in range(regular)]
         if any(not name for name in names):
-            if self.enabled_var.get() and self.teams_var.get():
-                raise ValueError("Enter a name for each team.")
-            names = [name or f"Team {i + 1}" for i, name in enumerate(names)]
+            if not (self.enabled_var.get() and self.teams_var.get()):
+                names = [name or f"Team {i + 1}" for i, name in enumerate(names)]
         return {"enable_roles_teams": self.enabled_var.get(), "enable_dealer": self.dealer_var.get(),
                 "enable_teams": self.teams_var.get(), "team_count": count, "team_names": names,
                 "player_teams": [var.get() if var.get() in ids else None for var in self.assignments[:players]],

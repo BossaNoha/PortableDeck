@@ -49,7 +49,5 @@ class BasicSettingsPanel:
 
     def values(self):
         count = int(self.count_var.get()) if self.autosave_var.get() else 5
-        if not 1 <= count <= 1000:
-            raise ValueError("Autosaves to keep must be between 1 and 1000.")
         return {"contextual_session_actions": self.context_actions_var.get(), "show_game_log": self.show_log_var.get(), "color_game_settings_categories": self.color_categories_var.get(), "enable_undo": self.undo_var.get(), "autosave_enabled": self.autosave_var.get(), "autosave_count": count,
                 "require_exit_confirmation": self.confirm_exit_var.get()}

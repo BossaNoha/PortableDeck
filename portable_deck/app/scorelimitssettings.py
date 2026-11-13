@@ -29,7 +29,5 @@ class ScoreLimitsSettings:
 
     def values(self):
         target, warning = int(self.limit.get()), int(self.threshold.get())
-        if target < 1 or warning < 0 or (self.target.get() and self.warning.get() and warning >= target):
-            raise ValueError("Target score must be positive; warning must be below the target and at least zero.")
         return {"enable_target_score": self.target.get(), "target_score": target,
                 "enable_score_warning": self.warning.get(), "score_warning": warning}

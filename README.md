@@ -282,3 +282,19 @@ Call `synchronize(game)` after game changes: changing players clears selection,
 and changing a card collection clears its selection to avoid targeting a different
 card at the old index. Selection is local input state and is excluded from saves,
 Undo and game rules. A CLI can use it or pass action parameters directly.
+
+### Settings validation and preset compatibility
+
+`portable_deck.core.settingsvalidation.validate_settings(values)` validates a
+settings dictionary without importing Tkinter and returns an independent copy
+with missing defaults filled in. The settings form and preset loader share this
+validation, including types, ranges, names, deck capacity and game configuration.
+
+Loading presets compares their rule fields with the current schema. A warning
+lists missing and unknown fields or fields with incorrect types. Missing fields
+use application defaults and unknown fields are ignored. Invalid preset values
+are replaced with defaults (or valid dependent defaults) and listed in the warning;
+unrelated valid settings are retained. Manual form editing and saving remain strict.
+Malformed JSON or a missing file still prevents loading. Basic settings, player count and configuration metadata are excluded
+from the comparison. `read_preset(..., on_warning=callback)` supplies warning text
+to another interface; without a callback it emits a Python warning.
