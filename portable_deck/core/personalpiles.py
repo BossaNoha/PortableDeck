@@ -2,9 +2,11 @@
 
 
 class PersonalPileActions:
-    def initialize_personal_piles(self, enabled=False, count=1, configurations=None, unequal=False, counts=None):
+    def initialize_personal_piles(self, enabled=False, count=1, configurations=None, unequal=False, counts=None, team_access=False, dealer_access=False):
         if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 20:
             raise ValueError("Personal pile count must be between 1 and 20.")
+        self.enable_team_pile_access = bool(team_access)
+        self.enable_dealer_pile_access = bool(dealer_access)
         self.enable_personal_piles = bool(enabled)
         self.personal_pile_count = count
         self.unequal_personal_piles = bool(unequal)
@@ -27,7 +29,7 @@ class PersonalPileActions:
                 rule = {"access": config.get("access", "owner"), "ordered": bool(config.get("ordered", False)),
                         "order_by": config.get("order_by", "time"), "new_card": config.get("new_card", "top"),
                         "size_order": config.get("size_order", "up")}
-                if rule["access"] not in {"everyone", "team", "owner"} or rule["order_by"] not in {"time", "size"} or rule["new_card"] not in {"top", "bottom"} or rule["size_order"] not in {"up", "down"}:
+                if rule["access"] not in {"everyone", "team", "owner", "team_dealer", "dealer_only", "owner_dealer", "everyone_but_owner", "team_but_member"} or rule["order_by"] not in {"time", "size"} or rule["new_card"] not in {"top", "bottom"} or rule["size_order"] not in {"up", "down"}:
                     raise ValueError("Invalid personal pile settings.")
                 group.append(rule)
             self.personal_pile_settings.append(group)
@@ -38,8 +40,26 @@ class PersonalPileActions:
             return False
         if not 0 <= owner < len(self.players) or not 0 <= pile < self.personal_pile_counts[owner]:
             return False
-        return (owner == self.current_player_index
-                or self.personal_pile_settings[owner][pile]["access"] == "everyone")
+        viewer = self.current_player_index
+        access = self.personal_pile_settings[owner][pile]["access"]
+        if access == "everyone_but_owner":
+            return viewer != owner
+        if access == "team_but_member":
+            return bool(viewer != owner and self.enable_team_pile_access
+                        and self.enable_roles_teams and self.enable_teams
+                        and self.player_teams[owner] is not None
+                        and self.player_teams[owner] == self.player_teams[viewer])
+        dealer = self.player_is_dealer(viewer)
+        if access == "dealer_only":
+            return dealer
+        if owner == viewer or access == "everyone":
+            return True
+        if dealer and (access in {"team_dealer", "owner_dealer"} or self.enable_dealer_pile_access):
+            return True
+        return bool(access in {"team", "team_dealer"} and self.enable_team_pile_access
+                    and self.enable_roles_teams and self.enable_teams
+                    and self.player_teams[owner] is not None
+                    and self.player_teams[owner] == self.player_teams[viewer])
 
     @staticmethod
     def personal_card_sort_key(card):

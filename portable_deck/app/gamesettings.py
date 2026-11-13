@@ -256,6 +256,11 @@ class GameSettingsPanel:
                                              self.custom_names_var, self.player_name,
                                              self.category_layout.schedule_layout)
 
+        self.personal_piles.roles = self.roles_teams
+        for variable in (self.roles_teams.enabled_var, self.roles_teams.teams_var, self.roles_teams.dealer_var):
+            variable.trace_add("write", self.personal_piles.update_states)
+        self.personal_piles.update_states()
+
         interactions = section("Player interactions")
         self.interactions = InteractionSettings(interactions, self.settings, self.chip_accounts_var, self.discard_enabled_var)
 

@@ -141,6 +141,8 @@ class MainMenu:
                 enable_personal_piles=self.settings.get("enable_personal_piles", False),
                 personal_pile_count=self.settings.get("personal_pile_count", 1),
                 unequal_personal_piles=self.settings.get("unequal_personal_piles", False),
+                enable_team_pile_access=self.settings.get("enable_team_pile_access", False),
+                enable_dealer_pile_access=self.settings.get("enable_dealer_pile_access", False),
                 personal_pile_counts=self.settings.get("personal_pile_counts", []),
                 personal_pile_settings=self.settings.get("personal_pile_settings", []),
                 reset_chip_accounts_on_restart=self.settings.get("reset_chip_accounts_on_restart", True),

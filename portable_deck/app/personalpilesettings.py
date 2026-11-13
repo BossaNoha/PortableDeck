@@ -9,12 +9,15 @@ class PersonalPileSettings:
             settings["player_names"][owner] if settings.get("use_custom_player_names")
             and owner < len(settings.get("player_names", [])) else f"Player {owner + 1}"
         ))
+        self.settings = settings
         self.parent = parent
         self.players_var = players_var
         self.fit_window = fit_window
         legacy_count = settings.get("personal_discard_pile_count", 0)
         self.enabled_var = tk.BooleanVar(value=settings.get("enable_personal_piles", legacy_count > 0))
         self.count_var = tk.StringVar(value=str(settings.get("personal_pile_count", legacy_count or 1)))
+        self.team_access_var = tk.BooleanVar(value=settings.get("enable_team_pile_access", False))
+        self.dealer_access_var = tk.BooleanVar(value=settings.get("enable_dealer_pile_access", False))
         self.saved = settings.get("personal_pile_settings", [])
         self.unequal_var = tk.BooleanVar(value=settings.get("unequal_personal_piles", False))
         self.saved_counts = settings.get("personal_pile_counts", [])
@@ -34,8 +37,10 @@ class PersonalPileSettings:
         tk.Label(count_row, text="Personal piles per player:").pack(side="left")
         self.shared_count = tk.Spinbox(count_row, from_=1, to=20, width=5, textvariable=self.count_var)
         self.shared_count.pack(side="left", padx=6)
-        tk.Label(self.options, text="Team access currently allows only the owner.",
-                 fg="#666666").pack(anchor="w", pady=4)
+        self.team_access_check = tk.Checkbutton(self.options, text="Enable team access to Team personal piles", variable=self.team_access_var, wraplength=320, justify="left")
+        self.team_access_check.pack(anchor="w")
+        self.dealer_access_check = tk.Checkbutton(self.options, text="Enable dealer access to personal piles", variable=self.dealer_access_var, wraplength=320, justify="left")
+        self.dealer_access_check.pack(anchor="w")
         self.scroll_area = ContentScrollArea(self.options, fit_window=fit_window)
         self.scroll_area.pack(fill="both", expand=True)
         self.canvas = self.scroll_area.canvas
@@ -122,6 +127,10 @@ class PersonalPileSettings:
                 tk.Label(access_group, text="Access:").pack(side="left")
                 access = tk.OptionMenu(access_group, row["access"], "everyone", "team", "owner")
                 access.pack(side="left")
+                display = tk.StringVar()
+                access.configure(textvariable=display)
+                row.update(access_menu=access, access_display=display)
+                row["access"].trace_add("write", lambda *_, r=row: self.refresh_access_label(r))
                 ordering_group = tk.Frame(frame)
                 ordering_group.grid(row=0, column=1, sticky="w", padx=(12, 0))
                 tk.Label(ordering_group, text="Ordering:").pack(side="left")
@@ -165,19 +174,52 @@ class PersonalPileSettings:
             group.grid_configure(row=line, column=0, sticky="w", padx=(offset, 0))
             offset += width + 12
 
-    def update_states(self):
+    def access_choices(self):
+        roles = getattr(self, "roles", None)
+        active = roles.enabled_var.get() if roles else self.settings.get("enable_roles_teams", False)
+        teams = active and (roles.teams_var.get() if roles else self.settings.get("enable_teams", False))
+        dealer = active and (roles.dealer_var.get() if roles else self.settings.get("enable_dealer", False))
+        choices = [("owner", "Owner only"), ("everyone", "Everyone"), ("everyone_but_owner", "Everyone but owner")]
+        if teams:
+            choices.extend((("team", "Team"), ("team_but_member", "Team but member")))
+        if dealer:
+            if teams:
+                choices.append(("team_dealer", "Team + Dealer"))
+            choices.extend((("dealer_only", "Dealer only"), ("owner_dealer", "Owner + Dealer")))
+        return choices
+
+    def refresh_access_label(self, row):
+        labels = {"owner": "Owner only", "everyone": "Everyone", "team": "Team",
+                  "team_dealer": "Team + Dealer", "dealer_only": "Dealer only", "owner_dealer": "Owner + Dealer", "everyone_but_owner": "Everyone but owner",
+                  "team_but_member": "Team but member"}
+        row["access_display"].set(labels.get(row["access"].get(), "Owner only"))
+
+    def update_states(self, *_):
         def enable(frame):
             for widget in frame.winfo_children():
                 if "state" in widget.keys():
                     widget.configure(state="normal" if self.enabled_var.get() else "disabled")
                 enable(widget)
         enable(self.options)
+        if hasattr(self, "roles"):
+            active = self.enabled_var.get() and self.roles.enabled_var.get()
+            self.team_access_check.configure(state="normal" if active and self.roles.teams_var.get() else "disabled")
+            self.dealer_access_check.configure(state="normal" if active and self.roles.dealer_var.get() else "disabled")
         self.shared_count.configure(state="normal" if self.enabled_var.get() and not self.unequal_var.get() else "disabled")
         if self.unequal_var.get():
             self.owner_counts_frame.pack(fill="x", before=self.pile_contents)
         else:
             self.owner_counts_frame.pack_forget()
+        choices = self.access_choices()
+        valid = {key for key, label in choices}
         for row in self.rows.values():
+            menu = row["access_menu"]["menu"]
+            menu.delete(0, "end")
+            for key, label in choices:
+                menu.add_command(label=label, command=lambda value=key, variable=row["access"]: variable.set(value))
+            if row["access"].get() not in valid:
+                row["access"].set("owner")
+            self.refresh_access_label(row)
             self.arrange_controls(row)
         self.parent.after_idle(self.arrange_all_controls)
         self.scroll_area.schedule_resize()
@@ -188,7 +230,7 @@ class PersonalPileSettings:
 
     def values(self):
         counts = self.counts()
-        return {"enable_personal_piles": self.enabled_var.get(), "personal_pile_count": int(self.count_var.get()),
+        return {"enable_team_pile_access": self.team_access_var.get(), "enable_dealer_pile_access": self.dealer_access_var.get(), "enable_personal_piles": self.enabled_var.get(), "personal_pile_count": int(self.count_var.get()),
                 "unequal_personal_piles": self.unequal_var.get(),
                 "personal_pile_counts": [int(var.get()) for var in self.owner_count_vars[:len(counts)]],
                 "personal_pile_settings": [[self.row_value(self.rows[owner, pile])

@@ -65,6 +65,7 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
         personal_pile_settings=None,
         unequal_personal_piles=False,
         personal_pile_counts=None,
+        enable_team_pile_access=False, enable_dealer_pile_access=False,
         enable_roles_teams=False,
         enable_dealer=False,
         enable_teams=False,
@@ -146,7 +147,7 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
         )
 
         self.initialize_personal_piles(enable_personal_piles, personal_pile_count, personal_pile_settings,
-                                       unequal_personal_piles, personal_pile_counts)
+                                       unequal_personal_piles, personal_pile_counts, enable_team_pile_access, enable_dealer_pile_access)
         self.initialize_roles_teams(enable_roles_teams, enable_dealer, enable_teams, team_count, team_names, player_teams, dealer_players)
         self.initialize_table_limits(enable_table_limits, max_table_rows, max_table_columns, limit_table_rows, limit_table_columns)
         if self.enable_table and self.enable_table_limits:
@@ -229,6 +230,8 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
             personal_pile_count=self.personal_pile_count,
             unequal_personal_piles=self.unequal_personal_piles,
             personal_pile_counts=self.personal_pile_counts,
+            enable_team_pile_access=self.enable_team_pile_access,
+            enable_dealer_pile_access=self.enable_dealer_pile_access,
             personal_pile_settings=self.personal_pile_settings,
             enable_discard_pile=self.enable_discard_pile,
             deck_path=self.deck.path,

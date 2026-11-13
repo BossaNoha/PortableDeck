@@ -116,6 +116,40 @@ class PersonalPileTests(unittest.TestCase):
             with self.subTest(counts=counts), self.assertRaises(ValueError):
                 self.game().initialize_personal_piles(True, 1, unequal=True, counts=counts)
 
+    def test_team_and_dealer_access_are_opt_in(self):
+        game = Game(3, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
+                    enable_personal_piles=True, enable_roles_teams=True, enable_teams=True,
+                    enable_dealer=True, team_count=2, player_teams=["team_1", "team_1", None],
+                    dealer_players=[False, False, True], personal_pile_settings=[[{"access": "team"}]])
+        game.current_player_index = 1
+        self.assertFalse(game.can_access_personal_pile(0, 0))
+        game.enable_team_pile_access = True
+        self.assertTrue(game.can_access_personal_pile(0, 0))
+        game.personal_pile_settings[0][0]["access"] = "owner"
+        self.assertFalse(game.can_access_personal_pile(0, 0))
+        game.current_player_index = 2
+        self.assertFalse(game.can_access_personal_pile(0, 0))
+        game.enable_dealer_pile_access = True
+        self.assertTrue(game.can_access_personal_pile(0, 0))
+        game.enable_roles_teams = False
+        self.assertFalse(game.can_access_personal_pile(0, 0))
+
+    def test_access_excluding_owner(self):
+        game = Game(3, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
+                    enable_personal_piles=True, enable_roles_teams=True, enable_teams=True,
+                    enable_dealer=True, team_count=2, player_teams=["team_1", "team_1", None],
+                    dealer_players=[True, False, False], enable_team_pile_access=True,
+                    enable_dealer_pile_access=True)
+        for access, expected in (("everyone_but_owner", [False, True, True]),
+                                 ("team_but_member", [False, True, False])):
+            game.personal_pile_settings[0][0]["access"] = access
+            for viewer, allowed in enumerate(expected):
+                game.current_player_index = viewer
+                self.assertEqual(game.can_access_personal_pile(0, 0), allowed)
+        game.enable_teams = False
+        game.current_player_index = 1
+        self.assertFalse(game.can_access_personal_pile(0, 0))
+
     def test_disabled_table_blocks_personal_actions(self):
         game = self.game()
         game.enable_table = False

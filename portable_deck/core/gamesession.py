@@ -10,6 +10,8 @@ def save_session(game, path):
     """Save the complete state needed to continue a game later."""
     game.ensure_discard_pile_state()
     state = {
+        "enable_team_pile_access": game.enable_team_pile_access,
+        "enable_dealer_pile_access": game.enable_dealer_pile_access,
         "enable_flipping": game.enable_flipping, "allow_flip_hand": game.allow_flip_hand,
         "allow_flip_table": game.allow_flip_table, "allow_flip_player_cards": game.allow_flip_player_cards,
         "limit_table_rows": game.limit_table_rows, "limit_table_columns": game.limit_table_columns,
@@ -243,6 +245,7 @@ def load_session(game_class, path):
         state.get("personal_pile_settings", []),
         state.get("unequal_personal_piles", False),
         state.get("personal_pile_counts"),
+        state.get("enable_team_pile_access", False), state.get("enable_dealer_pile_access", False),
     )
     if "personal_piles" in state:
         game.personal_piles = state["personal_piles"]
