@@ -74,39 +74,20 @@ class GameScoringActions:
         self.enable_score_warning, self.score_warning = bool(warning_enabled), warning
         self.score_alerts_seen = {}
 
+    def score_notifications(self):
+        from .scorenotifications import pending_score_notifications
+        return pending_score_notifications(self)
+
+    def acknowledge_score_notifications(self, notifications):
+        from .scorenotifications import acknowledge_score_notifications
+        acknowledge_score_notifications(self, notifications)
+
+    def score_confirmation_notification(self):
+        from .scorenotifications import score_confirmation_notification
+        return score_confirmation_notification(self)
+
     def turn_score_alerts(self):
-        if not self.score_enabled or not self.enable_target_score:
-            return []
-        active = {}
-        warning_owners = {}
-        for i, score in enumerate(self.scores):
-            label = self.players[i].name
-            identity = f"player_{i}"
-            if self.share_team_score and self.player_teams[i]:
-                identity = self.player_teams[i]
-                label = self.player_team_name(i)
-            if score >= self.target_score:
-                active[f"target:{identity}"] = f"{label} reached the target score ({score}/{self.target_score})."
-            elif self.enable_score_warning and score >= self.score_warning:
-                key = f"warning:{identity}"
-                active[key] = f"{label} reached the warning threshold: {score} points (threshold {self.score_warning})."
-                warning_owners.setdefault(key, set()).add(i)
-        if self.enable_team_score:
-            for team in self.teams:
-                if team["id"] == "dealer":
-                    continue
-                score = self.team_scores[team["id"]]
-                if score >= self.target_score:
-                    active[f"target:team_counter:{team['id']}"] = f"Team {team['name']} reached the target score ({score}/{self.target_score})."
-                elif self.enable_score_warning and score >= self.score_warning:
-                    key = f"warning:team_counter:{team['id']}"
-                    active[key] = f"Team {team['name']} reached the warning threshold: {score} points."
-                    warning_owners[key] = {i for i, team_id in enumerate(self.player_teams) if team_id == team["id"]}
-        for viewer in list(self.score_alerts_seen):
-            self.score_alerts_seen[viewer] = [key for key in self.score_alerts_seen[viewer] if key in active]
-        viewer = str(self.current_player_index)
-        seen = self.score_alerts_seen.get(viewer, [])
-        messages = [message for key, message in active.items()
-                    if key not in seen and self.current_player_index not in warning_owners.get(key, set())]
-        self.score_alerts_seen[viewer] = list(active)
-        return messages
+        """Legacy consume-and-return-text adapter for existing clients."""
+        notices = self.score_notifications()
+        self.acknowledge_score_notifications(notices)
+        return [notice.message for notice in notices]

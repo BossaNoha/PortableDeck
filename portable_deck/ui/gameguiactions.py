@@ -173,9 +173,10 @@ class GameGUIActions:
         self.update_leave_button()
         if not self.game.active_player_indices():
             return
-        alerts = self.game.turn_score_alerts()
+        alerts = self.game.score_notifications()
         if alerts:
-            messagebox.showinfo("Score notice", "\n\n".join(alerts), parent=self.root)
+            messagebox.showinfo(alerts[0].title, "\n\n".join(notice.message for notice in alerts), parent=self.root)
+        self.game.acknowledge_score_notifications(alerts)
         if hasattr(self, "personal_piles_ui"):
             self.personal_piles_ui.update()
         self.selection.table_index = None
@@ -190,16 +191,8 @@ class GameGUIActions:
         for button in self._turn_action_buttons():
             button.config(state="disabled")
         if needs_point_confirmation:
-            requester_name = self.game.players[
-                self.game.pending_point_request["requester"]
-            ].name
-            voter_name = self.current_player_name()
-            approved = messagebox.askyesno(
-                "Confirm point request",
-                f"{requester_name} requested a score change of {self.game.pending_point_request.get('delta', 1):+d}.\n\n"
-                f"As {voter_name}, do you approve this score change?",
-                parent=self.root,
-            )
+            notice = self.game.score_confirmation_notification()
+            approved = messagebox.askyesno(notice.title, notice.message, parent=self.root)
             _, result = execute_value(self.game, "confirm_point", approved=approved)
             self.log(result)
             self.status_panel.update_status()

@@ -314,3 +314,19 @@ print(format_rules_overview(overview))
 
 The snapshot is immutable, imports no Tkinter and does not change the session.
 It lists rules and permissions without exposing cards in players' hands.
+
+### Shared score notifications
+
+`game.score_notifications()` prepares immutable notifications for the current
+player, with title, message, recipient, kind, score and threshold. Querying does
+not mark them as read. A client displays them and then calls
+`game.acknowledge_score_notifications(notices)` (also with an empty sequence when
+there is nothing to display). This removes expired events and allows later
+threshold crossings to notify again. The GUI acknowledges after the user closes
+the notice; CLI clients can use the same protocol without Tkinter.
+
+`game.score_confirmation_notification()` prepares a pending score approval
+prompt, including requester and delta. Submit the decision through
+`game.session.execute("confirm_point", approved=True)` or `approved=False`.
+The existing `turn_score_alerts()` method remains a compatibility adapter that
+returns message strings and acknowledges them immediately.
