@@ -1,4 +1,6 @@
 {
+  "enable_team_pile_access": false,
+  "enable_dealer_pile_access": false,
   "enable_flipping": true,
   "allow_flip_hand": false,
   "allow_flip_table": false,

@@ -8,6 +8,7 @@ from .personalpilesui import PersonalPilesUI
 from .interactionsui import InteractionsUI
 from .handsvisibilityui import show_visible_hands
 from .specialactionsui import SpecialActionsUI
+from .rulesoverview import show_rules_overview
 from ..app.deckpreview import show_deck_preview
 from .cardactions import (
     clear_table, draw_card, discard_selected, end_turn,
@@ -31,6 +32,8 @@ class GameGUIBuilder:
         self.options_menu.add_command(label="Exit to Desktop", command=self.exit_to_desktop)
         self.options_button.configure(menu=self.options_menu)
         self.options_button.pack(side="left")
+        self.rules_overview_button = tk.Button(self.options_bar, text="Overview rules", command=lambda: show_rules_overview(self))
+        self.rules_overview_button.pack(side="left", padx=(8, 0))
         self.layout_frame = tk.Frame(self.root)
         self.layout_frame.pack(fill="both", expand=True)
         self.left_frame = tk.Frame(self.layout_frame)
