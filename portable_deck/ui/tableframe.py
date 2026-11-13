@@ -98,6 +98,7 @@ class TableFrame(tk.LabelFrame):
                         command=lambda card_index=index: self.select_card(card_index),
                     )
                     self.card_buttons.append(button)
+                    button.bind("<Button-3>", lambda event, card_index=index: self.open_card_menu(event, card_index))
                     if index == self.selected_index:
                         button.config(bg="lightblue")
                 else:
@@ -145,6 +146,7 @@ class TableFrame(tk.LabelFrame):
                     command=lambda card_index=index: self.select_card(card_index),
                 )
                 self.card_buttons.append(button)
+                button.bind("<Button-3>", lambda event, card_index=index: self.open_card_menu(event, card_index))
                 if index == self.selected_index:
                     button.config(bg="lightblue")
             else:
@@ -176,6 +178,7 @@ class TableFrame(tk.LabelFrame):
         )
         button.pack(side="left", padx=4, pady=3)
         self.card_buttons.append(button)
+        button.bind("<Button-3>", lambda event, card_index=index: self.open_card_menu(event, card_index))
         if index == self.selected_index:
             button.config(bg="lightblue")
 
@@ -184,6 +187,11 @@ class TableFrame(tk.LabelFrame):
         if not entry.get("face_up", True):
             return "Face down"
         return f"{entry['card']}\n{entry['player']}"
+
+    def open_card_menu(self, event, index):
+        if hasattr(self, "on_card_context"):
+            return self.on_card_context(event, index)
+        return "break"
 
     def select_card(self, index):
         self.selected_index = None if self.selected_index == index else index

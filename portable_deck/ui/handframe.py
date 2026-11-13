@@ -38,6 +38,7 @@ class HandFrame(tk.LabelFrame):
             button = tk.Button(self.cards_frame, text=(card + " (revealed)") if i in player.revealed_indices else card if visible else f"Hidden card {i + 1}",
                                width=18, wraplength=120, command=lambda index=i: self.select_card(index))
             button.bind("<MouseWheel>", self.scroll)
+            button.bind("<Button-3>", lambda event, index=i: self.open_card_menu(event, index))
             if i == self.selected_index:
                 button.configure(bg="lightblue")
             self.card_buttons.append(button)
@@ -80,6 +81,10 @@ class HandFrame(tk.LabelFrame):
             steps = -int(event.delta / 120) or (-1 if event.delta > 0 else 1)
             self.canvas.yview_scroll(steps, "units")
             return "break"
+
+    def open_card_menu(self, event, index):
+        from .cardcontextmenu import show_card_menu
+        return show_card_menu(self.game_gui, event, "hand", index)
 
     def select_card(self, index):
         self.selected_index = None if self.selected_index == index else index

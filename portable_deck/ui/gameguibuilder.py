@@ -10,6 +10,7 @@ from .handsvisibilityui import show_visible_hands
 from .specialactionsui import SpecialActionsUI
 from .rulesoverview import show_rules_overview
 from .contextactions import ContextActions
+from .cardcontextmenu import show_card_menu
 from ..app.deckpreview import show_deck_preview
 from .cardactions import (
     clear_table, draw_card, discard_selected, end_turn,
@@ -64,6 +65,7 @@ class GameGUIBuilder:
         self.log_text.pack(fill="both", expand=True)
 
         self.table_frame = TableFrame(self.right_frame, self.game)
+        self.table_frame.on_card_context = lambda event, index: show_card_menu(self, event, "table", index)
         if self.game.enable_table:
             self.table_frame.pack(fill="both", expand=True)
         else:
