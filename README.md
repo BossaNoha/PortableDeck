@@ -218,3 +218,8 @@ a hand card, table card or empty spot reveals applicable card actions. Players,
 Chips, Score, Table and View menus contain the other enabled actions. Turning
 the option off keeps the original buttons. This UI preference is excluded from
 game-rule presets.
+
+Cards can be dragged from a hand onto a permitted empty table slot, or between
+table positions when moving table cards is enabled. Empty targets highlight
+during dragging. Escape cancels; dropping outside a valid slot leaves the card
+in place. Dragging uses the usual game log, checkpoint and Undo actions.

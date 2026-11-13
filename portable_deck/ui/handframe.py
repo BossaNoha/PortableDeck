@@ -42,6 +42,8 @@ class HandFrame(tk.LabelFrame):
             if i == self.selected_index:
                 button.configure(bg="lightblue")
             self.card_buttons.append(button)
+            if hasattr(self.game_gui, "card_drag"):
+                self.game_gui.card_drag.bind(button, "hand", i)
         self.schedule_layout()
         self.game_gui.refresh_action_availability()
         if hasattr(self.game_gui, "context_actions"):

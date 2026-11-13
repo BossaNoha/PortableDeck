@@ -78,30 +78,9 @@ class TablePlacementActions:
         return available
 
     def _compact_main_line(self):
-        """Close gaps between cards in the original row after a removal."""
-        if self.enable_table_limits or self.allow_face_down_table_cards or self.allow_move_table_sequences:
-            return
-        if self.allow_play_in_front_of_players:
-            for player_index in range(len(self.players)):
-                lane = sorted(
-                    (entry for entry in self.table_cards
-                     if isinstance(entry.get("position"), (tuple, list))
-                     and len(entry["position"]) == 2
-                     and entry["position"][0] == player_index),
-                    key=lambda entry: entry["position"][1],
-                )
-                for column, entry in enumerate(lane):
-                    entry["position"] = [player_index, column]
-            return
-        main_line = sorted(
-            (entry for entry in self.table_cards
-             if isinstance(entry.get("position"), (tuple, list))
-             and len(entry["position"]) == 2
-             and entry["position"][0] == 0),
-            key=lambda entry: entry["position"][1],
-        )
-        for column, entry in enumerate(main_line):
-            entry["position"] = [0, column]
+        """Keep explicit table positions stable after moves and removals."""
+        # Gaps remain valid empty slots; closing them would undo a chosen drop.
+        return
 
     def move_table_card(self, table_index, position):
         """Move a selected table card into an available table position."""

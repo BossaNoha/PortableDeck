@@ -49,6 +49,8 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         return self.cancel_selection(event)
 
     def cancel_selection(self, event=None):
+        if hasattr(self, "card_drag") and self.card_drag.dragging:
+            self.card_drag.cancel(event)
         if event is not None and (isinstance(event.widget, tk.Menu) or event.widget.winfo_toplevel() != self.root):
             return
         if (self.hand_frame.selected_index is None and self.table_frame.selected_index is None

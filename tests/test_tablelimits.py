@@ -52,6 +52,18 @@ class TableLimitTests(unittest.TestCase):
                         if spot not in occupied and g.within_table_limits(spot)}
             self.assertEqual(g.available_table_positions(), expected)
 
+    def test_move_keeps_chosen_position_without_compacting(self):
+        g = self.game()
+        g.enable_table_limits = False
+        g.players[0].hand = ["A"]
+        g.play_to_table(1)
+        self.assertEqual(g.move_table_card(0, (0, 1)), "A")
+        self.assertEqual(g.table_cards[0]["position"], [0, 1])
+        self.assertIn((0, 0), g.available_table_positions())
+        g.allow_move_cards_on_table = False
+        self.assertIsNone(g.move_table_card(0, (0, 0)))
+        self.assertEqual(g.table_cards[0]["position"], [0, 1])
+
     def test_save_load_restart(self):
         g = self.game()
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:

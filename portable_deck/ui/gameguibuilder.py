@@ -11,6 +11,7 @@ from .specialactionsui import SpecialActionsUI
 from .rulesoverview import show_rules_overview
 from .contextactions import ContextActions
 from .cardcontextmenu import show_card_menu
+from .carddrag import CardDrag
 from ..app.deckpreview import show_deck_preview
 from .cardactions import (
     clear_table, draw_card, discard_selected, end_turn,
@@ -278,6 +279,9 @@ class GameGUIBuilder:
             self.context_actions = ContextActions(self)
 
         self.table_frame.on_availability_changed = self.refresh_action_availability
+
+        self.card_drag = CardDrag(self)
+        self.table_frame.on_drag_bind = lambda widget, index: self.card_drag.bind(widget, "table", index)
 
         # Initialize GUI
         self.hand_frame.update_hand()

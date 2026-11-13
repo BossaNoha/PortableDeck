@@ -123,6 +123,7 @@ class TableFrame(tk.LabelFrame):
                         command=lambda card_index=index: self.select_card(card_index),
                     )
                     self.card_buttons.append(button)
+                    button._table_card_index = index
                     button.bind("<Button-3>", lambda event, card_index=index: self.open_card_menu(event, card_index))
                     if index == self.selected_index:
                         button.config(bg="lightblue")
@@ -136,6 +137,8 @@ class TableFrame(tk.LabelFrame):
                     )
                     if position == self.selected_position:
                         button.config(bg="lightgreen")
+                if button.cget("text") == "Empty":
+                    button._table_drop_position = position
                 button.pack(side="left", padx=3, pady=3)
 
     def _expand_window_for_table(self):
@@ -146,6 +149,8 @@ class TableFrame(tk.LabelFrame):
             if isinstance(widget, (tk.Button, tk.Label)):
                 widget.configure(font=self.card_font)
             widget.bind("<MouseWheel>", self.scroll_table)
+            if hasattr(widget, "_table_card_index") and hasattr(self, "on_drag_bind"):
+                self.on_drag_bind(widget, widget._table_card_index)
             for child in widget.winfo_children():
                 configure(child)
         configure(self.contents)
@@ -171,6 +176,7 @@ class TableFrame(tk.LabelFrame):
                     command=lambda card_index=index: self.select_card(card_index),
                 )
                 self.card_buttons.append(button)
+                button._table_card_index = index
                 button.bind("<Button-3>", lambda event, card_index=index: self.open_card_menu(event, card_index))
                 if index == self.selected_index:
                     button.config(bg="lightblue")
@@ -184,6 +190,8 @@ class TableFrame(tk.LabelFrame):
                 )
                 if position == self.selected_position:
                     button.config(bg="lightgreen")
+            if button.cget("text") == "Empty":
+                button._table_drop_position = position
             button.grid(
                 row=row - min_row,
                 column=column - min_column,
@@ -203,6 +211,7 @@ class TableFrame(tk.LabelFrame):
         )
         button.pack(side="left", padx=4, pady=3)
         self.card_buttons.append(button)
+        button._table_card_index = index
         button.bind("<Button-3>", lambda event, card_index=index: self.open_card_menu(event, card_index))
         if index == self.selected_index:
             button.config(bg="lightblue")
