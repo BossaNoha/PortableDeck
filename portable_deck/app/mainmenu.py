@@ -241,4 +241,6 @@ class MainMenu:
 def start_menu():
     root = tk.Tk()
     MainMenu(root)
+    from .welcome import show_first_run_intro
+    root.after(100, lambda: show_first_run_intro(root))
     root.mainloop()

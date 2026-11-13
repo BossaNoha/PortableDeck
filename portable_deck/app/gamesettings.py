@@ -149,12 +149,16 @@ class GameSettingsPanel:
         )
         self.discard_draw_mode_menu.pack(anchor="w", padx=(20, 0))
 
-        table_section = section("Table settings")
+        table_section = section("Table")
         tk.Checkbutton(table_section, text="Enable table", variable=self.table_enabled_var,
                        command=self.update_feature_controls).pack(anchor="w")
         self.table_options = tk.Frame(table_section)
         self.table_options.pack(fill="x")
-        table = self.table_options
+        self.table_settings_section = CollapsibleSection(self.table_options, "Table settings", self.category_changed)
+        self.table_settings_section.pack(fill="x", pady=(4, 0))
+        self.table_actions_section = CollapsibleSection(self.table_options, "Table actions", self.category_changed)
+        self.table_actions_section.pack(fill="x", pady=(4, 0))
+        table = self.table_settings_section.content
         tk.Checkbutton(table, text="Limit table rows and columns", variable=self.table_limits_var,
                        command=self.update_feature_controls).pack(anchor="w")
         self.table_dimensions = tk.Frame(table)
@@ -167,16 +171,19 @@ class GameSettingsPanel:
             entry = tk.Spinbox(self.table_dimensions, from_=1, to=20, width=5, textvariable=variable)
             entry.grid(row=row, column=1)
             self.dimension_inputs.append((entry, enabled))
-        table_options = tk.Frame(table)
+        placement_options = tk.Frame(table)
+        placement_options.pack(fill="x")
+        placement_options.columnconfigure(0, weight=1)
+        table_options = tk.Frame(self.table_actions_section.content)
         table_options.pack(fill="x")
         table_options.columnconfigure(0, weight=1)
         self._add_check(table_options, "Take a selected table card into the current hand", self.take_table_var, "Move a selected table card into the current player's hand.", row=0, column=0)
         self.table_to_discard_check = self._add_check(table_options, "Discard a selected table card to discard pile", self.table_to_discard_var, "Move a selected table card directly to the discard pile.", row=1, column=0)
         self._add_check(table_options, "Let the current player clear the table", self.manual_cleanup_var, "Add an action that sends all table cards to the discard pile.", row=2, column=0)
         self._add_check(table_options, "Clear the table at round end", self.round_cleanup_var, "Automatically discard all table cards when the last player ends the round.", row=3, column=0)
-        self._add_check(table_options, "Play cards at specific table positions", self.positioned_play_var, "Choose an available empty position on the table when playing a card.", row=4, column=0)
+        self._add_check(placement_options, "Play cards at specific table positions", self.positioned_play_var, "Choose an available empty position on the table when playing a card.", row=0, column=0)
         self._add_check(table_options, "Move cards between table positions", self.move_table_cards_var, "Move a card already on the table to another empty position.", row=5, column=0)
-        self._add_check(table_options, "Play cards in front of any player", self.play_in_front_var, "Show a separate card row for each player and allow targeted plays.", row=6, column=0)
+        self._add_check(placement_options, "Play cards in front of any player", self.play_in_front_var, "Show a separate card row for each player and allow targeted plays.", row=1, column=0)
         self._add_check(table_options, "Allow face-down cards and flipping", self.face_down_var, "Play a card face down, then reveal it when it is the last face-down card in its column.", row=7, column=0)
         self._add_check(table_options, "Move face-up card sequences", self.move_sequences_var, "Move a face-up card and the cards below it together in the same column.", row=8, column=0)
 
@@ -195,8 +202,8 @@ class GameSettingsPanel:
         tk.Spinbox(discard_counts, from_=1, to=20, width=5, textvariable=self.shared_discard_count_var).grid(row=0, column=1, padx=(6, 12))
 
 
-        occupied_row = tk.Frame(table_options)
-        occupied_row.grid(row=9, column=0, sticky="w", pady=(3, 0))
+        occupied_row = tk.Frame(placement_options)
+        occupied_row.grid(row=2, column=0, sticky="w", pady=(3, 0))
         add_tooltip(tk.Label(occupied_row, text="Occupied spot:"), "Choose what happens if a selected table position already contains a card.").pack(side="left")
         add_tooltip(tk.OptionMenu(occupied_row, self.occupied_slot_action_var, "invalid", "swap"), "Invalid blocks the play; swap exchanges the hand card with the table card.").pack(side="left")
 
@@ -265,7 +272,7 @@ class GameSettingsPanel:
             "Scoring": (self.score_var,),
             "Chip accounts": (self.chip_accounts_var,),
             "Discard pile": (self.discard_enabled_var,),
-            "Table settings": (self.table_enabled_var,),
+            "Table": (self.table_enabled_var,),
             "Personal piles on table": (self.personal_piles.enabled_var,),
             "Roles/teams": (self.roles_teams.enabled_var,),
             "Player interactions": (self.interactions.enabled,),
@@ -306,7 +313,8 @@ class GameSettingsPanel:
         return self.category_layout.preferred_width() + 20
 
     def update_feature_controls(self):
-        for frame, enabled in ((self.table_options, self.table_enabled_var.get()),
+        for frame, enabled in ((self.table_settings_section.content, self.table_enabled_var.get()),
+                               (self.table_actions_section.content, self.table_enabled_var.get()),
                                (self.discard_options, self.discard_enabled_var.get())):
             self._set_controls_enabled(frame, enabled)
         self._set_controls_enabled(self.table_dimensions, self.table_enabled_var.get() and self.table_limits_var.get())
