@@ -1,0 +1,4 @@
+# No third-party Python packages are required.
+# Runtime: Python 3 with Tkinter (Tcl/Tk) available.
+# Tkinter is provided by the Python/OS installation, not by pip.
+# Tests use the standard-library unittest module.
