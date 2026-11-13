@@ -1,21 +1,18 @@
 {
-  "enable_team_pile_access": false,
-  "enable_dealer_pile_access": false,
-  "enable_flipping": true,
-  "allow_flip_hand": false,
-  "allow_flip_table": false,
-  "allow_flip_player_cards": false,
+  "num_players": 2,
+  "cards_per_player": 3,
+  "deck_path": "decks/demodeck.json",
+  "use_custom_player_names": false,
+  "player_names": [],
   "limit_table_rows": true,
   "limit_table_columns": true,
   "enable_table_limits": false,
   "max_table_rows": 3,
   "max_table_columns": 5,
-  "show_game_log": true,
-  "enable_special_actions": false,
-  "allow_insert_draw_deck": false,
-  "allow_insert_discard_pile": false,
-  "color_game_settings_categories": true,
-  "reset_chip_accounts_on_restart": true,
+  "enable_target_score": false,
+  "target_score": 100,
+  "enable_score_warning": false,
+  "score_warning": 80,
   "enable_player_return": false,
   "enable_player_leaving": false,
   "leave_conditions": {
@@ -26,60 +23,42 @@
     "own_score_at": "target",
     "opponent_score_at": "target"
   },
-  "enable_target_score": false,
-  "target_score": 100,
-  "enable_score_warning": false,
-  "score_warning": 80,
+  "enable_special_actions": false,
+  "allow_insert_draw_deck": false,
+  "allow_insert_discard_pile": false,
+  "enable_flipping": false,
+  "allow_flip_hand": false,
+  "allow_flip_table": false,
+  "allow_flip_player_cards": false,
   "allow_reduce_score": false,
-  "configuration_name": "Default",
-  "configuration_baseline": {},
-  "enable_cards_visibility": false,
-  "cards_visibility": [
-    {
-      "players": [
-        0
-      ],
-      "teams": []
-    },
-    {
-      "players": [
-        1
-      ],
-      "teams": []
-    }
-  ],
-  "enable_interactions": false,
-  "interaction_options": {
-    "take_random_card": false,
-    "discard_random_card": false,
-    "give_card": false,
-    "steal_chips": false,
-    "peek_random_card": false,
-    "peek_all_cards": false
-  },
   "share_team_chips": false,
   "share_team_score": false,
   "enable_team_score": false,
-  "enable_roles_teams": false,
-  "enable_dealer": false,
-  "enable_teams": false,
-  "team_count": 1,
-  "team_names": [],
-  "player_teams": [
-    null,
-    null
-  ],
-  "dealer_players": [
-    false,
-    false
-  ],
+  "enable_table": true,
+  "enable_discard_pile": true,
+  "save_discard_on_exit": true,
+  "enable_score_counter": false,
+  "require_point_confirmation": false,
+  "allow_take_from_table": false,
+  "allow_move_table_card_to_discard": false,
+  "allow_manual_table_cleanup": false,
+  "clear_table_on_round_end": false,
+  "allow_positioned_play": true,
+  "allow_move_cards_on_table": false,
+  "allow_move_table_sequences": true,
+  "allow_face_down_table_cards": false,
+  "allow_recycle_discard_to_deck": false,
+  "shared_discard_pile_count": 1,
+  "personal_discard_pile_count": 0,
+  "enable_team_pile_access": false,
+  "enable_dealer_pile_access": false,
+  "enable_personal_piles": false,
+  "personal_pile_count": 1,
   "unequal_personal_piles": false,
   "personal_pile_counts": [
     1,
     1
   ],
-  "enable_personal_piles": false,
-  "personal_pile_count": 1,
   "personal_pile_settings": [
     [
       {
@@ -100,37 +79,59 @@
       }
     ]
   ],
-  "enable_table": true,
-  "enable_discard_pile": false,
-  "autosave_enabled": true,
-  "autosave_count": 5,
-  "require_exit_confirmation": false,
-  "num_players": 2,
-  "cards_per_player": 3,
-  "deck_path": "decks/demodeck.json",
-  "save_discard_on_exit": true,
-  "use_custom_player_names": false,
-  "player_names": [],
-  "enable_score_counter": false,
-  "require_point_confirmation": false,
-  "allow_take_from_table": false,
-  "allow_move_table_card_to_discard": false,
-  "allow_manual_table_cleanup": false,
-  "clear_table_on_round_end": false,
-  "allow_positioned_play": true,
-  "allow_move_cards_on_table": false,
+  "enable_roles_teams": false,
+  "enable_dealer": false,
+  "enable_teams": false,
+  "team_count": 1,
+  "team_names": [],
+  "player_teams": [
+    null,
+    null
+  ],
+  "dealer_players": [
+    false,
+    false
+  ],
+  "enable_interactions": false,
+  "interaction_options": {
+    "take_random_card": false,
+    "discard_random_card": false,
+    "give_card": false,
+    "steal_chips": false,
+    "peek_random_card": false,
+    "peek_all_cards": false
+  },
+  "enable_cards_visibility": false,
+  "cards_visibility": [
+    {
+      "players": [
+        0
+      ],
+      "teams": []
+    },
+    {
+      "players": [
+        1
+      ],
+      "teams": []
+    }
+  ],
   "allow_play_in_front_of_players": false,
   "allow_draw_from_discard": false,
   "draw_from_discard_mode": "top",
-  "allow_face_down_table_cards": false,
-  "allow_move_table_sequences": true,
-  "allow_recycle_discard_to_deck": false,
-  "shared_discard_pile_count": 1,
-  "personal_discard_pile_count": 0,
+  "reset_chip_accounts_on_restart": true,
   "enable_chip_accounts": false,
   "minimum_bet": 1,
   "starting_balance": 100,
   "require_pot_withdrawal_confirmation": false,
   "occupied_slot_action": "invalid",
-  "enable_undo": true
+  "contextual_session_actions": true,
+  "show_game_log": true,
+  "color_game_settings_categories": true,
+  "enable_undo": true,
+  "autosave_enabled": true,
+  "autosave_count": 5,
+  "require_exit_confirmation": false,
+  "configuration_name": "Default",
+  "configuration_baseline": {}
 }

@@ -16,6 +16,8 @@ class GameGUIActions:
         self._record_undo_state(undo_state)
         self.update_undo_button()
         self.update_leave_button()
+        if hasattr(self, "context_actions"):
+            self.context_actions.refresh()
         self.checkpoint()
 
     def _record_undo_state(self, undo_state):

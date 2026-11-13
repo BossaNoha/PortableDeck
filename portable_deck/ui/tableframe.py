@@ -190,14 +190,20 @@ class TableFrame(tk.LabelFrame):
         if not self.game.allow_move_cards_on_table:
             self.selected_position = None
         self.update_table()
+        if hasattr(self, "on_selection_changed"):
+            self.on_selection_changed()
 
     def select_slot(self, position):
         if not self.game.allow_move_cards_on_table:
             self.selected_index = None
         self.selected_position = position
         self.update_table()
+        if hasattr(self, "on_selection_changed"):
+            self.on_selection_changed()
 
     def clear_selection(self):
         self.selected_index = None
         self.selected_position = None
         self.update_table()
+        if hasattr(self, "on_selection_changed"):
+            self.on_selection_changed()

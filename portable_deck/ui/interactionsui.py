@@ -9,7 +9,7 @@ class InteractionsUI:
         self.button = tk.Button(gui.card_actions_frame, text="Player interactions", command=self.show)
         self.button.pack(side="left", padx=5)
 
-    def show(self):
+    def show(self, initial_action=None):
         gui, game = self.gui, self.gui.game
         actions = [key for key in INTERACTIONS if game.interaction_allowed(key)]
         if not actions:
@@ -19,7 +19,7 @@ class InteractionsUI:
         dialog.title("Player interactions")
         dialog.transient(gui.root)
         dialog.grab_set()
-        selected_action = tk.StringVar(value=INTERACTIONS[actions[0]])
+        selected_action = tk.StringVar(value=INTERACTIONS[initial_action if initial_action in actions else actions[0]])
         tk.OptionMenu(dialog, selected_action, *[INTERACTIONS[key] for key in actions]).pack(fill="x", padx=10, pady=8)
         tk.Label(dialog, text="Choose a player (ignored for random discard):").pack(anchor="w", padx=10)
         targets = [i for i in game.active_player_indices() if i != game.current_player_index]

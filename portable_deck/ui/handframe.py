@@ -42,6 +42,8 @@ class HandFrame(tk.LabelFrame):
                 button.configure(bg="lightblue")
             self.card_buttons.append(button)
         self.schedule_layout()
+        if hasattr(self.game_gui, "context_actions"):
+            self.game_gui.context_actions.refresh()
 
     def schedule_layout(self, _event=None):
         if not self.pending_layout:
@@ -81,5 +83,9 @@ class HandFrame(tk.LabelFrame):
 
     def select_card(self, index):
         self.selected_index = None if self.selected_index == index else index
+        if hasattr(self.game_gui, "context_actions"):
+            self.game_gui.table_frame.selected_index = None
+            self.game_gui.table_frame.update_table()
+            self.game_gui.context_actions.refresh()
         for i, button in enumerate(self.card_buttons):
             button.configure(bg="lightblue" if i == self.selected_index else "SystemButtonFace")

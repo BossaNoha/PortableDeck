@@ -10,6 +10,7 @@ DEFAULT_CONFIG_PATH = os.path.join(CONFIG_DIR, "default_settings.json")
 APP_DATA_DIR = os.path.join(BASE_DIR, "portable_deck", "data")
 DISCARD_PATH = os.path.join(APP_DATA_DIR, "discard.json")
 DEFAULT_SETTINGS = {
+    "contextual_session_actions": False,
     "enable_team_pile_access": False, "enable_dealer_pile_access": False,
     "enable_flipping": False, "allow_flip_hand": False,
     "allow_flip_table": False, "allow_flip_player_cards": False,

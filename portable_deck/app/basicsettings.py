@@ -6,6 +6,7 @@ from ..ui.collapsiblesection import CollapsibleSection
 class BasicSettingsPanel:
     def __init__(self, parent, settings, fit_window=lambda: None):
         self.color_categories_var = tk.BooleanVar(value=settings.get("color_game_settings_categories", False))
+        self.context_actions_var = tk.BooleanVar(value=settings.get("contextual_session_actions", False))
         self.show_log_var = tk.BooleanVar(value=settings.get("show_game_log", True))
         self.fit_window = fit_window
         self.undo_var = tk.BooleanVar(value=bool(settings.get("enable_undo", False)))
@@ -31,6 +32,8 @@ class BasicSettingsPanel:
         tk.Checkbutton(self.frame, text="Color enabled/disabled Game Settings categories",
                        variable=self.color_categories_var, wraplength=420, justify="left").grid(row=4, column=0, sticky="w")
         tk.Checkbutton(self.frame, text="Show game log", variable=self.show_log_var).grid(row=5, column=0, sticky="w")
+        tk.Checkbutton(self.frame, text="Use contextual actions and session menus", variable=self.context_actions_var,
+                       wraplength=420, justify="left").grid(row=6, column=0, sticky="w")
         self.update_controls()
 
     def update_controls(self):
@@ -48,5 +51,5 @@ class BasicSettingsPanel:
         count = int(self.count_var.get()) if self.autosave_var.get() else 5
         if not 1 <= count <= 1000:
             raise ValueError("Autosaves to keep must be between 1 and 1000.")
-        return {"show_game_log": self.show_log_var.get(), "color_game_settings_categories": self.color_categories_var.get(), "enable_undo": self.undo_var.get(), "autosave_enabled": self.autosave_var.get(), "autosave_count": count,
+        return {"contextual_session_actions": self.context_actions_var.get(), "show_game_log": self.show_log_var.get(), "color_game_settings_categories": self.color_categories_var.get(), "enable_undo": self.undo_var.get(), "autosave_enabled": self.autosave_var.get(), "autosave_count": count,
                 "require_exit_confirmation": self.confirm_exit_var.get()}

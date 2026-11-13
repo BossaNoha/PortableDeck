@@ -6,8 +6,9 @@ from .gameguibuilder import GameGUIBuilder
 class GameGUI(GameGUIBuilder, GameGUIActions):
     def __init__(
         self, root, game, on_save=None, on_exit_menu=None, on_exit_desktop=None,
-        on_restart=None, on_checkpoint=None, require_exit_confirmation=True, on_save_as=None, show_game_log=True,
+        on_restart=None, on_checkpoint=None, require_exit_confirmation=True, on_save_as=None, show_game_log=True, contextual_session_actions=False,
     ):
+        self.contextual_session_actions = bool(contextual_session_actions)
         self.show_game_log = bool(show_game_log)
         self.root = root
         self.game = game

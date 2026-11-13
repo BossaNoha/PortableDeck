@@ -9,6 +9,7 @@ from .interactionsui import InteractionsUI
 from .handsvisibilityui import show_visible_hands
 from .specialactionsui import SpecialActionsUI
 from .rulesoverview import show_rules_overview
+from .contextactions import ContextActions
 from ..app.deckpreview import show_deck_preview
 from .cardactions import (
     clear_table, draw_card, discard_selected, end_turn,
@@ -270,6 +271,9 @@ class GameGUIBuilder:
 
         if self.game.enable_special_actions:
             self.special_actions_ui = SpecialActionsUI(self)
+
+        if self.contextual_session_actions:
+            self.context_actions = ContextActions(self)
 
         # Initialize GUI
         self.hand_frame.update_hand()

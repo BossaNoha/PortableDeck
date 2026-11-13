@@ -211,3 +211,10 @@ it with **Use current settings**. These files are separate from game saves.
 Game-rule presets exclude Basic Settings (Autosave, retained autosaves, exit
 confirmation and Undo) and the player count. Loading a preset preserves these
 current values, and changing them does not mark the rule preset as modified.
+
+**Basic Settings -> Use contextual actions and session menus** enables an
+optional session layout. Draw Card, Next Turn and Undo stay visible. Selecting
+a hand card, table card or empty spot reveals applicable card actions. Players,
+Chips, Score, Table and View menus contain the other enabled actions. Turning
+the option off keeps the original buttons. This UI preference is excluded from
+game-rule presets.

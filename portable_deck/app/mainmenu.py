@@ -195,6 +195,7 @@ class MainMenu:
             on_restart=self.restart_game,
             on_checkpoint=self.checkpoint_game,
             require_exit_confirmation=self.settings.get("require_exit_confirmation", True),
+            contextual_session_actions=self.settings.get("contextual_session_actions", False),
             show_game_log=self.settings.get("show_game_log", True),
         )
 
