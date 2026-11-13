@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from .cardactions import request_point
+from .sessionactions import execute_value
 
 class GameGUIActions:
 
@@ -9,23 +10,17 @@ class GameGUIActions:
         self.chip_bank_ui.update_action_buttons()
 
     def run_action(self, action, *args):
-        undo_state = self.game.capture_undo_state() if self.game.enable_undo else None
-        action(*args)
+        self.session.run(action, *args)
         if hasattr(self, "personal_piles_ui"):
             self.personal_piles_ui.update()
-        self._record_undo_state(undo_state)
         self.update_undo_button()
         self.update_leave_button()
         if hasattr(self, "context_actions"):
             self.context_actions.refresh()
-        self.checkpoint()
-
-    def _record_undo_state(self, undo_state):
-        if undo_state is not None and undo_state != self.game.capture_undo_state():
-            self.game.undo_stack.append(undo_state)
+        self.refresh_action_availability()
 
     def undo(self):
-        if not self.game.undo_last_action():
+        if not self.session.undo():
             return
         self.hand_frame.selected_index = None
         self.table_frame.selected_index = None
@@ -45,7 +40,7 @@ class GameGUIActions:
         self.handle_turn_start()
         self.update_point_button()
         self.update_undo_button()
-        self.checkpoint()
+        self.refresh_action_availability()
 
     def update_undo_button(self):
         if hasattr(self, "undo_button"):
@@ -55,10 +50,7 @@ class GameGUIActions:
     def checkpoint(self):
         self.table_frame.capture_view()
         self.refresh_action_availability()
-        if self.on_checkpoint:
-            error = self.on_checkpoint(self.game)
-            if error:
-                self.log(f"Autosave failed: {error}")
+        self.session.checkpoint()
 
     def restart(self):
         if self.game.score_enabled:
@@ -94,7 +86,7 @@ class GameGUIActions:
             messagebox.showwarning("No selection", "Select a card in your hand first.", parent=self.root)
             return
         def action():
-            card = self.game.flip_hand_card(selected)
+            card = execute_value(self.game, "flip_hand_card", card_index=selected)
             if card is not None:
                 revealed = selected in self.current_player().revealed_indices
                 self.log(f"{self.current_player_name()} revealed {card}." if revealed else f"{self.current_player_name()} hid a hand card.")
@@ -103,7 +95,7 @@ class GameGUIActions:
 
     def reduce_current_score(self):
         def action():
-            _, message = self.game.reduce_score()
+            _, message = execute_value(self.game, "reduce_score")
             self.log(message)
             self.status_panel.update_status()
         self.run_action(action)
@@ -146,7 +138,7 @@ class GameGUIActions:
                 return
             player = players[selected[0]]
             def action():
-                ok, message = self.game.return_player(player)
+                ok, message = execute_value(self.game, "return_player", player_index=player)
                 self.log(message)
                 if ok:
                     for button in self._turn_action_buttons():
@@ -163,7 +155,7 @@ class GameGUIActions:
 
     def leave_current_player(self):
         def action():
-            ok, message = self.game.leave_session()
+            ok, message = execute_value(self.game, "leave_session")
             self.log(message)
             if not ok:
                 return
@@ -208,7 +200,7 @@ class GameGUIActions:
                 f"As {voter_name}, do you approve this score change?",
                 parent=self.root,
             )
-            _, result = self.game.confirm_point_request(approved)
+            _, result = execute_value(self.game, "confirm_point", approved=approved)
             self.log(result)
             self.status_panel.update_status()
 
@@ -223,7 +215,7 @@ class GameGUIActions:
                 f"to {recipient_name}.\n\nAs {voter_name}, do you approve?",
                 parent=self.root,
             )
-            _, result = self.game.confirm_pot_withdrawal(approved)
+            _, result = execute_value(self.game, "confirm_pot", approved=approved)
             self.log(result)
             self.status_panel.update_status()
 

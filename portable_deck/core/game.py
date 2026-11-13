@@ -179,6 +179,13 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
                            "clear_table_on_round_end"):
                 setattr(self, option, False)
 
+    @property
+    def session(self):
+        from .session import SessionController
+        if not hasattr(self, "_session_controller"):
+            self._session_controller = SessionController(self)
+        return self._session_controller
+
     def start(self, cards_per_player=5):
         if not isinstance(cards_per_player, int) or isinstance(cards_per_player, bool) or cards_per_player < 0:
             raise ValueError("cards_per_player must be a non-negative integer")

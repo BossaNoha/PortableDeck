@@ -290,11 +290,7 @@ class GameGUIBuilder:
             self._restore_log()
         else:
             self.log(f"{self.current_player_name()}'s turn starts.")
-        turn_start_state = (
-            self.game.capture_undo_state() if self.game.enable_undo else None
-        )
-        self.handle_turn_start()
-        self._record_undo_state(turn_start_state)
+        self.session.run(self.handle_turn_start)
         self.update_point_button()
         self.update_undo_button()
         self.update_chip_action_buttons()

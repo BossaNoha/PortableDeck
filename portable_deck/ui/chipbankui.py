@@ -1,8 +1,17 @@
 """Actions for chip accounts and the shared pot."""
+from functools import wraps
+from .sessionactions import execute_value
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 
 from .chipdialogs import ask_chip_purchase, ask_pot_recipient
+
+
+def session_action(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        return self.gui.session.run(method, self, *args, **kwargs)
+    return wrapped
 
 
 class ChipBankUI:
@@ -21,6 +30,7 @@ class ChipBankUI:
         self.buttons = [self.buy_button, self.play_button, self.take_button]
         self.update_action_buttons()
 
+    @session_action
     def buy_chips(self):
         game = self.gui.game
         purchase = ask_chip_purchase(
@@ -32,8 +42,7 @@ class ChipBankUI:
         if purchase is None:
             return
         player_index, amount = purchase
-        undo_state = game.capture_undo_state() if game.enable_undo else None
-        balance = game.buy_chips(player_index, amount)
+        balance = execute_value(game, "buy_chips", player_index=player_index, amount=amount)
         if balance is None:
             messagebox.showerror(
                 "Purchase failed", "Could not add chips to this account.", parent=self.gui.root
@@ -41,9 +50,10 @@ class ChipBankUI:
             return
         player_name = game.players[player_index].name
         self._finish_action(
-            undo_state, f"{player_name} bought {amount} chips. New balance: {balance}."
+            f"{player_name} bought {amount} chips. New balance: {balance}."
         )
 
+    @session_action
     def play_chips(self):
         game = self.gui.game
         balance = game.chip_balance(game.current_player_index)
@@ -63,13 +73,13 @@ class ChipBankUI:
         )
         if amount is None:
             return
-        undo_state = game.capture_undo_state() if game.enable_undo else None
-        succeeded, message = game.play_chips(amount)
+        succeeded, message = execute_value(game, "play_chips", amount=amount)
         if not succeeded:
             messagebox.showwarning("Could not play chips", message, parent=self.gui.root)
             return
-        self._finish_action(undo_state, message)
+        self._finish_action(message)
 
+    @session_action
     def take_pot(self):
         game = self.gui.game
         if game.chip_pot < 1:
@@ -89,21 +99,19 @@ class ChipBankUI:
         )
         if recipient_index is None:
             return
-        undo_state = game.capture_undo_state() if game.enable_undo else None
-        succeeded, message = game.request_pot_withdrawal(recipient_index)
+        succeeded, message = execute_value(game, "take_pot", player_index=recipient_index)
         if not succeeded:
             messagebox.showwarning("Could not take pot", message, parent=self.gui.root)
             return
-        self._finish_action(undo_state, message)
+        self._finish_action(message)
 
-    def _finish_action(self, undo_state, message):
+    def _finish_action(self, message):
         self.gui.log(message)
-        self.gui._record_undo_state(undo_state)
         self.gui.status_panel.update_status()
         self.gui.update_undo_button()
         self.update_action_buttons()
         self.gui.update_leave_button()
-        self.gui.checkpoint()
+        self.gui.refresh_action_availability()
 
     def update_action_buttons(self):
         if not self.buttons:

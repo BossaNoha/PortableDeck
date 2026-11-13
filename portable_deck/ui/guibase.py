@@ -19,6 +19,8 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         self.on_restart = on_restart
         self.on_checkpoint = on_checkpoint
         self.require_exit_confirmation = require_exit_confirmation
+        self.session = game.session
+        self.session.checkpoint_callback = self.save_checkpoint
         self.root.title("Portable Deck - Game")
         self.root.minsize(900, 560)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
@@ -30,6 +32,14 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
             "<Button-1>": self.root.bind("<Button-1>", self.cancel_selection_on_background, add="+"),
         }
         self.layout_frame.bind("<Destroy>", self.remove_selection_bindings, add="+")
+
+    def save_checkpoint(self, game):
+        if hasattr(self, "table_frame"):
+            self.table_frame.capture_view()
+        error = self.on_checkpoint(game) if self.on_checkpoint else None
+        if error and hasattr(self, "log_text"):
+            self.log(f"Autosave failed: {error}")
+        return error
 
     def refresh_action_availability(self):
         from .actionavailability import refresh_action_availability

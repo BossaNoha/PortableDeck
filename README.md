@@ -240,3 +240,33 @@ Card indices are zero-based. Queries do not execute an action or change game
 state. Unknown action identifiers raise ValueError. GUI controls and tooltips
 use this same API; the GUI layer only maps widgets and selection to action IDs
 and ActionContext. Game model methods still enforce execution rules.
+
+## Shared session actions
+
+GUI and non-graphical clients can use the same session controller:
+
+```python
+from portable_deck.core.game import Game
+
+game = Game(2, "decks/demodeck.json", enable_undo=True)
+result = game.session.execute("draw_card")
+if result.success:
+    print(result.value)
+else:
+    print(result.message)
+game.session.undo()
+```
+
+Card indices are zero-based. For example, `execute("play_card", card_index=0)`
+plays the first card; `execute("move_table_card", card_index=0,
+target_position=(0, 1))` moves a table card. Other actions include discard,
+flipping, chips, scoring, confirmations, leaving/returning and ending a turn.
+Availability is checked before execution. Results include `success`, `changed`,
+`value`, `message` and `checkpoint_error`.
+
+Set `game.session.checkpoint_callback` to a function accepting the game to save
+changed sessions automatically. A save failure is reported without reversing
+the action. `session.run(operation)` groups nested operations and presentation
+log updates into one Undo step and one checkpoint. Unexpected operation errors
+restore the previous game state and are re-raised. The core controller imports
+no Tkinter; dialogs and rendering remain in the GUI.
