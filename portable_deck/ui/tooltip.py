@@ -12,7 +12,8 @@ class Tooltip:
         widget.bind("<ButtonPress>", self.hide, add="+")
 
     def show(self, _event=None):
-        if self.window or not self.text:
+        text = self.text() if callable(self.text) else self.text
+        if self.window or not text:
             return
         x = self.widget.winfo_rootx() + 12
         y = self.widget.winfo_rooty() + self.widget.winfo_height() + 4
@@ -20,7 +21,7 @@ class Tooltip:
         self.window.wm_overrideredirect(True)
         self.window.wm_geometry(f"+{x}+{y}")
         tk.Label(
-            self.window, text=self.text, justify="left", wraplength=320,
+            self.window, text=text, justify="left", wraplength=320,
             background="#fffbd6", relief="solid", borderwidth=1, padx=7, pady=4,
         ).pack()
 

@@ -24,11 +24,16 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
         self.build_game_interface()
+        self.refresh_action_availability()
         self.selection_bindings = {
             "<Escape>": self.root.bind("<Escape>", self.cancel_selection, add="+"),
             "<Button-1>": self.root.bind("<Button-1>", self.cancel_selection_on_background, add="+"),
         }
         self.layout_frame.bind("<Destroy>", self.remove_selection_bindings, add="+")
+
+    def refresh_action_availability(self):
+        from .actionavailability import refresh_action_availability
+        refresh_action_availability(self)
 
     def remove_selection_bindings(self, event):
         if event.widget == self.layout_frame:

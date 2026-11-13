@@ -43,6 +43,7 @@ class HandFrame(tk.LabelFrame):
                 button.configure(bg="lightblue")
             self.card_buttons.append(button)
         self.schedule_layout()
+        self.game_gui.refresh_action_availability()
         if hasattr(self.game_gui, "context_actions"):
             self.game_gui.context_actions.refresh()
 
@@ -92,5 +93,6 @@ class HandFrame(tk.LabelFrame):
             self.game_gui.table_frame.selected_index = None
             self.game_gui.table_frame.update_table()
             self.game_gui.context_actions.refresh()
+        self.game_gui.refresh_action_availability()
         for i, button in enumerate(self.card_buttons):
             button.configure(bg="lightblue" if i == self.selected_index else "SystemButtonFace")

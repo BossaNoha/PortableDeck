@@ -277,6 +277,8 @@ class GameGUIBuilder:
         if self.contextual_session_actions:
             self.context_actions = ContextActions(self)
 
+        self.table_frame.on_availability_changed = self.refresh_action_availability
+
         # Initialize GUI
         self.hand_frame.update_hand()
         self.status_panel.update_status()

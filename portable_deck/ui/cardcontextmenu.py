@@ -3,6 +3,7 @@ import tkinter as tk
 
 
 def card_menu_entries(gui, location):
+    gui.refresh_action_availability()
     game = gui.game
     entries = []
     def include(name, allowed=True):
@@ -16,7 +17,7 @@ def card_menu_entries(gui, location):
             include(name)
         include("play_at_spot_button", gui.table_frame.selected_position is not None)
         if hasattr(gui, "interactions_ui") and game.interaction_allowed("give_card"):
-            entries.append(("Give to player…", lambda: gui.interactions_ui.show("give_card"), gui.play_button.cget("state")))
+            entries.append(("Give to player…", lambda: gui.interactions_ui.show("give_card"), "normal" if game.active_player_indices() and not game.current_player_must_confirm_point() and not game.current_player_must_confirm_pot_withdrawal() else "disabled"))
         if hasattr(gui, "special_actions_ui"):
             entries.extend((button.cget("text"), button.invoke, button.cget("state")) for button in gui.special_actions_ui.buttons)
     else:
@@ -25,7 +26,7 @@ def card_menu_entries(gui, location):
         move = getattr(gui, "move_table_card_button", None)
         if move is not None:
             command = move.invoke if gui.table_frame.selected_position is not None else lambda: choose_move_destination(gui)
-            entries.append(("Move to position…", command, move.cget("state")))
+            entries.append(("Move to position…", command, "normal" if gui.table_frame.selected_index is not None and gui.game.active_player_indices() and not gui.game.current_player_must_confirm_point() and not gui.game.current_player_must_confirm_pot_withdrawal() else "disabled"))
     return entries
 
 
@@ -52,6 +53,7 @@ def choose_move_destination(gui):
         if selected:
             gui.table_frame.selected_position = positions[selected[0]]
             dialog.destroy()
+            gui.refresh_action_availability()
             gui.move_table_card_button.invoke()
     tk.Button(dialog, text="Move", command=move).pack(side="right", padx=10, pady=10)
     tk.Button(dialog, text="Cancel", command=dialog.destroy).pack(side="right", pady=10)
@@ -79,8 +81,15 @@ def show_card_menu(gui, event, location, index):
     menu = tk.Menu(gui.root, tearoff=False)
     gui.card_context_menu = menu
     entries = card_menu_entries(gui, location)
+    from .actionavailability import action_reason
     for label, command, state in entries:
-        menu.add_command(label=label, command=command, state=state)
+        reason = ""
+        if state == "disabled":
+            for button in gui.card_actions_frame.winfo_children():
+                if isinstance(button, tk.Button) and button.cget("text") == label:
+                    reason = action_reason(gui, button)
+                    break
+        menu.add_command(label=label + (" — " + reason if reason else ""), command=command, state=state)
     if not entries:
         menu.add_command(label="No available actions", state="disabled")
     try:

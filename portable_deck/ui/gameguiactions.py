@@ -54,6 +54,7 @@ class GameGUIActions:
 
     def checkpoint(self):
         self.table_frame.capture_view()
+        self.refresh_action_availability()
         if self.on_checkpoint:
             error = self.on_checkpoint(self.game)
             if error:

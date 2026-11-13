@@ -35,8 +35,10 @@ class ContextActions:
         heading = tk.Menubutton(self.gui.options_bar, text=title, relief="raised")
         menu = tk.Menu(heading, tearoff=False)
         def update():
+            from .actionavailability import action_reason
+            self.gui.refresh_action_availability()
             for index, button in enumerate(buttons):
-                menu.entryconfigure(index, state=button.cget("state"))
+                menu.entryconfigure(index, state=button.cget("state"), label=button.cget("text") + (" — " + action_reason(self.gui, button) if action_reason(self.gui, button) else ""))
         menu.configure(postcommand=update)
         for button in buttons:
             menu.add_command(label=button.cget("text"), command=button.invoke)
@@ -46,6 +48,7 @@ class ContextActions:
 
     def refresh(self):
         gui, g = self.gui, self.gui.game
+        gui.refresh_action_availability()
         for button in self.buttons:
             button.place_forget()
         shown = [gui.draw_button]
@@ -64,13 +67,13 @@ class ContextActions:
             include("flip_hand_button")
             if hasattr(self, "give_button"):
                 shown.append(self.give_button)
-                self.give_button.configure(state=gui.play_button.cget("state"))
+                self.give_button.configure(state="normal" if g.active_player_indices() and not g.current_player_must_confirm_point() and not g.current_player_must_confirm_pot_withdrawal() else "disabled")
             if hasattr(gui, "special_actions_ui"):
                 shown.extend(gui.special_actions_ui.buttons)
         if table:
             for name in ("take_table_button", "table_discard_button", "flip_table_card_button"):
                 include(name)
-            include("move_table_card_button", spot)
+            include("move_table_card_button")
         if hand and spot:
             include("play_at_spot_button")
         self.shown = list(dict.fromkeys(shown))
