@@ -156,6 +156,7 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
         self.initialize_special_actions(enable_special_actions, allow_insert_draw_deck, allow_insert_discard_pile)
         self.initialize_leaving(enable_player_leaving, leave_conditions, enable_player_return)
         self.initialize_score_limits(enable_target_score, target_score, enable_score_warning, score_warning)
+        self.table_view_state = {"zoom": 100, "x": 0.0, "y": 0.0}
         self.configuration_info = {"name": "Unknown", "modified": None}
         self.initialize_cards_visibility(enable_cards_visibility, cards_visibility)
         self.initialize_interactions(enable_interactions, interaction_options)

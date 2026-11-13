@@ -10,6 +10,8 @@ class TableFrame(tk.LabelFrame):
         self.game = game
         self.selected_index = None
         self.selected_position = None
+        self.restoring_view = True
+        self.saved_view = dict(game.table_view_state)
         self.zoom_percent = 100
         self.base_font_size = abs(tkfont.nametofont("TkDefaultFont").actual("size"))
         self.card_font = tkfont.Font(self, font="TkDefaultFont")
@@ -27,7 +29,13 @@ class TableFrame(tk.LabelFrame):
         self.canvas = tk.Canvas(area, width=420, height=300, highlightthickness=0)
         vertical = tk.Scrollbar(area, orient="vertical", command=self.canvas.yview)
         horizontal = tk.Scrollbar(area, orient="horizontal", command=self.canvas.xview)
-        self.canvas.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
+        def track_x(first, last):
+            horizontal.set(first, last)
+            self.capture_view()
+        def track_y(first, last):
+            vertical.set(first, last)
+            self.capture_view()
+        self.canvas.configure(yscrollcommand=track_y, xscrollcommand=track_x)
         self.canvas.grid(row=0, column=0, sticky="nsew")
         vertical.grid(row=0, column=1, sticky="ns")
         horizontal.grid(row=1, column=0, sticky="ew")
@@ -38,6 +46,22 @@ class TableFrame(tk.LabelFrame):
         self.contents.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         self.canvas.bind("<MouseWheel>", self.scroll_table)
         self.update_table()
+        self.change_zoom(self.saved_view.get("zoom", 100) - 100)
+        self.after(60, self.restore_view)
+
+    def capture_view(self):
+        if self.restoring_view or not self.game.enable_table:
+            return
+        self.game.table_view_state = {"zoom": self.zoom_percent, "x": self.canvas.xview()[0], "y": self.canvas.yview()[0]}
+
+    def restore_view(self):
+        if not self.winfo_exists():
+            return
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self.canvas.xview_moveto(self.saved_view.get("x", 0))
+        self.canvas.yview_moveto(self.saved_view.get("y", 0))
+        self.restoring_view = False
+        self.capture_view()
 
     def change_zoom(self, delta):
         self.zoom_percent = max(50, min(200, self.zoom_percent + delta))
@@ -45,6 +69,7 @@ class TableFrame(tk.LabelFrame):
         self.zoom_label.configure(text=f"{self.zoom_percent}%")
         self.zoom_out_button.configure(state="disabled" if self.zoom_percent == 50 else "normal")
         self.zoom_in_button.configure(state="disabled" if self.zoom_percent == 200 else "normal")
+        self.capture_view()
 
     def scroll_table(self, event):
         if event.state & 4:

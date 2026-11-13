@@ -53,6 +53,7 @@ class GameGUIActions:
             self.undo_button.config(state=state)
 
     def checkpoint(self):
+        self.table_frame.capture_view()
         if self.on_checkpoint:
             error = self.on_checkpoint(self.game)
             if error:

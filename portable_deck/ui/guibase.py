@@ -81,11 +81,13 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         self.log_text.config(state="disabled")
 
     def save_as(self):
+        self.table_frame.capture_view()
         callback = self.on_save_as or self.on_save
         if callback:
             callback(self.game)
 
     def save(self):
+        self.table_frame.capture_view()
         if self.on_save:
             self.on_save(self.game)
 
