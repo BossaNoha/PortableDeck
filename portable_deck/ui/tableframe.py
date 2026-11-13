@@ -186,7 +186,7 @@ class TableFrame(tk.LabelFrame):
         return f"{entry['card']}\n{entry['player']}"
 
     def select_card(self, index):
-        self.selected_index = index
+        self.selected_index = None if self.selected_index == index else index
         if not self.game.allow_move_cards_on_table:
             self.selected_position = None
         self.update_table()
