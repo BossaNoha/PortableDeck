@@ -24,6 +24,39 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
         self.build_game_interface()
+        self.selection_bindings = {
+            "<Escape>": self.root.bind("<Escape>", self.cancel_selection, add="+"),
+            "<Button-1>": self.root.bind("<Button-1>", self.cancel_selection_on_background, add="+"),
+        }
+        self.layout_frame.bind("<Destroy>", self.remove_selection_bindings, add="+")
+
+    def remove_selection_bindings(self, event):
+        if event.widget == self.layout_frame:
+            for sequence, binding in self.selection_bindings.items():
+                self.root.unbind(sequence, binding)
+            self.selection_bindings.clear()
+
+    def cancel_selection_on_background(self, event):
+        if not isinstance(event.widget, (tk.Frame, tk.LabelFrame, tk.Canvas)):
+            return
+        if event.widget.winfo_toplevel() != self.root:
+            return
+        return self.cancel_selection(event)
+
+    def cancel_selection(self, event=None):
+        if event is not None and (isinstance(event.widget, tk.Menu) or event.widget.winfo_toplevel() != self.root):
+            return
+        if (self.hand_frame.selected_index is None and self.table_frame.selected_index is None
+                and self.table_frame.selected_position is None):
+            return
+        self.hand_frame.selected_index = None
+        self.table_frame.selected_index = None
+        self.table_frame.selected_position = None
+        self.hand_frame.update_hand()
+        self.table_frame.update_table()
+        if hasattr(self, "context_actions"):
+            self.context_actions.refresh()
+        return "break"
 
     # ----- Helper methods -----
     def current_player(self):
