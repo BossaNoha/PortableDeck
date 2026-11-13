@@ -7,7 +7,6 @@ class HandFrame(tk.LabelFrame):
     def __init__(self, master, game_gui, **kwargs):
         super().__init__(master, text="Your Hand", padx=5, pady=5, **kwargs)
         self.game_gui = game_gui
-        self.selected_index = None
         self.card_buttons = []
         self.pending_layout = False
         self.hand_owner = None
@@ -21,7 +20,16 @@ class HandFrame(tk.LabelFrame):
         self.canvas.bind("<MouseWheel>", self.scroll)
         self.cards_frame.bind("<MouseWheel>", self.scroll)
 
+    @property
+    def selected_index(self):
+        return self.game_gui.selection.hand_index
+
+    @selected_index.setter
+    def selected_index(self, value):
+        self.game_gui.selection.hand_index = value
+
     def update_hand(self):
+        self.game_gui.selection.synchronize(self.game_gui.game)
         for widget in self.cards_frame.winfo_children():
             widget.destroy()
         self.card_buttons = []
@@ -90,7 +98,7 @@ class HandFrame(tk.LabelFrame):
         return show_card_menu(self.game_gui, event, "hand", index)
 
     def select_card(self, index):
-        self.selected_index = None if self.selected_index == index else index
+        self.game_gui.selection.select_hand(index)
         if hasattr(self.game_gui, "context_actions"):
             self.game_gui.table_frame.selected_index = None
             self.game_gui.table_frame.update_table()

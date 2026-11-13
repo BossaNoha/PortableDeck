@@ -38,9 +38,9 @@ def action_reason(gui, button):
     action = next((action for widget, action in gui_action_bindings(gui) if widget is button), None)
     if action is None:
         return ""
-    context = ActionContext(hand_index=gui.hand_frame.selected_index,
-                            table_index=gui.table_frame.selected_index,
-                            target_position=gui.table_frame.selected_position)
+    context = ActionContext(hand_index=gui.selection.hand_index,
+                            table_index=gui.selection.table_index,
+                            target_position=gui.selection.target_position)
     return action_availability(gui.game, action, context).reason
 
 

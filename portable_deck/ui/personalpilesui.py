@@ -41,7 +41,7 @@ class PersonalPilesUI:
         self.scroll_area.schedule_resize()
 
     def refresh_hand(self, message):
-        self.gui.hand_frame.selected_index = None
+        self.gui.selection.hand_index = None
         self.gui.hand_frame.update_hand()
         self.gui.status_panel.update_status()
         self.gui.log(message)
@@ -52,7 +52,7 @@ class PersonalPilesUI:
             self.refresh_hand(f"{self.gui.current_player_name()} took {card} from a personal pile.")
 
     def choose_destination(self):
-        if self.gui.hand_frame.selected_index is None:
+        if self.gui.selection.hand_index is None:
             messagebox.showwarning("No selection", "Select a card first.", parent=self.gui.root)
             return
         game = self.gui.game
@@ -79,7 +79,7 @@ class PersonalPilesUI:
             if not selection:
                 return
             owner, pile = destinations[selection[0]]
-            index = self.gui.hand_frame.selected_index
+            index = self.gui.selection.hand_index
             def action():
                 card = game.play_to_personal_pile(index + 1, owner, pile)
                 if card:

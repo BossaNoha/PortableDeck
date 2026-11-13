@@ -3,9 +3,39 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+env/
+.env/
+
+# Test, analysis and packaging output
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+build/
+dist/
+*.egg-info/
 
 # Local game sessions
 saves/
+/configs/settings.json
+/portable_deck/data/discard.json
+/decks/discard.json
 
 # Temporary save files
 *.json.tmp
+
+# Local credentials and editor/OS files
+.env
+.env.*
+!.env.example
+!.env.sample
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo

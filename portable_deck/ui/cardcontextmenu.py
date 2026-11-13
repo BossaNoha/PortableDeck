@@ -15,7 +15,7 @@ def card_menu_entries(gui, location):
         include("discard_button", game.enable_discard_pile)
         for name in ("play_face_down_button", "personal_pile_button", "flip_hand_button"):
             include(name)
-        include("play_at_spot_button", gui.table_frame.selected_position is not None)
+        include("play_at_spot_button", gui.selection.target_position is not None)
         if hasattr(gui, "interactions_ui") and game.interaction_allowed("give_card"):
             entries.append(("Give to player…", lambda: gui.interactions_ui.show("give_card"), "normal" if game.active_player_indices() and not game.current_player_must_confirm_point() and not game.current_player_must_confirm_pot_withdrawal() else "disabled"))
         if hasattr(gui, "special_actions_ui"):
@@ -25,8 +25,8 @@ def card_menu_entries(gui, location):
             include(name)
         move = getattr(gui, "move_table_card_button", None)
         if move is not None:
-            command = move.invoke if gui.table_frame.selected_position is not None else lambda: choose_move_destination(gui)
-            entries.append(("Move to position…", command, "normal" if gui.table_frame.selected_index is not None and gui.game.active_player_indices() and not gui.game.current_player_must_confirm_point() and not gui.game.current_player_must_confirm_pot_withdrawal() else "disabled"))
+            command = move.invoke if gui.selection.target_position is not None else lambda: choose_move_destination(gui)
+            entries.append(("Move to position…", command, "normal" if gui.selection.table_index is not None and gui.game.active_player_indices() and not gui.game.current_player_must_confirm_point() and not gui.game.current_player_must_confirm_pot_withdrawal() else "disabled"))
     return entries
 
 
@@ -51,7 +51,7 @@ def choose_move_destination(gui):
     def move():
         selected = choices.curselection()
         if selected:
-            gui.table_frame.selected_position = positions[selected[0]]
+            gui.selection.target_position = positions[selected[0]]
             dialog.destroy()
             gui.refresh_action_availability()
             gui.move_table_card_button.invoke()
@@ -64,14 +64,14 @@ def show_card_menu(gui, event, location, index):
         if not 0 <= index < len(gui.current_player().hand):
             return "break"
         # Selecting through a context menu must never toggle the card off.
-        gui.hand_frame.selected_index = None
+        gui.selection.hand_index = None
         gui.hand_frame.select_card(index)
-        gui.table_frame.selected_index = None
+        gui.selection.table_index = None
         gui.table_frame.update_table()
     else:
         if not 0 <= index < len(gui.game.table_cards):
             return "break"
-        gui.table_frame.selected_index = None
+        gui.selection.table_index = None
         gui.table_frame.select_card(index)
     if hasattr(gui, "context_actions"):
         gui.context_actions.refresh()

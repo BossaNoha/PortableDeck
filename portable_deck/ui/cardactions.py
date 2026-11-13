@@ -106,7 +106,7 @@ def _take_discard_card(game, pile, index, hand_frame, gui_log, status_panel, pil
     if card is None:
         return
     player = game.players[game.current_player_index]
-    hand_frame.selected_index = None
+    hand_frame.game_gui.selection.hand_index = None
     hand_frame.update_hand()
     status_panel.update_status()
     gui_log(f"{player.name} took {card} from {pile_name}.")
@@ -116,7 +116,7 @@ def discard_selected(game, hand_frame, gui_log, status_panel):
     """Discard the currently selected card."""
     if not game.enable_discard_pile:
         return
-    selected = hand_frame.selected_index
+    selected = hand_frame.game_gui.selection.hand_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a card first!")
         return
@@ -132,7 +132,7 @@ def _discard_to_destination(game, hand_frame, gui_log, status_panel, selected, d
     name, pile_index, personal = destination
     card = execute_value(game, "discard_card", card_index=selected, pile_index=pile_index, personal=personal)
     if card:
-        hand_frame.selected_index = None
+        hand_frame.game_gui.selection.hand_index = None
         hand_frame.update_hand()
         status_panel.update_status()
         gui_log(f"{game.players[game.current_player_index].name} discarded {card} to {name}.")
@@ -182,7 +182,7 @@ def _current_player_discard_destinations(game):
 def play_selected(game, hand_frame, table_frame, gui_log, status_panel):
     """Play onto the table or return the card to the draw pile."""
     if not game.enable_table and not game.enable_discard_pile:
-        selected = hand_frame.selected_index
+        selected = hand_frame.game_gui.selection.hand_index
         if selected is None:
             messagebox.showwarning("No selection", "Select a card from your hand first!")
             return
@@ -190,7 +190,7 @@ def play_selected(game, hand_frame, table_frame, gui_log, status_panel):
         if card is None:
             messagebox.showwarning("Invalid", "Invalid card selection!")
             return
-        hand_frame.selected_index = None
+        hand_frame.game_gui.selection.hand_index = None
         hand_frame.update_hand()
         status_panel.update_status()
         gui_log(f"{game.players[game.current_player_index].name} played {card}; it was shuffled into the draw pile.")
@@ -199,15 +199,15 @@ def play_selected(game, hand_frame, table_frame, gui_log, status_panel):
 
 
 def play_selected_face_down(game, hand_frame, table_frame, gui_log, status_panel):
-    selected = hand_frame.selected_index
+    selected = hand_frame.game_gui.selection.hand_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a card from your hand first!")
         return
-    position = table_frame.selected_position if game.allow_positioned_play else None
+    position = table_frame.selection.target_position if game.allow_positioned_play else None
     card = execute_value(game, "play_face_down", card_index=selected, target_position=position)
     if card:
         player = game.players[game.current_player_index].name
-        hand_frame.selected_index = None
+        hand_frame.game_gui.selection.hand_index = None
         hand_frame.update_hand()
         table_frame.clear_selection()
         status_panel.update_status()
@@ -217,10 +217,10 @@ def play_selected_face_down(game, hand_frame, table_frame, gui_log, status_panel
 
 
 def flip_selected_table_card(game, table_frame, gui_log, status_panel):
-    if table_frame.selected_index is None:
+    if table_frame.selection.table_index is None:
         messagebox.showwarning("No selection", "Select a table card first!")
         return
-    card = execute_value(game, "flip_table_card", card_index=table_frame.selected_index)
+    card = execute_value(game, "flip_table_card", card_index=table_frame.selection.table_index)
     if card is None:
         messagebox.showwarning("Invalid flip", "That card cannot be revealed yet.")
         return
@@ -239,7 +239,7 @@ def recycle_discard_into_deck(game, gui_log, status_panel, root):
 
 
 def _play_from_hand_at(game, hand_frame, table_frame, position, gui_log, status_panel):
-    selected = hand_frame.selected_index
+    selected = hand_frame.game_gui.selection.hand_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a card from your hand first!")
         return
@@ -247,7 +247,7 @@ def _play_from_hand_at(game, hand_frame, table_frame, position, gui_log, status_
     card = execute_value(game, "play_at_position" if position is not None else "play_card", card_index=selected, target_position=position)
     if card:
         player_name = game.players[game.current_player_index].name
-        hand_frame.selected_index = None
+        hand_frame.game_gui.selection.hand_index = None
         hand_frame.update_hand()
         table_frame.clear_selection()
         status_panel.update_status()
@@ -257,38 +257,38 @@ def _play_from_hand_at(game, hand_frame, table_frame, position, gui_log, status_
 
 
 def play_at_selected_spot(game, hand_frame, table_frame, gui_log, status_panel):
-    selected_hand = hand_frame.selected_index
+    selected_hand = hand_frame.game_gui.selection.hand_index
     if selected_hand is None:
         messagebox.showwarning("No selection", "Select a card from your hand first!")
         return
-    if table_frame.selected_position is None and table_frame.selected_index is not None:
+    if table_frame.selection.target_position is None and table_frame.selection.table_index is not None:
         if game.occupied_slot_action == "invalid":
             messagebox.showwarning(
                 "Occupied spot", "This spot is occupied. Choose an empty slot or enable swapping in Settings."
             )
             return
-        result = game.swap_with_table(selected_hand + 1, table_frame.selected_index)
+        result = game.swap_with_table(selected_hand + 1, table_frame.selection.table_index)
         if result is None:
             messagebox.showwarning("Invalid", "The selected card could not be swapped.")
             return
         played_card, returned_card = result
         player_name = game.players[game.current_player_index].name
-        hand_frame.selected_index = None
+        hand_frame.game_gui.selection.hand_index = None
         hand_frame.update_hand()
         table_frame.clear_selection()
         status_panel.update_status()
         gui_log(f"{player_name} swapped {played_card} for {returned_card} on the table.")
         return
-    if table_frame.selected_position is None:
+    if table_frame.selection.target_position is None:
         messagebox.showwarning("No spot selected", "Select an empty spot on the table first!")
         return
     _play_from_hand_at(
-        game, hand_frame, table_frame, table_frame.selected_position, gui_log, status_panel
+        game, hand_frame, table_frame, table_frame.selection.target_position, gui_log, status_panel
     )
 
 
 def take_selected_from_table(game, table_frame, hand_frame, gui_log, status_panel):
-    selected = table_frame.selected_index
+    selected = table_frame.selection.table_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a table card first!")
         return
@@ -298,7 +298,7 @@ def take_selected_from_table(game, table_frame, hand_frame, gui_log, status_pane
         table_frame.clear_selection()
         return
     player_name = game.players[game.current_player_index].name
-    table_frame.selected_index = None
+    table_frame.selection.table_index = None
     table_frame.update_table()
     hand_frame.update_hand()
     status_panel.update_status()
@@ -306,7 +306,7 @@ def take_selected_from_table(game, table_frame, hand_frame, gui_log, status_pane
 
 
 def move_selected_table_card_to_discard(game, table_frame, gui_log, status_panel):
-    selected = table_frame.selected_index
+    selected = table_frame.selection.table_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a table card first!")
         return
@@ -347,7 +347,7 @@ def _finish_table_discard(game, table_frame, gui_log, status_panel, selected, de
         messagebox.showwarning("Invalid", "That table card is no longer available!")
         table_frame.clear_selection()
         return
-    table_frame.selected_index = None
+    table_frame.selection.table_index = None
     table_frame.update_table()
     status_panel.update_status()
     gui_log(f"{card} was moved from the table to {name}.")
@@ -355,8 +355,8 @@ def _finish_table_discard(game, table_frame, gui_log, status_panel, selected, de
 
 def move_selected_table_card(game, table_frame, gui_log, status_panel):
     """Move the selected table card to the selected empty table slot."""
-    selected = table_frame.selected_index
-    position = table_frame.selected_position
+    selected = table_frame.selection.table_index
+    position = table_frame.selection.target_position
     if selected is None:
         messagebox.showwarning("No card selected", "Select a table card to move first!")
         return
@@ -374,7 +374,7 @@ def move_selected_table_card(game, table_frame, gui_log, status_panel):
 
 def clear_table(game, table_frame, gui_log, status_panel):
     count = execute_value(game, "clear_table")
-    table_frame.selected_index = None
+    table_frame.selection.table_index = None
     table_frame.update_table()
     status_panel.update_status()
     if count:
@@ -386,7 +386,7 @@ def clear_table(game, table_frame, gui_log, status_panel):
 def end_turn(game, hand_frame, gui_log, status_panel, on_turn_start=None):
     """End current player's turn and move to next."""
     round_ended, cleared_count = execute_value(game, "end_turn")
-    hand_frame.selected_index = None
+    hand_frame.game_gui.selection.hand_index = None
     hand_frame.update_hand()
     status_panel.update_status()
     if round_ended:

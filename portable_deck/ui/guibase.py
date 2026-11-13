@@ -12,6 +12,9 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         self.show_game_log = bool(show_game_log)
         self.root = root
         self.game = game
+        from ..core.selection import SelectionState
+        self.selection = SelectionState()
+        self.selection.synchronize(game)
         self.on_save = on_save
         self.on_save_as = on_save_as
         self.on_exit_menu = on_exit_menu
@@ -63,12 +66,10 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
             self.card_drag.cancel(event)
         if event is not None and (isinstance(event.widget, tk.Menu) or event.widget.winfo_toplevel() != self.root):
             return
-        if (self.hand_frame.selected_index is None and self.table_frame.selected_index is None
-                and self.table_frame.selected_position is None):
+        if (self.selection.hand_index is None and self.selection.table_index is None
+                and self.selection.target_position is None):
             return
-        self.hand_frame.selected_index = None
-        self.table_frame.selected_index = None
-        self.table_frame.selected_position = None
+        self.selection.clear()
         self.hand_frame.update_hand()
         self.table_frame.update_table()
         if hasattr(self, "context_actions"):

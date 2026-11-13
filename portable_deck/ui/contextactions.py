@@ -56,9 +56,9 @@ class ContextActions:
             button = getattr(gui, name, None)
             if button is not None and condition:
                 shown.append(button)
-        hand = gui.hand_frame.selected_index is not None
-        table = gui.table_frame.selected_index is not None
-        spot = gui.table_frame.selected_position is not None
+        hand = gui.selection.hand_index is not None
+        table = gui.selection.table_index is not None
+        spot = gui.selection.target_position is not None
         if hand and not table:
             include("play_button", g.enable_table or (not g.enable_discard_pile and not g.enable_interactions))
             include("discard_button", g.enable_discard_pile)

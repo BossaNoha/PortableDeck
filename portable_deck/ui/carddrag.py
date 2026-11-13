@@ -110,16 +110,16 @@ class CardDrag:
             positioned = game.allow_positioned_play or game.allow_play_in_front_of_players
             if not positioned and tuple(position) != tuple(game.default_table_position()):
                 return False
-            gui.hand_frame.selected_index = index
-            gui.table_frame.selected_index = None
-            gui.table_frame.selected_position = tuple(position)
+            gui.selection.hand_index = index
+            gui.selection.table_index = None
+            gui.selection.target_position = tuple(position)
             action = play_at_selected_spot if positioned else play_selected
             gui.run_action(action, game, gui.hand_frame, gui.table_frame, gui.log, gui.status_panel)
         elif source == "table":
             if not game.allow_move_cards_on_table or not 0 <= index < len(game.table_cards):
                 return False
-            gui.table_frame.selected_index = index
-            gui.table_frame.selected_position = tuple(position)
+            gui.selection.table_index = index
+            gui.selection.target_position = tuple(position)
             gui.run_action(move_selected_table_card, game, gui.table_frame, gui.log, gui.status_panel)
         else:
             return False

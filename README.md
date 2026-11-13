@@ -270,3 +270,15 @@ the action. `session.run(operation)` groups nested operations and presentation
 log updates into one Undo step and one checkpoint. Unexpected operation errors
 restore the previous game state and are re-raised. The core controller imports
 no Tkinter; dialogs and rendering remain in the GUI.
+
+### Selection state
+
+`portable_deck.core.selection.SelectionState` holds transient hand/table indices
+and the target table position without importing Tkinter. GUI controls share one
+instance; the frames only render that selection. Use `select_hand`,
+`select_table`, `select_target` and `clear` to control it. Selection methods
+support toggling and keeping a table card selected while choosing its destination.
+Call `synchronize(game)` after game changes: changing players clears selection,
+and changing a card collection clears its selection to avoid targeting a different
+card at the old index. Selection is local input state and is excluded from saves,
+Undo and game rules. A CLI can use it or pass action parameters directly.

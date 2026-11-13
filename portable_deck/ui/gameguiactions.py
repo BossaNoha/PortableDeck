@@ -10,7 +10,9 @@ class GameGUIActions:
         self.chip_bank_ui.update_action_buttons()
 
     def run_action(self, action, *args):
+        self.selection.synchronize(self.game)
         self.session.run(action, *args)
+        self.selection.synchronize(self.game)
         if hasattr(self, "personal_piles_ui"):
             self.personal_piles_ui.update()
         self.update_undo_button()
@@ -22,9 +24,7 @@ class GameGUIActions:
     def undo(self):
         if not self.session.undo():
             return
-        self.hand_frame.selected_index = None
-        self.table_frame.selected_index = None
-        self.table_frame.selected_position = None
+        self.selection.clear()
         self.hand_frame.update_hand()
         self.table_frame.update_table()
         self.status_panel.update_status()
@@ -81,7 +81,7 @@ class GameGUIActions:
         self.update_point_button()
 
     def flip_current_hand_card(self):
-        selected = self.hand_frame.selected_index
+        selected = self.selection.hand_index
         if selected is None:
             messagebox.showwarning("No selection", "Select a card in your hand first.", parent=self.root)
             return
@@ -143,7 +143,7 @@ class GameGUIActions:
                 if ok:
                     for button in self._turn_action_buttons():
                         button.configure(state="normal")
-                    self.hand_frame.selected_index = None
+                    self.selection.hand_index = None
                     self.hand_frame.update_hand()
                     self.status_panel.update_status()
                     self.handle_turn_start()
@@ -159,7 +159,7 @@ class GameGUIActions:
             self.log(message)
             if not ok:
                 return
-            self.hand_frame.selected_index = None
+            self.selection.hand_index = None
             self.hand_frame.update_hand()
             self.status_panel.update_status()
             if self.game.active_player_indices():
@@ -178,8 +178,8 @@ class GameGUIActions:
             messagebox.showinfo("Score notice", "\n\n".join(alerts), parent=self.root)
         if hasattr(self, "personal_piles_ui"):
             self.personal_piles_ui.update()
-        self.table_frame.selected_index = None
-        self.table_frame.selected_position = None
+        self.selection.table_index = None
+        self.selection.target_position = None
         self.table_frame.update_table()
         needs_point_confirmation = self.game.current_player_must_confirm_point()
         needs_pot_confirmation = self.game.current_player_must_confirm_pot_withdrawal()

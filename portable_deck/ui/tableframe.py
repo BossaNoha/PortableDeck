@@ -5,11 +5,12 @@ import tkinter.font as tkfont
 class TableFrame(tk.LabelFrame):
     """Shows the shared cards that players have played onto the table."""
 
-    def __init__(self, master, game, **kwargs):
+    def __init__(self, master, game, selection=None, **kwargs):
         super().__init__(master, text="Table", padx=8, pady=5, **kwargs)
         self.game = game
-        self.selected_index = None
-        self.selected_position = None
+        from ..core.selection import SelectionState
+        self.selection = selection if selection is not None else SelectionState()
+        self.selection.synchronize(game)
         self.restoring_view = True
         self.saved_view = dict(game.table_view_state)
         self.zoom_percent = 100
@@ -82,7 +83,24 @@ class TableFrame(tk.LabelFrame):
                 self.canvas.yview_scroll(steps, "units")
         return "break"
 
+    @property
+    def selected_index(self):
+        return self.selection.table_index
+
+    @selected_index.setter
+    def selected_index(self, value):
+        self.selection.table_index = value
+
+    @property
+    def selected_position(self):
+        return self.selection.target_position
+
+    @selected_position.setter
+    def selected_position(self, value):
+        self.selection.target_position = value
+
     def update_table(self):
+        self.selection.synchronize(self.game)
         for widget in self.contents.winfo_children():
             widget.destroy()
         self.card_buttons = []
@@ -228,9 +246,7 @@ class TableFrame(tk.LabelFrame):
         return "break"
 
     def select_card(self, index):
-        self.selected_index = None if self.selected_index == index else index
-        if not self.game.allow_move_cards_on_table:
-            self.selected_position = None
+        self.selection.select_table(index, keep_target=self.game.allow_move_cards_on_table)
         self.update_table()
         if hasattr(self, "on_selection_changed"):
             self.on_selection_changed()
@@ -238,9 +254,7 @@ class TableFrame(tk.LabelFrame):
             self.on_availability_changed()
 
     def select_slot(self, position):
-        if not self.game.allow_move_cards_on_table:
-            self.selected_index = None
-        self.selected_position = position
+        self.selection.select_target(position, keep_card=self.game.allow_move_cards_on_table)
         self.update_table()
         if hasattr(self, "on_selection_changed"):
             self.on_selection_changed()

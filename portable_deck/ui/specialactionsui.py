@@ -16,7 +16,7 @@ class SpecialActionsUI:
 
     def choose(self, destination):
         gui, game = self.gui, self.gui.game
-        selected = gui.hand_frame.selected_index
+        selected = gui.selection.hand_index
         if selected is None:
             messagebox.showwarning("No selection", "Select a card in your hand first.", parent=gui.root)
             return
@@ -42,7 +42,7 @@ class SpecialActionsUI:
                 return
             name = "draw deck" if destination == "draw" else f"discard pile {pile_index + 1}"
             gui.log(f"{gui.current_player_name()} placed {card} at position {position} in the {name}.")
-            gui.hand_frame.selected_index = None
+            gui.selection.hand_index = None
             gui.hand_frame.update_hand()
             gui.status_panel.update_status()
         gui.run_action(action)

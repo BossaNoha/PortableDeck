@@ -43,7 +43,7 @@ class InteractionsUI:
                 amount = simpledialog.askinteger("Steal chips", "How many chips?", minvalue=1, maxvalue=balance, parent=dialog)
                 if amount is None:
                     return
-            selected = gui.hand_frame.selected_index
+            selected = gui.selection.hand_index
             def execute():
                 try:
                     result = game.interact(action, target, None if selected is None else selected + 1, amount)
@@ -61,7 +61,7 @@ class InteractionsUI:
                                     "give_card": f"{actor} gave {result.get('card', '')} to {name}.",
                                     "steal_chips": f"{actor} stole {result.get('amount', 0)} chips from {name}."}
                     gui.log(descriptions[action])
-                gui.hand_frame.selected_index = None
+                gui.selection.hand_index = None
                 gui.hand_frame.update_hand()
                 gui.status_panel.update_status()
                 gui.update_chip_action_buttons()
