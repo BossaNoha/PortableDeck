@@ -1,4 +1,5 @@
 """Shared execution, Undo and checkpoint orchestration without GUI dependencies."""
+import copy
 from dataclasses import dataclass
 from .actionavailability import ActionContext, action_availability
 
@@ -9,6 +10,8 @@ class ActionResult:
     value: object = None
     message: str = ""
     checkpoint_error: str | None = None
+    events: tuple = ()
+    messages: tuple[str, ...] = ()
 
 
 class SessionController:
@@ -25,6 +28,8 @@ class SessionController:
                 self.last_checkpoint_error = self.checkpoint_callback(self.game) or None
             except (OSError, ValueError, TypeError) as error:
                 self.last_checkpoint_error = str(error)
+        if self.last_checkpoint_error:
+            self.game.log_action("", "autosave_failed", error=self.last_checkpoint_error)
         return self.last_checkpoint_error
 
     def restore(self, state):
@@ -125,6 +130,7 @@ class SessionController:
         if action not in handlers:
             raise ValueError(f"No execution handler for action: {action}")
         before = g.capture_undo_state()
+        event_offset, log_offset = len(g.history), len(g.game_log)
         def perform():
             try:
                 raw = handlers[action]()
@@ -136,17 +142,13 @@ class SessionController:
                 if not success:
                     self.restore(before)
                     return ActionResult(False, value=raw, message=message)
-                # Draws are also tracked by end-of-turn summaries; keep an immediate event for CLI clients.
-                if action == "end_turn":
-                    g.log_action(g.players[g.current_player_index].name, "turn_started")
-                if action == "draw_card":
-                    g.log_action(g.players[g.current_player_index].name, "draw_card")
                 return ActionResult(True, before != g.capture_undo_state(), raw, message)
             except (ValueError, TypeError, KeyError, IndexError) as error:
                 self.restore(before)
                 return ActionResult(False, message=str(error))
         result = self.run(perform)
-        return ActionResult(result.success, result.changed, result.value, result.message, self.last_checkpoint_error)
+        return ActionResult(result.success, result.changed, result.value, result.message, self.last_checkpoint_error,
+                            tuple(copy.deepcopy(g.history[event_offset:])), tuple(g.game_log[log_offset:]))
 
     def draw_from_discard(self, parameters):
         g = self.game
@@ -164,7 +166,8 @@ class SessionController:
         card = pile.pop(card_index)
         player = g.players[g.current_player_index]
         player.draw_card(card)
-        g.log_action(player.name, "draw_from_discard", card)
+        name = (g.all_discard_piles()[pile_index][0] if "source_index" in parameters else f"Shared discard {pile_index + 1}")
+        g.log_action(player.name, "draw_from_discard", card, destination=name)
         return card
 
     def undo(self):

@@ -69,5 +69,5 @@ class PlayerInteractions:
         entry = {"player": self.players[actor].name, "action": action, "target": other.name}
         # Revealed cards stay in the private dialog, outside logs and saved history.
         entry.update({key: result[key] for key in ("card", "amount") if key in result})
-        self.history.append(entry)
+        self.record_event(entry)
         return result

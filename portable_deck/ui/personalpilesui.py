@@ -40,16 +40,16 @@ class PersonalPilesUI:
                           command=lambda o=owner, p=pile: self.gui.run_action(self.take, o, p)).pack(side="right")
         self.scroll_area.schedule_resize()
 
-    def refresh_hand(self, message):
+    def refresh_hand(self):
         self.gui.selection.hand_index = None
         self.gui.hand_frame.update_hand()
         self.gui.status_panel.update_status()
-        self.gui.log(message)
+        self.gui.render_log()
 
     def take(self, owner, pile):
         card = self.gui.game.take_from_personal_pile(owner, pile)
         if card:
-            self.refresh_hand(f"{self.gui.current_player_name()} took {card} from a personal pile.")
+            self.refresh_hand()
 
     def choose_destination(self):
         if self.gui.selection.hand_index is None:
@@ -83,7 +83,7 @@ class PersonalPilesUI:
             def action():
                 card = game.play_to_personal_pile(index + 1, owner, pile)
                 if card:
-                    self.refresh_hand(f"{self.gui.current_player_name()} played {card} to {game.players[owner].name}'s pile {pile + 1}.")
+                    self.refresh_hand()
             self.gui.run_action(action)
             dialog.destroy()
         tk.Button(dialog, text="Play", command=play).pack(side="right", padx=10, pady=(0, 10))

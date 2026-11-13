@@ -77,7 +77,7 @@ class GameGUIBuilder:
             self.card_actions_frame,
             text="Draw Card",
             command=lambda: self.run_action(
-                draw_card, self.game, self.hand_frame, self.log, self.status_panel
+                draw_card, self.game, self.hand_frame, self.render_log, self.status_panel
             ),
         )
         self.draw_button.pack(side="left", padx=5)
@@ -88,7 +88,7 @@ class GameGUIBuilder:
                 self.card_actions_frame,
                 text="Recycle Discard into Deck",
                 command=lambda: self.run_action(
-                    recycle_discard_into_deck, self.game, self.log,
+                    recycle_discard_into_deck, self.game, self.render_log,
                     self.status_panel, self.root,
                 ),
             )
@@ -101,7 +101,7 @@ class GameGUIBuilder:
                 text="Take from Discard",
                 command=lambda: self.run_action(
                     draw_from_discard,
-                    self.game, self.hand_frame, self.log, self.status_panel, self.root,
+                    self.game, self.hand_frame, self.render_log, self.status_panel, self.root,
                 ),
             )
             self.discard_draw_button.pack(side="left", padx=5)
@@ -110,7 +110,7 @@ class GameGUIBuilder:
             self.card_actions_frame,
             text="Discard Selected",
             command=lambda: self.run_action(
-                discard_selected, self.game, self.hand_frame, self.log, self.status_panel
+                discard_selected, self.game, self.hand_frame, self.render_log, self.status_panel
             ),
         )
         if self.game.enable_discard_pile:
@@ -120,7 +120,7 @@ class GameGUIBuilder:
             self.card_actions_frame,
             text="Play Selected Card",
             command=lambda: self.run_action(
-                play_selected, self.game, self.hand_frame, self.table_frame, self.log, self.status_panel
+                play_selected, self.game, self.hand_frame, self.table_frame, self.render_log, self.status_panel
             ),
         )
         if self.game.enable_table or (not self.game.enable_discard_pile and not self.game.enable_interactions):
@@ -132,7 +132,7 @@ class GameGUIBuilder:
                 text="Play Selected Face Down",
                 command=lambda: self.run_action(
                     play_selected_face_down, self.game, self.hand_frame,
-                    self.table_frame, self.log, self.status_panel,
+                    self.table_frame, self.render_log, self.status_panel,
                 ),
             )
             self.play_face_down_button.pack(side="left", padx=5)
@@ -144,7 +144,7 @@ class GameGUIBuilder:
                 text="Play at Selected Spot",
                 command=lambda: self.run_action(
                     play_at_selected_spot,
-                    self.game, self.hand_frame, self.table_frame, self.log, self.status_panel,
+                    self.game, self.hand_frame, self.table_frame, self.render_log, self.status_panel,
                 ),
             )
             self.play_at_spot_button.pack(side="left", padx=5)
@@ -157,7 +157,7 @@ class GameGUIBuilder:
                 text="Take Selected from Table",
                 command=lambda: self.run_action(
                     take_selected_from_table,
-                    self.game, self.table_frame, self.hand_frame, self.log, self.status_panel,
+                    self.game, self.table_frame, self.hand_frame, self.render_log, self.status_panel,
                 ),
             )
             self.take_table_button.pack(side="left", padx=5)
@@ -168,7 +168,7 @@ class GameGUIBuilder:
                 text="Move Selected to Discard",
                 command=lambda: self.run_action(
                     move_selected_table_card_to_discard,
-                    self.game, self.table_frame, self.log, self.status_panel,
+                    self.game, self.table_frame, self.render_log, self.status_panel,
                 ),
             )
             self.table_discard_button.pack(side="left", padx=5)
@@ -179,7 +179,7 @@ class GameGUIBuilder:
                 text="Move Selected Table Card",
                 command=lambda: self.run_action(
                     move_selected_table_card,
-                    self.game, self.table_frame, self.log, self.status_panel,
+                    self.game, self.table_frame, self.render_log, self.status_panel,
                 ),
             )
             self.move_table_card_button.pack(side="left", padx=5)
@@ -190,7 +190,7 @@ class GameGUIBuilder:
                 text="Flip Selected Table Card",
                 command=lambda: self.run_action(
                     flip_selected_table_card, self.game, self.table_frame,
-                    self.log, self.status_panel,
+                    self.render_log, self.status_panel,
                 ),
             )
             self.flip_table_card_button.pack(side="left", padx=5)
@@ -200,7 +200,7 @@ class GameGUIBuilder:
                 self.card_actions_frame,
                 text="Clear Table",
                 command=lambda: self.run_action(
-                    clear_table, self.game, self.table_frame, self.log, self.status_panel
+                    clear_table, self.game, self.table_frame, self.render_log, self.status_panel
                 ),
             )
             self.clear_table_button.pack(side="left", padx=5)
@@ -211,7 +211,7 @@ class GameGUIBuilder:
             text="Next Turn",
             command=lambda: self.run_action(
                 end_turn,
-                self.game, self.hand_frame, self.log, self.status_panel, self.handle_turn_start,
+                self.game, self.hand_frame, self.render_log, self.status_panel, self.handle_turn_start,
             ),
         )
         self.next_button.pack(side="left", padx=5)
@@ -286,10 +286,8 @@ class GameGUIBuilder:
         # Initialize GUI
         self.hand_frame.update_hand()
         self.status_panel.update_status()
-        if self.game.gui_log:
-            self._restore_log()
-        else:
-            self.log(f"{self.current_player_name()}'s turn starts.")
+        self.game.ensure_initial_log()
+        self.render_log()
         self.session.run(self.handle_turn_start)
         self.update_point_button()
         self.update_undo_button()

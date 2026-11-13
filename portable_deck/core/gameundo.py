@@ -25,7 +25,7 @@ class GameUndoActions:
             "cards_drawn_this_turn": self.cards_drawn_this_turn,
             "scores": copy.deepcopy(self.scores),
             "pending_point_request": copy.deepcopy(self.pending_point_request),
-            "gui_log": copy.deepcopy(self.gui_log),
+            "game_log": copy.deepcopy(self.game_log),
             "chip_balances": copy.deepcopy(self.chip_balances),
             "chip_pot": self.chip_pot,
             "pending_pot_withdrawal": copy.deepcopy(self.pending_pot_withdrawal),
@@ -59,7 +59,7 @@ class GameUndoActions:
         self.cards_drawn_this_turn = state["cards_drawn_this_turn"]
         self.scores = copy.deepcopy(state["scores"])
         self.pending_point_request = copy.deepcopy(state["pending_point_request"])
-        self.gui_log = copy.deepcopy(state["gui_log"])
+        self.game_log = copy.deepcopy(state.get("game_log", state.get("gui_log", [])))
         self.chip_balances = copy.deepcopy(state.get("chip_balances", [0 for _ in self.players]))
         self.chip_pot = state.get("chip_pot", 0)
         self.pending_pot_withdrawal = copy.deepcopy(state.get("pending_pot_withdrawal"))

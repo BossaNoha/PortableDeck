@@ -3,19 +3,16 @@ from .sessionactions import execute_value
 import tkinter as tk
 from tkinter import messagebox
 
-def draw_card(game, hand_frame, gui_log, status_panel):
+def draw_card(game, hand_frame, render_log, status_panel):
     """Current player draws a card."""
     player_name = game.players[game.current_player_index].name
     card = execute_value(game, "draw_card")
     hand_frame.update_hand()
     status_panel.update_status()
-    if card is None:
-        gui_log("The draw deck is empty. No card was drawn.")
-    else:
-        gui_log(f"{player_name} drew a card.")
+    render_log()
 
 
-def draw_from_discard(game, hand_frame, gui_log, status_panel, root):
+def draw_from_discard(game, hand_frame, render_log, status_panel, root):
     """Take the configured card from any shared or personal discard pile."""
     if not game.enable_discard_pile:
         return
@@ -24,14 +21,14 @@ def draw_from_discard(game, hand_frame, gui_log, status_panel, root):
         messagebox.showinfo("Discard pile is empty", "There are no cards to take.", parent=root)
         return
     if game.draw_from_discard_mode == "any":
-        _choose_discard_card(game, piles, hand_frame, gui_log, status_panel, root)
+        _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root)
     elif len(piles) == 1:
-        _take_discard_card(game, piles[0][1], len(piles[0][1]) - 1, hand_frame, gui_log, status_panel, piles[0][0])
+        _take_discard_card(game, piles[0][1], len(piles[0][1]) - 1, hand_frame, render_log, status_panel, piles[0][0])
     else:
-        _choose_discard_pile(game, piles, hand_frame, gui_log, status_panel, root)
+        _choose_discard_pile(game, piles, hand_frame, render_log, status_panel, root)
 
 
-def _choose_discard_pile(game, piles, hand_frame, gui_log, status_panel, root):
+def _choose_discard_pile(game, piles, hand_frame, render_log, status_panel, root):
     dialog = tk.Toplevel(root)
     dialog.title("Choose a discard pile")
     dialog.transient(root)
@@ -48,7 +45,7 @@ def _choose_discard_pile(game, piles, hand_frame, gui_log, status_panel, root):
         if not selected:
             return
         name, pile = piles[selected[0]]
-        _take_discard_card(game, pile, len(pile) - 1, hand_frame, gui_log, status_panel, name)
+        _take_discard_card(game, pile, len(pile) - 1, hand_frame, render_log, status_panel, name)
         dialog.destroy()
 
     buttons = tk.Frame(dialog)
@@ -59,7 +56,7 @@ def _choose_discard_pile(game, piles, hand_frame, gui_log, status_panel, root):
     dialog.wait_window()
 
 
-def _choose_discard_card(game, piles, hand_frame, gui_log, status_panel, root):
+def _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root):
     dialog = tk.Toplevel(root)
     dialog.title("Choose a discard card")
     dialog.transient(root)
@@ -91,7 +88,7 @@ def _choose_discard_card(game, piles, hand_frame, gui_log, status_panel, root):
             messagebox.showwarning("Select a card", "Choose a card from the list.", parent=dialog)
             return
         pile, index, pile_name = card_sources[selection[0]]
-        _take_discard_card(game, pile, index, hand_frame, gui_log, status_panel, pile_name)
+        _take_discard_card(game, pile, index, hand_frame, render_log, status_panel, pile_name)
         dialog.destroy()
 
     tk.Button(buttons, text="Take selected", command=take_selected).pack(side="right")
@@ -100,7 +97,7 @@ def _choose_discard_card(game, piles, hand_frame, gui_log, status_panel, root):
     dialog.wait_window()
 
 
-def _take_discard_card(game, pile, index, hand_frame, gui_log, status_panel, pile_name):
+def _take_discard_card(game, pile, index, hand_frame, render_log, status_panel, pile_name):
     source = next(i for i, (_name, candidate) in enumerate(game.all_discard_piles()) if candidate is pile)
     card = execute_value(game, "draw_from_discard", source_index=source, card_index=index)
     if card is None:
@@ -109,10 +106,10 @@ def _take_discard_card(game, pile, index, hand_frame, gui_log, status_panel, pil
     hand_frame.game_gui.selection.hand_index = None
     hand_frame.update_hand()
     status_panel.update_status()
-    gui_log(f"{player.name} took {card} from {pile_name}.")
+    render_log()
 
 
-def discard_selected(game, hand_frame, gui_log, status_panel):
+def discard_selected(game, hand_frame, render_log, status_panel):
     """Discard the currently selected card."""
     if not game.enable_discard_pile:
         return
@@ -123,24 +120,24 @@ def discard_selected(game, hand_frame, gui_log, status_panel):
 
     destinations = _current_player_discard_destinations(game)
     if len(destinations) == 1:
-        _discard_to_destination(game, hand_frame, gui_log, status_panel, selected, destinations[0])
+        _discard_to_destination(game, hand_frame, render_log, status_panel, selected, destinations[0])
     else:
-        _choose_discard_destination(game, hand_frame, gui_log, status_panel, selected, destinations)
+        _choose_discard_destination(game, hand_frame, render_log, status_panel, selected, destinations)
 
 
-def _discard_to_destination(game, hand_frame, gui_log, status_panel, selected, destination):
+def _discard_to_destination(game, hand_frame, render_log, status_panel, selected, destination):
     name, pile_index, personal = destination
     card = execute_value(game, "discard_card", card_index=selected, pile_index=pile_index, personal=personal)
     if card:
         hand_frame.game_gui.selection.hand_index = None
         hand_frame.update_hand()
         status_panel.update_status()
-        gui_log(f"{game.players[game.current_player_index].name} discarded {card} to {name}.")
+        render_log()
     else:
         messagebox.showwarning("Invalid", "Invalid card selection!")
 
 
-def _choose_discard_destination(game, hand_frame, gui_log, status_panel, selected, destinations):
+def _choose_discard_destination(game, hand_frame, render_log, status_panel, selected, destinations):
     dialog = tk.Toplevel(hand_frame.winfo_toplevel())
     dialog.title("Choose a discard pile")
     dialog.transient(hand_frame.winfo_toplevel())
@@ -156,7 +153,7 @@ def _choose_discard_destination(game, hand_frame, gui_log, status_panel, selecte
         selection = choices.curselection()
         if not selection:
             return
-        _discard_to_destination(game, hand_frame, gui_log, status_panel, selected, destinations[selection[0]])
+        _discard_to_destination(game, hand_frame, render_log, status_panel, selected, destinations[selection[0]])
         dialog.destroy()
 
     buttons = tk.Frame(dialog)
@@ -179,7 +176,7 @@ def _current_player_discard_destinations(game):
     return destinations
 
 
-def play_selected(game, hand_frame, table_frame, gui_log, status_panel):
+def play_selected(game, hand_frame, table_frame, render_log, status_panel):
     """Play onto the table or return the card to the draw pile."""
     if not game.enable_table and not game.enable_discard_pile:
         selected = hand_frame.game_gui.selection.hand_index
@@ -193,12 +190,12 @@ def play_selected(game, hand_frame, table_frame, gui_log, status_panel):
         hand_frame.game_gui.selection.hand_index = None
         hand_frame.update_hand()
         status_panel.update_status()
-        gui_log(f"{game.players[game.current_player_index].name} played {card}; it was shuffled into the draw pile.")
+        render_log()
         return
-    _play_from_hand_at(game, hand_frame, table_frame, None, gui_log, status_panel)
+    _play_from_hand_at(game, hand_frame, table_frame, None, render_log, status_panel)
 
 
-def play_selected_face_down(game, hand_frame, table_frame, gui_log, status_panel):
+def play_selected_face_down(game, hand_frame, table_frame, render_log, status_panel):
     selected = hand_frame.game_gui.selection.hand_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a card from your hand first!")
@@ -211,12 +208,12 @@ def play_selected_face_down(game, hand_frame, table_frame, gui_log, status_panel
         hand_frame.update_hand()
         table_frame.clear_selection()
         status_panel.update_status()
-        gui_log(f"{player} played a card face down onto the table.")
+        render_log()
     else:
         messagebox.showwarning("Invalid", "The card could not be played at that spot.")
 
 
-def flip_selected_table_card(game, table_frame, gui_log, status_panel):
+def flip_selected_table_card(game, table_frame, render_log, status_panel):
     if table_frame.selection.table_index is None:
         messagebox.showwarning("No selection", "Select a table card first!")
         return
@@ -226,19 +223,19 @@ def flip_selected_table_card(game, table_frame, gui_log, status_panel):
         return
     table_frame.clear_selection()
     status_panel.update_status()
-    gui_log(f"Table card flipped: {card}.")
+    render_log()
 
 
-def recycle_discard_into_deck(game, gui_log, status_panel, root):
+def recycle_discard_into_deck(game, render_log, status_panel, root):
     count = execute_value(game, "recycle_discard")
     if not count:
         messagebox.showinfo("Cannot recycle", "The draw deck must be empty and the discard pile must contain cards.", parent=root)
         return
     status_panel.update_status()
-    gui_log(f"The discard pile was recycled into the draw deck ({count} cards).")
+    render_log()
 
 
-def _play_from_hand_at(game, hand_frame, table_frame, position, gui_log, status_panel):
+def _play_from_hand_at(game, hand_frame, table_frame, position, render_log, status_panel):
     selected = hand_frame.game_gui.selection.hand_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a card from your hand first!")
@@ -251,12 +248,12 @@ def _play_from_hand_at(game, hand_frame, table_frame, position, gui_log, status_
         hand_frame.update_hand()
         table_frame.clear_selection()
         status_panel.update_status()
-        gui_log(f"{player_name} played {card} onto the table.")
+        render_log()
     else:
         messagebox.showwarning("Invalid", "Invalid card selection!")
 
 
-def play_at_selected_spot(game, hand_frame, table_frame, gui_log, status_panel):
+def play_at_selected_spot(game, hand_frame, table_frame, render_log, status_panel):
     selected_hand = hand_frame.game_gui.selection.hand_index
     if selected_hand is None:
         messagebox.showwarning("No selection", "Select a card from your hand first!")
@@ -277,17 +274,17 @@ def play_at_selected_spot(game, hand_frame, table_frame, gui_log, status_panel):
         hand_frame.update_hand()
         table_frame.clear_selection()
         status_panel.update_status()
-        gui_log(f"{player_name} swapped {played_card} for {returned_card} on the table.")
+        render_log()
         return
     if table_frame.selection.target_position is None:
         messagebox.showwarning("No spot selected", "Select an empty spot on the table first!")
         return
     _play_from_hand_at(
-        game, hand_frame, table_frame, table_frame.selection.target_position, gui_log, status_panel
+        game, hand_frame, table_frame, table_frame.selection.target_position, render_log, status_panel
     )
 
 
-def take_selected_from_table(game, table_frame, hand_frame, gui_log, status_panel):
+def take_selected_from_table(game, table_frame, hand_frame, render_log, status_panel):
     selected = table_frame.selection.table_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a table card first!")
@@ -302,10 +299,10 @@ def take_selected_from_table(game, table_frame, hand_frame, gui_log, status_pane
     table_frame.update_table()
     hand_frame.update_hand()
     status_panel.update_status()
-    gui_log(f"{player_name} took {card} from the table.")
+    render_log()
 
 
-def move_selected_table_card_to_discard(game, table_frame, gui_log, status_panel):
+def move_selected_table_card_to_discard(game, table_frame, render_log, status_panel):
     selected = table_frame.selection.table_index
     if selected is None:
         messagebox.showwarning("No selection", "Select a table card first!")
@@ -327,7 +324,7 @@ def move_selected_table_card_to_discard(game, table_frame, gui_log, status_panel
             choice = choices.curselection()
             if not choice:
                 return
-            _finish_table_discard(game, table_frame, gui_log, status_panel, selected, destinations[choice[0]])
+            _finish_table_discard(game, table_frame, render_log, status_panel, selected, destinations[choice[0]])
             dialog.destroy()
 
         buttons = tk.Frame(dialog)
@@ -337,10 +334,10 @@ def move_selected_table_card_to_discard(game, table_frame, gui_log, status_panel
         choices.bind("<Double-1>", lambda _event: move_to_selected())
         dialog.wait_window()
         return
-    _finish_table_discard(game, table_frame, gui_log, status_panel, selected, destinations[0])
+    _finish_table_discard(game, table_frame, render_log, status_panel, selected, destinations[0])
 
 
-def _finish_table_discard(game, table_frame, gui_log, status_panel, selected, destination):
+def _finish_table_discard(game, table_frame, render_log, status_panel, selected, destination):
     name, pile_index, personal = destination
     card = execute_value(game, "discard_table_card", card_index=selected, pile_index=pile_index, personal=personal)
     if card is None:
@@ -350,10 +347,10 @@ def _finish_table_discard(game, table_frame, gui_log, status_panel, selected, de
     table_frame.selection.table_index = None
     table_frame.update_table()
     status_panel.update_status()
-    gui_log(f"{card} was moved from the table to {name}.")
+    render_log()
 
 
-def move_selected_table_card(game, table_frame, gui_log, status_panel):
+def move_selected_table_card(game, table_frame, render_log, status_panel):
     """Move the selected table card to the selected empty table slot."""
     selected = table_frame.selection.table_index
     position = table_frame.selection.target_position
@@ -369,36 +366,29 @@ def move_selected_table_card(game, table_frame, gui_log, status_panel):
         return
     table_frame.clear_selection()
     status_panel.update_status()
-    gui_log(f"{card} was moved to another spot on the table.")
+    render_log()
 
 
-def clear_table(game, table_frame, gui_log, status_panel):
+def clear_table(game, table_frame, render_log, status_panel):
     count = execute_value(game, "clear_table")
     table_frame.selection.table_index = None
     table_frame.update_table()
     status_panel.update_status()
-    if count:
-        gui_log(f"The table was cleared. {count} card(s) moved to the discard pile.")
-    else:
-        gui_log("The table is already empty.")
+    render_log()
 
 
-def end_turn(game, hand_frame, gui_log, status_panel, on_turn_start=None):
+def end_turn(game, hand_frame, render_log, status_panel, on_turn_start=None):
     """End current player's turn and move to next."""
     round_ended, cleared_count = execute_value(game, "end_turn")
     hand_frame.game_gui.selection.hand_index = None
     hand_frame.update_hand()
     status_panel.update_status()
-    if round_ended:
-        gui_log("The round has ended.")
-    if cleared_count:
-        gui_log(f"The table was cleared. {cleared_count} card(s) moved to the discard pile.")
-    gui_log(f"Turn ended. {game.players[game.current_player_index].name}'s turn starts.")
+    render_log()
     if on_turn_start:
         on_turn_start()
 
 
-def request_point(game, hand_frame, gui_log, status_panel):
+def request_point(game, hand_frame, render_log, status_panel):
     succeeded, message = execute_value(game, "request_point")
-    gui_log(message)
+    render_log()
     status_panel.update_status()

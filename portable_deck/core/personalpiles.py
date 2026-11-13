@@ -87,7 +87,7 @@ class PersonalPileActions:
             cards.append(card)
         if rule["ordered"] and rule["order_by"] == "size":
             cards.sort(key=self.personal_card_sort_key, reverse=rule["size_order"] == "down")
-        self.log_action(self.players[self.current_player_index].name, "play_to_personal_pile", card)
+        self.log_action(self.players[self.current_player_index].name, "play_to_personal_pile", card, owner=self.players[owner].name, pile=pile)
         return card
 
     def take_from_personal_pile(self, owner, pile):

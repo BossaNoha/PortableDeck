@@ -10,7 +10,7 @@ class GameTableActions(TablePlacementActions):
             return None
         entry = self.table_cards[index]
         entry["face_up"] = not entry.get("face_up", True)
-        self.log_action(self.players[self.current_player_index].name, "flip_table_card")
+        self.log_action(self.players[self.current_player_index].name, "flip_table_card", entry["card"] if entry["face_up"] else None, face_up=entry["face_up"])
         return entry["card"]
 
     def recycle_discard_into_deck(self):
@@ -25,7 +25,7 @@ class GameTableActions(TablePlacementActions):
             self.deck.flat_deck.extend(pile)
             pile.clear()
         random.shuffle(self.deck.flat_deck)
-        self.log_action(self.players[self.current_player_index].name, "recycle_discard", None)
+        self.log_action(self.players[self.current_player_index].name, "recycle_discard", count=count)
         return count
 
     def swap_with_table(self, hand_index, table_index):
@@ -44,7 +44,7 @@ class GameTableActions(TablePlacementActions):
         table_entry["card"] = replacement
         table_entry["player"] = player.name
         player.draw_card(returned_card)
-        self.log_action(player.name, "swap_table_card", replacement)
+        self.log_action(player.name, "swap_table_card", replacement, returned_card=returned_card)
         return replacement, returned_card
 
     def take_from_table(self, index):
@@ -74,7 +74,8 @@ class GameTableActions(TablePlacementActions):
             if personal else self.discard_piles[pile_index]
         )
         destination.append(card)
-        self.log_action(self.players[self.current_player_index].name, "table_to_discard", card)
+        name = f"{self.players[self.current_player_index].name}'s discard {pile_index + 1}" if personal else f"Shared discard {pile_index + 1}"
+        self.log_action(self.players[self.current_player_index].name, "table_to_discard", card, destination=name)
         return card
 
     def clear_table(self, automatic=False):
@@ -87,7 +88,7 @@ class GameTableActions(TablePlacementActions):
         if count:
             self.discard_pile.extend(entry["card"] for entry in self.table_cards)
             self.table_cards.clear()
-            self.history.append({
+            self.record_event({
                 "player": self.players[self.current_player_index].name,
                 "action": "clear_table",
                 "count": count,

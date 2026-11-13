@@ -1,4 +1,5 @@
 #game.py
+from .gamelog import GameLog
 from .deck import Deck
 from .player import Player
 import json
@@ -14,7 +15,7 @@ from .playerleaving import PlayerLeaving
 from .specialactions import SpecialActions
 from .flipping import FlippingCards
 
-class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
+class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, PlayerInteractions, RolesTeams, PersonalPileActions, GameScoringActions, GameUndoActions, ChipBankActions, GameTableActions):
     def __init__(
         self,
         num_players,
@@ -110,7 +111,7 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
         self.table_cards = []
         self.current_player_index = 0
         self.history = []
-        self.gui_log = []
+        self.game_log = []
         self.enable_undo = bool(enable_undo)
         self.allow_move_cards_on_table = bool(allow_move_cards_on_table or allow_move_table_sequences)
         self.allow_play_in_front_of_players = bool(allow_play_in_front_of_players)
@@ -200,10 +201,10 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
 
         self.cards_per_player = cards_per_player
         self.deck.shuffle()
-        print("Deck shuffled. Starting the game...")
         for _ in range(cards_per_player):
             for player in self.players:
                 player.draw_card(self.deck.draw_card())
+        self.ensure_initial_log()
 
     def restart(self, keep_scores=False):
         """Create a fresh game with the same setup, optionally retaining scores."""
@@ -285,7 +286,7 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
         if self.cards_drawn_this_turn > 0:
             player_name = self.players[self.current_player_index].name
             entry = {"player": player_name, "action": "draw_multiple", "count": self.cards_drawn_this_turn}
-            self.history.append(entry)
+            self.record_event(entry)
             self.cards_drawn_this_turn = 0
 
     def deal_card_to_current(self):
@@ -294,6 +295,7 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
         if card:
             player.draw_card(card)
             self.cards_drawn_this_turn += 1
+            self.log_action(player.name, "draw_card")
         return card
 
     @property
@@ -369,7 +371,8 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
                 if personal else self.discard_piles[pile_index]
             )
             destination.append(card)
-            self.log_action(player.name, "discard", card)
+            name = f"{player.name}'s discard {pile_index + 1}" if personal else f"Shared discard {pile_index + 1}"
+            self.log_action(player.name, "discard", card, destination=name)
             return card   # ✅ success
         else:
             return None   # ❌ failure
@@ -379,20 +382,18 @@ class Game(FlippingCards, SpecialActions, PlayerLeaving, CardsVisibility, Player
         self.log_draws_for_turn()
         active = self.active_player_indices()
         if not active:
+            self.log_action("", "all_players_left")
             return True, 0
         following = next((i for i in active if i > self.current_player_index), active[0])
         round_ended = following <= self.current_player_index
         cleared_count = 0
+        if round_ended:
+            self.log_action("", "round_ended")
         if round_ended and self.clear_table_on_round_end:
             cleared_count = self.clear_table(automatic=True)
         self.current_player_index = following
+        self.log_action(self.players[following].name, "turn_started")
         return round_ended, cleared_count
-
-    def log_action(self, player_name, action, card=None):
-        entry = {"player": player_name, "action": action}
-        if card:
-            entry["card"] = card
-        self.history.append(entry)
 
     def save_discard_pile(self, path):
         import os

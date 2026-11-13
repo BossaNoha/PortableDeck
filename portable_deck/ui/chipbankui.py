@@ -10,7 +10,9 @@ from .chipdialogs import ask_chip_purchase, ask_pot_recipient
 def session_action(method):
     @wraps(method)
     def wrapped(self, *args, **kwargs):
-        return self.gui.session.run(method, self, *args, **kwargs)
+        result = self.gui.session.run(method, self, *args, **kwargs)
+        self.gui.render_log()
+        return result
     return wrapped
 
 
@@ -49,9 +51,7 @@ class ChipBankUI:
             )
             return
         player_name = game.players[player_index].name
-        self._finish_action(
-            f"{player_name} bought {amount} chips. New balance: {balance}."
-        )
+        self._finish_action()
 
     @session_action
     def play_chips(self):
@@ -77,7 +77,7 @@ class ChipBankUI:
         if not succeeded:
             messagebox.showwarning("Could not play chips", message, parent=self.gui.root)
             return
-        self._finish_action(message)
+        self._finish_action()
 
     @session_action
     def take_pot(self):
@@ -103,10 +103,10 @@ class ChipBankUI:
         if not succeeded:
             messagebox.showwarning("Could not take pot", message, parent=self.gui.root)
             return
-        self._finish_action(message)
+        self._finish_action()
 
-    def _finish_action(self, message):
-        self.gui.log(message)
+    def _finish_action(self):
+        self.gui.render_log()
         self.gui.status_panel.update_status()
         self.gui.update_undo_button()
         self.update_action_buttons()

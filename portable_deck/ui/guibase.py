@@ -39,10 +39,7 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
     def save_checkpoint(self, game):
         if hasattr(self, "table_frame"):
             self.table_frame.capture_view()
-        error = self.on_checkpoint(game) if self.on_checkpoint else None
-        if error and hasattr(self, "log_text"):
-            self.log(f"Autosave failed: {error}")
-        return error
+        return self.on_checkpoint(game) if self.on_checkpoint else None
 
     def refresh_action_availability(self):
         from .actionavailability import refresh_action_availability
@@ -83,20 +80,17 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
     def current_player_name(self):
         return self.current_player().name
 
-    def log(self, message):
-        """Append a message to the log text box."""
-        self.game.gui_log.append(message)
+    def render_log(self):
+        """Display the core-owned public log without creating or changing entries."""
         self.log_text.config(state="normal")
-        self.log_text.insert("end", message + "\n")
+        self.log_text.delete("1.0", "end")
+        if self.game.game_log:
+            self.log_text.insert("end", "\n".join(self.game.game_log) + "\n")
         self.log_text.see("end")
         self.log_text.config(state="disabled")
 
     def _restore_log(self):
-        """Render log messages restored from a saved game without duplicating them."""
-        self.log_text.config(state="normal")
-        self.log_text.insert("end", "\n".join(self.game.gui_log) + "\n")
-        self.log_text.see("end")
-        self.log_text.config(state="disabled")
+        self.render_log()
 
     def save_as(self):
         self.table_frame.capture_view()

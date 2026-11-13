@@ -114,13 +114,13 @@ class CardDrag:
             gui.selection.table_index = None
             gui.selection.target_position = tuple(position)
             action = play_at_selected_spot if positioned else play_selected
-            gui.run_action(action, game, gui.hand_frame, gui.table_frame, gui.log, gui.status_panel)
+            gui.run_action(action, game, gui.hand_frame, gui.table_frame, gui.render_log, gui.status_panel)
         elif source == "table":
             if not game.allow_move_cards_on_table or not 0 <= index < len(game.table_cards):
                 return False
             gui.selection.table_index = index
             gui.selection.target_position = tuple(position)
-            gui.run_action(move_selected_table_card, game, gui.table_frame, gui.log, gui.status_panel)
+            gui.run_action(move_selected_table_card, game, gui.table_frame, gui.render_log, gui.status_panel)
         else:
             return False
         return True

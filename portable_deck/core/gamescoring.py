@@ -32,7 +32,7 @@ class GameScoringActions:
             return True, f"{player_name} had their score changed by {delta:+d} (no other players to confirm)."
 
         self.pending_point_request = {"requester": requester, "confirmed_by": [], "delta": delta}
-        self.log_action(self.players[requester].name, "point_requested")
+        self.log_action(self.players[requester].name, "point_requested", delta=delta)
         return True, f"{self.players[requester].name} requested a score change of {delta:+d}."
 
     def current_player_must_confirm_point(self):

@@ -46,6 +46,6 @@ class SpecialActions:
         offset = top_offset if destination == "draw" else len(pile) - top_offset
         card = player.play_card(hand_index)
         pile.insert(offset, card)
-        self.history.append({"player": player.name, "action": "insert_hand_card", "card": card,
+        self.record_event({"player": player.name, "action": "insert_hand_card", "card": card,
                              "destination": destination, "position": position, "pile_index": pile_index})
         return card

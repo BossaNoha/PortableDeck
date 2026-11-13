@@ -52,7 +52,7 @@ class TablePlacementActions:
             entry = {"player": player.name, "card": card, "face_up": bool(face_up)}
             entry["position"] = position
             self.table_cards.append(entry)
-            self.log_action(player.name, "play", card)
+            self.log_action(player.name, "play", card if face_up else None, face_up=bool(face_up))
             return card
         return None
 
@@ -131,12 +131,12 @@ class TablePlacementActions:
             if remaining:
                 newly_exposed = max(remaining, key=lambda card: card["position"][0])
                 newly_exposed["face_up"] = True
-            self.log_action(entry["player"], "move_table_sequence", entry["card"])
+            self.log_action(self.players[self.current_player_index].name, "move_table_sequence", entry["card"])
             return [card["card"] for card in sequence]
 
         entry["position"] = list(position)
         self._compact_main_line()
-        self.log_action(entry["player"], "move_table_card", entry["card"])
+        self.log_action(self.players[self.current_player_index].name, "move_table_card", entry["card"])
         return entry["card"]
 
     def default_table_position(self):

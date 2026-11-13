@@ -15,7 +15,7 @@ class FlippingCards:
             player.revealed_indices.remove(index)
         else:
             player.revealed_indices.add(index)
-        self.log_action(player.name, "flip_hand_card")
+        self.log_action(player.name, "flip_hand_card", player.hand[index] if index in player.revealed_indices else None, revealed=index in player.revealed_indices)
         return player.hand[index]
 
     def can_flip_table_cards(self):

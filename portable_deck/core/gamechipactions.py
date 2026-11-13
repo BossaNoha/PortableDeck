@@ -13,9 +13,10 @@ class ChipBankActions:
         ):
             return None
         self.chip_balances[self.chip_account_index(player_index)] += amount
-        self.history.append({
+        self.record_event({
             "player": self.players[player_index].name,
             "action": "buy_chips",
+            "balance": self.chip_balance(player_index),
             "amount": amount,
         })
         return self.chip_balances[self.chip_account_index(player_index)]
@@ -33,7 +34,7 @@ class ChipBankActions:
             return False, f"{player.name} does not have enough chips."
         self.chip_balances[self.chip_account_index(self.current_player_index)] -= amount
         self.chip_pot += amount
-        self.history.append({"player": player.name, "action": "play_chips", "amount": amount})
+        self.record_event({"player": player.name, "action": "play_chips", "amount": amount, "pot": self.chip_pot})
         return True, f"{player.name} put {amount} chips into the pot. Pot: {self.chip_pot}."
 
     def request_pot_withdrawal(self, recipient_index):
@@ -57,7 +58,7 @@ class ChipBankActions:
                     "recipient": recipient_index,
                     "confirmed_by": [],
                 }
-                self.history.append({
+                self.record_event({
                     "player": self.players[requester].name,
                     "action": "pot_withdrawal_requested",
                     "recipient": recipient,
@@ -82,12 +83,12 @@ class ChipBankActions:
         recipient_index = request["recipient"]
         recipient_name = self.players[recipient_index].name
         if not approved:
-            self.history.append({"player": voter_name, "action": "pot_withdrawal_denied"})
+            self.record_event({"player": voter_name, "action": "pot_withdrawal_denied"})
             self.pending_pot_withdrawal = None
             return True, f"{voter_name} rejected the pot withdrawal. The pot remains unchanged."
 
         request["confirmed_by"].append(voter)
-        self.history.append({"player": voter_name, "action": "pot_withdrawal_approved"})
+        self.record_event({"player": voter_name, "action": "pot_withdrawal_approved"})
         other_players = [index for index in self.active_player_indices() if index != request["requester"]]
         if all(index in request["confirmed_by"] for index in other_players):
             return True, self._complete_pot_withdrawal(request["requester"], recipient_index)
@@ -99,7 +100,7 @@ class ChipBankActions:
         self.chip_pot = 0
         self.pending_pot_withdrawal = None
         recipient_name = self.players[recipient_index].name
-        self.history.append({
+        self.record_event({
             "player": self.players[requester_index].name,
             "action": "pot_withdrawn",
             "recipient": recipient_name,

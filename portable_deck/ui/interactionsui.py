@@ -51,16 +51,11 @@ class InteractionsUI:
                     messagebox.showwarning("Cannot interact", str(error), parent=dialog)
                     return
                 name = game.players[result["target"]].name
-                actor = gui.current_player_name()
                 if action.startswith("peek_"):
-                    gui.log(f"{actor} looked at {'a random card' if action == 'peek_random_card' else 'all cards'} of {name}.")
+                    gui.render_log()
                     messagebox.showinfo(f"{name}'s cards — private view", "\n".join(result["cards"]), parent=dialog)
                 else:
-                    descriptions = {"take_random_card": f"{actor} took a random card from {name}.",
-                                    "discard_random_card": f"{actor} discarded {name}'s card: {result.get('card', '')}.",
-                                    "give_card": f"{actor} gave {result.get('card', '')} to {name}.",
-                                    "steal_chips": f"{actor} stole {result.get('amount', 0)} chips from {name}."}
-                    gui.log(descriptions[action])
+                    gui.render_log()
                 gui.selection.hand_index = None
                 gui.hand_frame.update_hand()
                 gui.status_panel.update_status()

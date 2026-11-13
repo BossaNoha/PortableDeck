@@ -12,6 +12,7 @@ class GameGUIActions:
     def run_action(self, action, *args):
         self.selection.synchronize(self.game)
         self.session.run(action, *args)
+        self.render_log()
         self.selection.synchronize(self.game)
         if hasattr(self, "personal_piles_ui"):
             self.personal_piles_ui.update()
@@ -30,8 +31,8 @@ class GameGUIActions:
         self.status_panel.update_status()
         self.log_text.config(state="normal")
         self.log_text.delete("1.0", "end")
-        if self.game.gui_log:
-            self.log_text.insert("end", "\n".join(self.game.gui_log) + "\n")
+        if self.game.game_log:
+            self.log_text.insert("end", "\n".join(self.game.game_log) + "\n")
         self.log_text.see("end")
         self.log_text.config(state="disabled")
         if self.game.active_player_indices():
@@ -51,6 +52,7 @@ class GameGUIActions:
         self.table_frame.capture_view()
         self.refresh_action_availability()
         self.session.checkpoint()
+        self.render_log()
 
     def restart(self):
         if self.game.score_enabled:
@@ -76,7 +78,7 @@ class GameGUIActions:
 
     def request_current_point(self):
         self.run_action(
-            request_point, self.game, self.hand_frame, self.log, self.status_panel
+            request_point, self.game, self.hand_frame, self.render_log, self.status_panel
         )
         self.update_point_button()
 
@@ -89,14 +91,14 @@ class GameGUIActions:
             card = execute_value(self.game, "flip_hand_card", card_index=selected)
             if card is not None:
                 revealed = selected in self.current_player().revealed_indices
-                self.log(f"{self.current_player_name()} revealed {card}." if revealed else f"{self.current_player_name()} hid a hand card.")
+                self.render_log()
                 self.hand_frame.update_hand()
         self.run_action(action)
 
     def reduce_current_score(self):
         def action():
             _, message = execute_value(self.game, "reduce_score")
-            self.log(message)
+            self.render_log()
             self.status_panel.update_status()
         self.run_action(action)
         self.update_point_button()
@@ -139,7 +141,7 @@ class GameGUIActions:
             player = players[selected[0]]
             def action():
                 ok, message = execute_value(self.game, "return_player", player_index=player)
-                self.log(message)
+                self.render_log()
                 if ok:
                     for button in self._turn_action_buttons():
                         button.configure(state="normal")
@@ -156,7 +158,7 @@ class GameGUIActions:
     def leave_current_player(self):
         def action():
             ok, message = execute_value(self.game, "leave_session")
-            self.log(message)
+            self.render_log()
             if not ok:
                 return
             self.selection.hand_index = None
@@ -164,9 +166,7 @@ class GameGUIActions:
             self.status_panel.update_status()
             if self.game.active_player_indices():
                 self.handle_turn_start()
-                self.log(f"{self.current_player_name()}'s turn starts.")
-            else:
-                self.log("All players have left the session.")
+                self.render_log()
         self.run_action(action)
 
     def handle_turn_start(self):
@@ -194,7 +194,7 @@ class GameGUIActions:
             notice = self.game.score_confirmation_notification()
             approved = messagebox.askyesno(notice.title, notice.message, parent=self.root)
             _, result = execute_value(self.game, "confirm_point", approved=approved)
-            self.log(result)
+            self.render_log()
             self.status_panel.update_status()
 
         if self.game.current_player_must_confirm_pot_withdrawal():
@@ -209,7 +209,7 @@ class GameGUIActions:
                 parent=self.root,
             )
             _, result = execute_value(self.game, "confirm_pot", approved=approved)
-            self.log(result)
+            self.render_log()
             self.status_panel.update_status()
 
         for button in self._turn_action_buttons():

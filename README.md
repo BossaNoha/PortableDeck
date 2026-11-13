@@ -330,3 +330,16 @@ prompt, including requester and delta. Submit the decision through
 `game.session.execute("confirm_point", approved=True)` or `approved=False`.
 The existing `turn_score_alerts()` method remains a compatibility adapter that
 returns message strings and acknowledges them immediately.
+
+### Core-owned game log
+
+Game operations record structured events in `game.history` and public messages
+in `game.game_log`, including when called directly without the GUI. The shared
+formatter in `portable_deck.core.gamelog` owns message wording. GUI code only
+renders the resulting log; CLI clients can print it or use `ActionResult.events`
+and `ActionResult.messages` for output from a particular session action.
+
+Hidden draws, face-down plays and private peek results are excluded from public
+messages. Undo and failed transactions restore both history and messages. New
+saves use `game_log`; older saves with `gui_log` remain readable, and the old
+attribute is retained as a compatibility alias. Existing saved text is preserved.

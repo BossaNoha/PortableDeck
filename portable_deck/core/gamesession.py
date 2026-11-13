@@ -66,7 +66,7 @@ def save_session(game, path):
         "table_cards": game.table_cards,
         "current_player_index": game.current_player_index,
         "history": game.history,
-        "gui_log": game.gui_log,
+        "game_log": game.game_log,
         "cards_drawn_this_turn": game.cards_drawn_this_turn,
         "cards_per_player": game.cards_per_player,
         "score_enabled": game.score_enabled,
@@ -155,7 +155,7 @@ def load_session(game_class, path):
     if not 0 <= game.current_player_index < len(game.players):
         raise ValueError("Saved game has an invalid current player")
     game.history = state["history"]
-    game.gui_log = state.get("gui_log", [])
+    game.game_log = state.get("game_log", state.get("gui_log", []))
     game.cards_drawn_this_turn = state["cards_drawn_this_turn"]
     game.cards_per_player = state.get("cards_per_player")
     game.allow_reduce_score = state.get("allow_reduce_score", False)

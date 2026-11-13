@@ -41,7 +41,7 @@ class SpecialActionsUI:
                 messagebox.showwarning("Cannot place card", str(error), parent=gui.root)
                 return
             name = "draw deck" if destination == "draw" else f"discard pile {pile_index + 1}"
-            gui.log(f"{gui.current_player_name()} placed {card} at position {position} in the {name}.")
+            gui.render_log()
             gui.selection.hand_index = None
             gui.hand_frame.update_hand()
             gui.status_panel.update_status()
