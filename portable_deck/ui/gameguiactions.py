@@ -4,6 +4,7 @@ from tkinter import messagebox
 from .cardactions import request_point
 from .sessionactions import execute_value
 from ..core.selectionsnapshot import build_selection_snapshot
+from ..core.playerleaving import build_player_return_options
 
 class GameGUIActions:
 
@@ -119,31 +120,30 @@ class GameGUIActions:
                 button.configure(state="disabled")
 
     def choose_returning_player(self):
-        if not self.game.left_players:
-            messagebox.showinfo("Return player", "No players have left the session.", parent=self.root)
-            return
-        if self.game.pending_point_request is not None or self.game.pending_pot_withdrawal is not None:
-            messagebox.showinfo("Return player", "Complete the pending confirmation first.", parent=self.root)
+        options = build_player_return_options(self.game)
+        if not options.allowed:
+            messagebox.showinfo("Return player", options.reason, parent=self.root)
             return
         dialog = tk.Toplevel(self.root)
         dialog.title("Return player back to game")
         dialog.transient(self.root)
         dialog.grab_set()
-        players = list(self.game.left_players)
+        players = options.players
         choices = tk.Listbox(dialog, height=min(10, len(players)), width=36, exportselection=False)
         choices.pack(fill="both", expand=True, padx=10, pady=10)
         for player in players:
-            choices.insert("end", self.game.players[player].name)
+            choices.insert("end", player.name)
         choices.selection_set(0)
         def restore():
             selected = choices.curselection()
             if not selected:
                 return
-            player = players[selected[0]]
+            player = players[selected[0]].index
             def action():
                 ok, message = execute_value(self.game, "return_player", player_index=player)
                 self.render_log()
                 if ok:
+                    dialog.destroy()
                     for button in self._turn_action_buttons():
                         button.configure(state="normal")
                     self.selection.hand_index = None
@@ -151,7 +151,8 @@ class GameGUIActions:
                     self.status_panel.update_status()
                     self.handle_turn_start()
                     self.update_point_button()
-            dialog.destroy()
+                else:
+                    messagebox.showwarning("Cannot return player", message, parent=dialog)
             self.run_action(action)
         tk.Button(dialog, text="Return player", command=restore).pack(side="right", padx=10, pady=(0, 10))
         tk.Button(dialog, text="Cancel", command=dialog.destroy).pack(side="right", pady=(0, 10))

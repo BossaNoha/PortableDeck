@@ -306,6 +306,14 @@ no Tkinter; dialogs and rendering remain in the GUI.
 
 ### Selection state
 
+Returning-player dialogs use
+`portable_deck.core.playerleaving.build_player_return_options(game)` for an
+immutable list of departed player IDs/names and eligibility reasons. Pending
+confirmations and disabled return rules are checked again by
+`session.execute("return_player", player_index=...)`; stale options cannot
+authorize a return. Returning the first player to an empty session resumes their
+turn and participates in Undo and checkpoints.
+
 `portable_deck.core.selection.SelectionState` holds transient hand/table indices
 and the target table position without importing Tkinter. GUI controls share one
 instance; the frames only render that selection. Use `select_hand`,

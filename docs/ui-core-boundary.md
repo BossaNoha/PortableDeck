@@ -121,7 +121,12 @@ eligibility reasons and amount limits. They refresh options on action changes
 and before submitting input. Shared target validation is reused by execution,
 which rejects stale targets or changed balances without mutation. Departed
 players remain listed with an explanation. Returning-player dialogs from
-priority 3 remain a separate follow-up.
+priority 3 now use `build_player_return_options` for immutable IDs, names and
+eligibility reasons. The shared `return_player_reason` is used by options,
+controller execution and the model. A rejected stale choice leaves the dialog
+open and displays its current reason. Tests cover disabled return, empty lists,
+pending confirmations, already-returned players and return/Undo when everyone
+has departed.
 
 Regression checks cover stale UI approval followed by confirmation blocking,
 chip-dialog state changes during input, unchanged state/Undo/checkpoints on

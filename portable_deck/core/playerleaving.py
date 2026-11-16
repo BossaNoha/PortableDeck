@@ -1,4 +1,46 @@
 """Conditional departures preserve player indices and skip departed turns."""
+from dataclasses import dataclass
+
+
+def return_player_reason(game, player):
+    """Shared, read-only validation used by options and execution."""
+    if not game.enable_player_return:
+        return "Player return is disabled."
+    if not isinstance(player, int) or isinstance(player, bool) or player not in game.left_players:
+        return "Choose a player who left the session."
+    if game.pending_point_request is not None or game.pending_pot_withdrawal is not None:
+        return "Complete the pending confirmation first."
+    return ""
+
+
+@dataclass(frozen=True)
+class ReturningPlayer:
+    index: int
+    name: str
+    allowed: bool
+    reason: str
+
+
+@dataclass(frozen=True)
+class PlayerReturnOptions:
+    allowed: bool
+    reason: str
+    players: tuple[ReturningPlayer, ...]
+
+
+def build_player_return_options(game):
+    """Prepare departed players without exposing live player objects."""
+    entries = []
+    for i in game.left_players:
+        reason = return_player_reason(game, i)
+        entries.append(ReturningPlayer(i, game.players[i].name, not reason, reason))
+    players = tuple(entries)
+    allowed = any(player.allowed for player in players)
+    reason = ("" if allowed else "Player return is disabled." if not game.enable_player_return
+              else players[0].reason if players else "No players have left the session.")
+    return PlayerReturnOptions(allowed, reason, players)
+
+
 class PlayerLeaving:
     def initialize_leaving(self, enabled=False, conditions=None, allow_return=False):
         self.enable_player_return = bool(allow_return)
@@ -60,12 +102,9 @@ class PlayerLeaving:
         return True, f"{self.players[player].name} left the session."
 
     def return_player(self, player):
-        if not self.enable_player_return:
-            return False, "Player return is disabled."
-        if not isinstance(player, int) or isinstance(player, bool) or player not in self.left_players:
-            return False, "Choose a player who left the session."
-        if self.pending_point_request is not None or self.pending_pot_withdrawal is not None:
-            return False, "Complete the pending confirmation first."
+        reason = return_player_reason(self, player)
+        if reason:
+            return False, reason
         was_empty = not self.active_player_indices()
         self.left_players.remove(player)
         if was_empty:

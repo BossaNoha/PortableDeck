@@ -3,6 +3,7 @@ import copy
 from dataclasses import dataclass
 from .actionavailability import ActionContext, action_availability
 from .interactions import INTERACTIONS
+from .playerleaving import return_player_reason
 
 @dataclass(frozen=True)
 class ActionResult:
@@ -102,10 +103,7 @@ class SessionController:
         if action in lifecycle:
             reason = ""
             if action == "return_player":
-                if not g.enable_player_return or parameters.get("player_index") not in g.left_players:
-                    reason = "Choose an eligible departed player."
-                elif g.pending_point_request or g.pending_pot_withdrawal:
-                    reason = "Complete the pending confirmation first."
+                reason = return_player_reason(g, parameters.get("player_index"))
             elif not g.active_player_indices():
                 reason = "No active players remain."
             elif action == "confirm_point" and not g.current_player_must_confirm_point():
