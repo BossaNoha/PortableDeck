@@ -133,3 +133,45 @@ def build_player_personal_piles_view(game, viewer, hand_index=None):
                     game.can_access_personal_pile(owner, index, viewer=viewer),
                     available("play_personal_pile"), available("take_personal_pile")))
     return PlayerPersonalPilesView(viewer, enabled, tuple(piles))
+
+
+@dataclass(frozen=True)
+class DiscardCardView:
+    index: int
+    card: str
+
+
+@dataclass(frozen=True)
+class DiscardPileView:
+    source_index: int
+    name: str
+    card_count: int
+    cards: tuple[DiscardCardView, ...]
+
+
+@dataclass(frozen=True)
+class PlayerDiscardView:
+    viewer: int
+    enabled: bool
+    mode: str
+    piles: tuple[DiscardPileView, ...]
+
+
+def build_player_discard_view(game, viewer):
+    """Prepare discard browsing without live lists or draw-deck order.
+
+    Source indices include empty piles and match the session draw command.
+    Cards are top first; top mode never copies deeper card identities.
+    """
+    _validate_viewer(game, viewer)
+    piles = []
+    if game.enable_discard_pile:
+        sources = [(f"Shared discard {i + 1}", pile) for i, pile in enumerate(game.discard_piles)]
+        for owner, group in enumerate(game.personal_discard_piles):
+            sources.extend((f"{game.players[owner].name}'s discard {i + 1}", pile)
+                           for i, pile in enumerate(group))
+        for source, (name, pile) in enumerate(sources):
+            indices = range(len(pile) - 1, -1, -1) if game.draw_from_discard_mode == "any" else ([len(pile) - 1] if pile else [])
+            piles.append(DiscardPileView(source, name, len(pile),
+                                         tuple(DiscardCardView(i, pile[i]) for i in indices)))
+    return PlayerDiscardView(viewer, game.enable_discard_pile, game.draw_from_discard_mode, tuple(piles))

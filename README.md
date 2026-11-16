@@ -407,6 +407,16 @@ current turn. Play availability uses the optional zero-based hand selection.
 Disabled personal piles expose no entries. The GUI renders this view and uses
 it to offer destinations; execution still revalidates through the controller.
 
+### Discard browsing
+
+`build_player_discard_view(game, viewer)` returns immutable shared and personal
+discard pile snapshots. In `top` mode only the top identity is copied; `any`
+mode lists cards top first with their original zero-based card indices.
+`source_index` includes empty piles and can be passed to the session's
+`draw_from_discard` command. The view does not grant permission to draw, and
+execution rechecks the current rules. No draw-deck order is included.
+The separate Full Deck preview displays the deck definition, not remaining order.
+
 ### Shared session status
 
 Table zoom and scroll offsets are client state, separate from `Game`. The desktop

@@ -14,8 +14,10 @@ Remaining boundaries to address in separate changes:
   views before using the model with remote clients. Hands now use
   `build_player_hands_view` in both the current hand and Visible hands window;
   table layouts use `build_player_table_view`; personal piles use
-  `build_player_personal_piles_view`. Discard/deck browsing and other collections
-  remain to be reviewed.
+  `build_player_personal_piles_view`. Discard browsing uses
+  `build_player_discard_view`. Full Deck preview still reads the deck definition
+  directly; it does not expose remaining draw order. Discard destination choices
+  and special insertion dialogs still inspect pile counts in the model.
   Neither the status snapshot nor the hand projection is a complete player view.
 
 This audit covers the game UI package. Application settings, save management
@@ -60,3 +62,9 @@ Personal pile cards retain their current public visibility. Their immutable
 projection separates viewer-specific access from turn/selection-dependent play
 and take availability. The GUI reads pile data and destinations from this view;
 session commands remain authoritative when executing an action.
+
+Discard draw dialogs use immutable pile/card snapshots with original source and
+card indices, without holding live pile lists or finding sources by object
+identity. Empty piles retain their source indices. Top-only browsing omits deeper
+identities; any-card browsing retains existing visibility. The controller checks
+draw permissions and current indices again when a choice is submitted.

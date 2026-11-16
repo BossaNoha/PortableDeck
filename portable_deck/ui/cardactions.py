@@ -1,5 +1,6 @@
 # cardactions.py
 from .sessionactions import execute_value
+from ..core.playerview import build_player_discard_view
 import tkinter as tk
 from tkinter import messagebox
 
@@ -14,16 +15,17 @@ def draw_card(game, hand_frame, render_log, status_panel):
 
 def draw_from_discard(game, hand_frame, render_log, status_panel, root):
     """Take the configured card from any shared or personal discard pile."""
-    if not game.enable_discard_pile:
+    view = build_player_discard_view(game, game.current_player_index)
+    if not view.enabled:
         return
-    piles = [(name, pile) for name, pile in game.all_discard_piles() if pile]
+    piles = [pile for pile in view.piles if pile.card_count]
     if not piles:
         messagebox.showinfo("Discard pile is empty", "There are no cards to take.", parent=root)
         return
-    if game.draw_from_discard_mode == "any":
+    if view.mode == "any":
         _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root)
     elif len(piles) == 1:
-        _take_discard_card(game, piles[0][1], len(piles[0][1]) - 1, hand_frame, render_log, status_panel, piles[0][0])
+        _take_discard_card(game, piles[0].source_index, piles[0].cards[0].index, hand_frame, render_log, status_panel)
     else:
         _choose_discard_pile(game, piles, hand_frame, render_log, status_panel, root)
 
@@ -36,16 +38,16 @@ def _choose_discard_pile(game, piles, hand_frame, render_log, status_panel, root
     tk.Label(dialog, text="Choose a pile; its top card will be taken:").pack(anchor="w", padx=10, pady=(10, 5))
     choices = tk.Listbox(dialog, exportselection=False, width=45, height=min(12, len(piles)))
     choices.pack(fill="both", expand=True, padx=10)
-    for name, pile in piles:
-        choices.insert("end", f"{name} ({len(pile)} cards): {pile[-1]}")
+    for pile in piles:
+        choices.insert("end", f"{pile.name} ({pile.card_count} cards): {pile.cards[0].card}")
     choices.selection_set(0)
 
     def take_selected():
         selected = choices.curselection()
         if not selected:
             return
-        name, pile = piles[selected[0]]
-        _take_discard_card(game, pile, len(pile) - 1, hand_frame, render_log, status_panel, name)
+        pile = piles[selected[0]]
+        _take_discard_card(game, pile.source_index, pile.cards[0].index, hand_frame, render_log, status_panel)
         dialog.destroy()
 
     buttons = tk.Frame(dialog)
@@ -71,11 +73,11 @@ def _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root
     scrollbar.pack(side="right", fill="y")
     card_list.configure(yscrollcommand=scrollbar.set)
     card_sources = []
-    for pile_name, pile in piles:
-        for position in range(len(pile) - 1, -1, -1):
-            marker = " (top)" if position == len(pile) - 1 else ""
-            card_sources.append((pile, position, pile_name))
-            card_list.insert("end", f"{pile_name}: {pile[position]}{marker}")
+    for pile in piles:
+        for card in pile.cards:
+            marker = " (top)" if card.index == pile.card_count - 1 else ""
+            card_sources.append((pile.source_index, card.index))
+            card_list.insert("end", f"{pile.name}: {card.card}{marker}")
     card_list.selection_set(0)
     card_list.activate(0)
 
@@ -87,8 +89,8 @@ def _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root
         if not selection:
             messagebox.showwarning("Select a card", "Choose a card from the list.", parent=dialog)
             return
-        pile, index, pile_name = card_sources[selection[0]]
-        _take_discard_card(game, pile, index, hand_frame, render_log, status_panel, pile_name)
+        source, index = card_sources[selection[0]]
+        _take_discard_card(game, source, index, hand_frame, render_log, status_panel)
         dialog.destroy()
 
     tk.Button(buttons, text="Take selected", command=take_selected).pack(side="right")
@@ -97,8 +99,7 @@ def _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root
     dialog.wait_window()
 
 
-def _take_discard_card(game, pile, index, hand_frame, render_log, status_panel, pile_name):
-    source = next(i for i, (_name, candidate) in enumerate(game.all_discard_piles()) if candidate is pile)
+def _take_discard_card(game, source, index, hand_frame, render_log, status_panel):
     card = execute_value(game, "draw_from_discard", source_index=source, card_index=index)
     if card is None:
         return

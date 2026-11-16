@@ -117,10 +117,11 @@ class PlayerViewTests(unittest.TestCase):
 
     def test_projection_works_without_tkinter(self):
         script = ("from portable_deck.core.game import Game; "
-                  "from portable_deck.core.playerview import build_player_hands_view, build_player_table_view, build_player_personal_piles_view; import sys; "
+                  "from portable_deck.core.playerview import build_player_hands_view, build_player_table_view, build_player_personal_piles_view, build_player_discard_view; import sys; "
                   "g=Game(2,'decks/demodeck.json'); assert build_player_hands_view(g,1).viewer==1; "
                   "assert build_player_table_view(g,1).viewer==1; "
                   "assert build_player_personal_piles_view(g,1).viewer==1; "
+                  "assert build_player_discard_view(g,1).viewer==1; "
                   "assert 'tkinter' not in sys.modules")
         result = subprocess.run([sys.executable, "-B", "-c", script],
                                 cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
