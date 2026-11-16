@@ -1,9 +1,57 @@
 import unittest
 import tempfile
+from unittest.mock import Mock
 from pathlib import Path
 from portable_deck.core.game import Game
 
 class SpecialActionTests(unittest.TestCase):
+    def test_session_placement_has_one_undo_step_and_checkpoint(self):
+        for destination in ("draw", "discard"):
+            with self.subTest(destination=destination):
+                game = self.game()
+                game.players[0].hand = ["A of Test"]
+                saved = Mock(return_value=None)
+                game.session.checkpoint_callback = saved
+                before = game.capture_undo_state()
+                # Match the GUI's outer transaction and zero-based selection.
+                result = game.session.run(lambda: game.session.execute(
+                    f"insert_{destination}_" + ("deck" if destination == "draw" else "pile"),
+                    card_index=0, position="1", pile_index=1))
+                self.assertTrue(result.success)
+                self.assertTrue(result.changed)
+                self.assertEqual(result.value, "A of Test")
+                pile = game.deck.flat_deck if destination == "draw" else game.discard_piles[1]
+                self.assertEqual(pile[0 if destination == "draw" else -1], "A of Test")
+                self.assertEqual(game.players[0].hand, [])
+                self.assertEqual(len(game.undo_stack), 1)
+                saved.assert_called_once_with(game)
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(saved.call_count, 2)
+
+    def test_rejected_session_placement_preserves_state_and_does_not_save(self):
+        for action, parameters in (
+            ("insert_draw_deck", {"position": "0"}),
+            ("insert_draw_deck", {"position": "X"}),
+            ("insert_draw_deck", {"position": "1", "card_index": 99}),
+            ("insert_discard_pile", {"position": "1", "pile_index": 99}),
+        ):
+            with self.subTest(action=action, parameters=parameters):
+                game = self.game()
+                game.players[0].hand = ["A of Test"]
+                game.deck.flat_deck[:] = ["B of Test"]
+                saved = Mock(return_value=None)
+                game.session.checkpoint_callback = saved
+                before = game.capture_undo_state()
+                result = game.session.run(lambda: game.session.execute(
+                    action, **{"card_index": 0, **parameters}))
+                self.assertFalse(result.success)
+                self.assertFalse(result.changed)
+                self.assertTrue(result.message)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+
     def game(self):
         return Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
                     enable_special_actions=True, allow_insert_draw_deck=True,

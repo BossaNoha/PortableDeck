@@ -35,12 +35,12 @@ class SpecialActionsUI:
             return
         position = position.strip().upper()
         def action():
-            try:
-                card = game.insert_hand_card(selected + 1, destination, position, pile_index)
-            except ValueError as error:
-                messagebox.showwarning("Cannot place card", str(error), parent=gui.root)
+            action_id = "insert_draw_deck" if destination == "draw" else "insert_discard_pile"
+            result = game.session.execute(
+                action_id, card_index=selected, position=position, pile_index=pile_index)
+            if not result.success:
+                messagebox.showwarning("Cannot place card", result.message, parent=gui.root)
                 return
-            name = "draw deck" if destination == "draw" else f"discard pile {pile_index + 1}"
             gui.render_log()
             gui.selection.hand_index = None
             gui.hand_frame.update_hand()
