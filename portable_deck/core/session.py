@@ -2,6 +2,7 @@
 import copy
 from dataclasses import dataclass
 from .actionavailability import ActionContext, action_availability
+from .interactions import INTERACTIONS
 
 @dataclass(frozen=True)
 class ActionResult:
@@ -129,6 +130,10 @@ class SessionController:
             "insert_draw_deck": lambda: g.insert_hand_card(card + 1, "draw", parameters["position"]),
             "insert_discard_pile": lambda: g.insert_hand_card(card + 1, "discard", parameters["position"], parameters.get("pile_index", 0)),
         }
+        if action in INTERACTIONS:
+            handlers[action] = lambda: g.interact(
+                action, parameters.get("target"),
+                None if card is None else card + 1, parameters.get("amount"))
         if action not in handlers:
             raise ValueError(f"No execution handler for action: {action}")
         before = g.capture_undo_state()

@@ -270,6 +270,13 @@ Player and pile indices are zero-based. Both commands enforce access permissions
 and participate in Undo and checkpoints. Availability queries can include
 `ActionContext(owner=0, pile_index=0)` to check a particular pile.
 
+Player interactions use their interaction IDs as session commands, for example
+`execute("give_card", target=1, card_index=0)` or
+`execute("steal_chips", target=1, amount=5)`. Random discard chooses its own target.
+Private peek commands return cards only in `ActionResult.value["cards"]`, outside
+public events and messages. They still record that a peek occurred, so the
+history change participates in Undo and checkpoints.
+
 Set `game.session.checkpoint_callback` to a function accepting the game to save
 changed sessions automatically. A save failure is reported without reversing
 the action. `session.run(operation)` groups nested operations and presentation

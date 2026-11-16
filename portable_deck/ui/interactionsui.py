@@ -45,11 +45,11 @@ class InteractionsUI:
                     return
             selected = gui.selection.hand_index
             def execute():
-                try:
-                    result = game.interact(action, target, None if selected is None else selected + 1, amount)
-                except ValueError as error:
-                    messagebox.showwarning("Cannot interact", str(error), parent=dialog)
+                outcome = game.session.execute(action, target=target, card_index=selected, amount=amount)
+                if not outcome.success:
+                    messagebox.showwarning("Cannot interact", outcome.message, parent=dialog)
                     return
+                result = outcome.value
                 name = game.players[result["target"]].name
                 if action.startswith("peek_"):
                     gui.render_log()

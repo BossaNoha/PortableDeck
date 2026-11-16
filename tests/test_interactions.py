@@ -1,10 +1,84 @@
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import Mock
 from portable_deck.core.game import Game
 from portable_deck.core.interactions import INTERACTIONS
 
 class InteractionTests(unittest.TestCase):
+    def test_session_interactions_have_one_undo_and_checkpoint(self):
+        for action in INTERACTIONS:
+            with self.subTest(action=action):
+                game = self.game()
+                before = game.capture_undo_state()
+                saved = Mock(return_value=None)
+                game.session.checkpoint_callback = saved
+                result = game.session.run(lambda: game.session.execute(
+                    action, target=1, card_index=0, amount=5))
+                self.assertTrue(result.success, result.message)
+                self.assertTrue(result.changed)
+                self.assertTrue(result.events)
+                self.assertEqual(len(game.undo_stack), 1)
+                saved.assert_called_once_with(game)
+                if action == "give_card":
+                    self.assertIn("A of Test", game.players[1].hand)
+                elif action == "steal_chips":
+                    self.assertEqual(game.chip_balance(0), 105)
+                    self.assertEqual(game.chip_balance(1), 95)
+                elif action == "take_random_card":
+                    self.assertIn(result.value["card"], game.players[0].hand)
+                elif action == "discard_random_card":
+                    self.assertIn(result.value["card"], game.discard_pile)
+                else:
+                    self.assertTrue(result.value["cards"])
+                    self.assertEqual([p.hand for p in game.players],
+                                     [["A of Test"], ["2 of Test", "3 of Test"], ["4 of Test"]])
+                    for event in result.events:
+                        self.assertNotIn("card", event)
+                        self.assertNotIn("cards", event)
+                    for card in game.players[1].hand:
+                        self.assertNotIn(card, repr(result.messages))
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(saved.call_count, 2)
+
+    def test_session_rejections_do_not_change_state_or_save(self):
+        for case in ("disabled", "confirmation", "departed_actor", "departed_target",
+                     "invalid_target", "missing_card", "invalid_amount", "empty_target", "shared_account"):
+            with self.subTest(case=case):
+                options = {}
+                if case == "shared_account":
+                    options = dict(enable_roles_teams=True, enable_teams=True, team_count=1,
+                                   player_teams=["team_1", "team_1", None], share_team_chips=True)
+                game = self.game(**options)
+                action, parameters = "take_random_card", {"target": 1}
+                if case == "disabled":
+                    game.enable_interactions = False
+                elif case == "confirmation":
+                    game.current_player_must_confirm_point = lambda: True
+                elif case == "departed_actor":
+                    game.left_players = [0]
+                elif case == "departed_target":
+                    game.left_players = [1]
+                elif case == "invalid_target":
+                    parameters["target"] = True
+                elif case == "missing_card":
+                    action = "give_card"
+                elif case in {"invalid_amount", "shared_account"}:
+                    action = "steal_chips"
+                    parameters["amount"] = -1 if case == "invalid_amount" else 5
+                elif case == "empty_target":
+                    game.players[1].hand.clear()
+                before = game.capture_undo_state()
+                saved = Mock(return_value=None)
+                game.session.checkpoint_callback = saved
+                result = game.session.execute(action, **parameters)
+                self.assertFalse(result.success)
+                self.assertTrue(result.message)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+
     def game(self, **options):
         game = Game(3, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
                     enable_interactions=True, interaction_options=dict.fromkeys(INTERACTIONS, True),

@@ -3,6 +3,7 @@
 Card indices are zero-based. This API only inspects state; it never executes actions.
 """
 from dataclasses import dataclass
+from .interactions import INTERACTIONS
 
 
 @dataclass(frozen=True)
@@ -26,7 +27,7 @@ ACTIONS = frozenset((
     "flip_table_card", "move_table_card", "request_point", "reduce_score",
     "draw_from_discard", "recycle_discard", "clear_table", "leave_session",
     "buy_chips", "play_chips", "take_pot", "insert_draw_deck", "insert_discard_pile",
-))
+)) | frozenset(INTERACTIONS)
 
 
 def action_availability(game, action, context=None):
@@ -60,10 +61,13 @@ def _action_reason(g, action, context):
         "insert_draw_deck": g.enable_special_actions and g.allow_insert_draw_deck,
         "insert_discard_pile": g.enable_special_actions and g.allow_insert_discard_pile and g.enable_discard_pile,
     }
+    enabled.update({key: g.interaction_allowed(key) for key in INTERACTIONS})
     if not enabled[action]:
         return "This action is disabled by the game rules."
     if not g.active_player_indices():
         return "All players have left. Return a player or restart the game."
+    if action in INTERACTIONS and g.current_player_index in g.left_players:
+        return "This player has left the session."
     if g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal():
         return "Complete the pending confirmation first."
     if action in {"play_personal_pile", "take_personal_pile"}:
@@ -111,7 +115,7 @@ def _action_reason(g, action, context):
         if rule["no_chips"] and g.enable_chip_accounts:
             details.append(f"Your chip account must be empty. Available: {g.chip_balance(g.current_player_index)}.")
         return ("All conditions required. " if rule["match"] == "all" else "At least one condition required. ") + " ".join(details)
-    hand_actions = {"play_card", "discard_card", "play_face_down", "play_personal_pile", "flip_hand_card", "play_at_position"}
+    hand_actions = {"play_card", "discard_card", "play_face_down", "play_personal_pile", "flip_hand_card", "play_at_position", "give_card"}
     if (action in hand_actions or action in {"insert_draw_deck", "insert_discard_pile"}) and context.hand_index is None:
         return "Select a card in your hand first."
     if action in {"take_table_card", "discard_table_card", "flip_table_card", "move_table_card"} and context.table_index is None:
