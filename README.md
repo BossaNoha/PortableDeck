@@ -264,6 +264,12 @@ flipping, chips, scoring, confirmations, leaving/returning and ending a turn.
 Availability is checked before execution. Results include `success`, `changed`,
 `value`, `message` and `checkpoint_error`.
 
+Personal table piles use `execute("play_personal_pile", card_index=0, owner=0,
+pile_index=0)` and `execute("take_personal_pile", owner=0, pile_index=0)`.
+Player and pile indices are zero-based. Both commands enforce access permissions
+and participate in Undo and checkpoints. Availability queries can include
+`ActionContext(owner=0, pile_index=0)` to check a particular pile.
+
 Set `game.session.checkpoint_callback` to a function accepting the game to save
 changed sessions automatically. A save failure is reported without reversing
 the action. `session.run(operation)` groups nested operations and presentation

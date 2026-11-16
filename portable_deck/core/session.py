@@ -76,7 +76,8 @@ class SessionController:
         g = self.game
         card = parameters.get("card_index")
         position = parameters.get("target_position")
-        context = ActionContext(hand_index=card, table_index=card, target_position=position)
+        context = ActionContext(hand_index=card, table_index=card, target_position=position,
+                                owner=parameters.get("owner"), pile_index=parameters.get("pile_index"))
         lifecycle = {"end_turn", "confirm_point", "confirm_pot", "return_player"}
         if action in lifecycle:
             reason = ""
@@ -124,6 +125,7 @@ class SessionController:
             "reduce_score": lambda: g.reduce_score(),
             "leave_session": lambda: g.leave_session(),
             "play_personal_pile": lambda: g.play_to_personal_pile(card + 1, parameters["owner"], parameters["pile_index"]),
+            "take_personal_pile": lambda: g.take_from_personal_pile(parameters["owner"], parameters["pile_index"]),
             "insert_draw_deck": lambda: g.insert_hand_card(card + 1, "draw", parameters["position"]),
             "insert_discard_pile": lambda: g.insert_hand_card(card + 1, "discard", parameters["position"], parameters.get("pile_index", 0)),
         }

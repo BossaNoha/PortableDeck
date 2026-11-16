@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from .contentscrollarea import ContentScrollArea
+from ..core.actionavailability import ActionContext, action_availability
 
 
 class PersonalPilesUI:
@@ -36,7 +37,8 @@ class PersonalPilesUI:
                     listing.configure(yscrollcommand=bar.set)
                 else:
                     tk.Label(frame, text="Empty").pack(side="left")
-                tk.Button(frame, text="Take top card", state="normal" if cards and game.can_access_personal_pile(owner, pile) else "disabled",
+                available = action_availability(game, "take_personal_pile", ActionContext(owner=owner, pile_index=pile))
+                tk.Button(frame, text="Take top card", state="normal" if available.allowed else "disabled",
                           command=lambda o=owner, p=pile: self.gui.run_action(self.take, o, p)).pack(side="right")
         self.scroll_area.schedule_resize()
 
@@ -47,9 +49,11 @@ class PersonalPilesUI:
         self.gui.render_log()
 
     def take(self, owner, pile):
-        card = self.gui.game.take_from_personal_pile(owner, pile)
-        if card:
+        result = self.gui.game.session.execute("take_personal_pile", owner=owner, pile_index=pile)
+        if result.success:
             self.refresh_hand()
+        else:
+            messagebox.showwarning("Cannot take card", result.message, parent=self.gui.root)
 
     def choose_destination(self):
         if self.gui.selection.hand_index is None:
@@ -81,10 +85,12 @@ class PersonalPilesUI:
             owner, pile = destinations[selection[0]]
             index = self.gui.selection.hand_index
             def action():
-                card = game.play_to_personal_pile(index + 1, owner, pile)
-                if card:
+                result = game.session.execute("play_personal_pile", card_index=index, owner=owner, pile_index=pile)
+                if result.success:
                     self.refresh_hand()
+                    dialog.destroy()
+                else:
+                    messagebox.showwarning("Cannot play card", result.message, parent=dialog)
             self.gui.run_action(action)
-            dialog.destroy()
         tk.Button(dialog, text="Play", command=play).pack(side="right", padx=10, pady=(0, 10))
         tk.Button(dialog, text="Cancel", command=dialog.destroy).pack(side="right", pady=(0, 10))

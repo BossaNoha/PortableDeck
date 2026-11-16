@@ -10,6 +10,8 @@ class ActionContext:
     hand_index: int | None = None
     table_index: int | None = None
     target_position: tuple[int, int] | None = None
+    owner: int | None = None
+    pile_index: int | None = None
 
 
 @dataclass(frozen=True)
@@ -19,7 +21,7 @@ class ActionAvailability:
 
 
 ACTIONS = frozenset((
-    "draw_card", "discard_card", "play_card", "play_face_down", "play_personal_pile",
+    "draw_card", "discard_card", "play_card", "play_face_down", "play_personal_pile", "take_personal_pile",
     "flip_hand_card", "play_at_position", "take_table_card", "discard_table_card",
     "flip_table_card", "move_table_card", "request_point", "reduce_score",
     "draw_from_discard", "recycle_discard", "clear_table", "leave_session",
@@ -41,6 +43,7 @@ def _action_reason(g, action, context):
         "play_card": g.enable_table or (not g.enable_discard_pile and not g.enable_interactions),
         "play_face_down": g.enable_table and g.allow_face_down_table_cards,
         "play_personal_pile": g.enable_table and g.enable_personal_piles,
+        "take_personal_pile": g.enable_table and g.enable_personal_piles,
         "flip_hand_card": g.enable_flipping and g.allow_flip_hand,
         "play_at_position": g.enable_table and (g.allow_positioned_play or g.allow_play_in_front_of_players),
         "take_table_card": g.enable_table and g.allow_take_from_table,
@@ -63,6 +66,18 @@ def _action_reason(g, action, context):
         return "All players have left. Return a player or restart the game."
     if g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal():
         return "Complete the pending confirmation first."
+    if action in {"play_personal_pile", "take_personal_pile"}:
+        if context.owner is not None or context.pile_index is not None:
+            owner, pile = context.owner, context.pile_index
+            if (not isinstance(owner, int) or isinstance(owner, bool)
+                    or not isinstance(pile, int) or isinstance(pile, bool)
+                    or not 0 <= owner < len(g.players)
+                    or not 0 <= pile < len(g.personal_piles[owner])):
+                return "Choose a valid personal pile."
+            if not g.can_access_personal_pile(owner, pile):
+                return "You cannot access this personal pile."
+            if action == "take_personal_pile" and not g.personal_piles[owner][pile]:
+                return "This personal pile is empty."
     if action in {"request_point", "reduce_score"} and g.pending_point_request:
         return "Wait for the other players to confirm the previous score change."
     if action in {"play_chips", "take_pot"} and g.pending_pot_withdrawal:

@@ -2,11 +2,70 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import Mock
 
 from portable_deck.core.game import Game
 
 
 class PersonalPileTests(unittest.TestCase):
+    def test_session_actions_share_one_undo_and_checkpoint(self):
+        for action in ("play_personal_pile", "take_personal_pile"):
+            with self.subTest(action=action):
+                game = self.game()
+                game.players[0].hand = ["3 of Test"]
+                game.personal_piles[0][1] = ["2 of Test"]
+                before = game.capture_undo_state()
+                saved = Mock(return_value=None)
+                game.session.checkpoint_callback = saved
+                result = game.session.run(lambda: game.session.execute(
+                    action, card_index=0, owner=0, pile_index=1))
+                self.assertTrue(result.success)
+                self.assertTrue(result.changed)
+                self.assertEqual(result.value, "3 of Test" if action == "play_personal_pile" else "2 of Test")
+                self.assertEqual(game.personal_piles[0][1],
+                                 ["2 of Test", "3 of Test"] if action == "play_personal_pile" else [])
+                self.assertEqual(len(game.undo_stack), 1)
+                saved.assert_called_once_with(game)
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(saved.call_count, 2)
+
+    def test_session_rejects_invalid_or_inaccessible_piles_without_changes(self):
+        for action in ("play_personal_pile", "take_personal_pile"):
+            for owner, pile in ((1, 0), (-1, 0), (0, -1), (99, 0), (0, 99),
+                                (True, 0), (0, False), ("0", 0), (None, None)):
+                with self.subTest(action=action, owner=owner, pile=pile):
+                    game = self.game()
+                    game.players[0].hand = ["3 of Test"]
+                    game.personal_piles[1][0] = ["2 of Test"]
+                    before = game.capture_undo_state()
+                    saved = Mock(return_value=None)
+                    game.session.checkpoint_callback = saved
+                    result = game.session.execute(action, card_index=0, owner=owner, pile_index=pile)
+                    self.assertFalse(result.success)
+                    self.assertTrue(result.message)
+                    self.assertEqual(game.capture_undo_state(), before)
+                    self.assertEqual(game.undo_stack, [])
+                    saved.assert_not_called()
+
+    def test_session_rejects_empty_disabled_and_confirmation_blocked_piles(self):
+        for blocked in ("empty", "disabled", "confirmation"):
+            with self.subTest(blocked=blocked):
+                game = self.game()
+                if blocked != "empty":
+                    game.personal_piles[0][0] = ["2 of Test"]
+                if blocked == "disabled":
+                    game.enable_personal_piles = False
+                if blocked == "confirmation":
+                    game.current_player_must_confirm_point = lambda: True
+                saved = Mock(return_value=None)
+                game.session.checkpoint_callback = saved
+                before = game.capture_undo_state()
+                result = game.session.execute("take_personal_pile", owner=0, pile_index=0)
+                self.assertFalse(result.success)
+                self.assertEqual(game.capture_undo_state(), before)
+                saved.assert_not_called()
+
     def game(self, rules=None):
         return Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
                     enable_personal_piles=True, personal_pile_count=2,
