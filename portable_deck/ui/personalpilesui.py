@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from .contentscrollarea import ContentScrollArea
-from ..core.actionavailability import ActionContext, action_availability
+from ..core.playerview import build_player_personal_piles_view
 
 
 class PersonalPilesUI:
@@ -20,26 +20,25 @@ class PersonalPilesUI:
         for child in self.contents.winfo_children():
             child.destroy()
         game = self.gui.game
-        if not game.enable_table or not game.enable_personal_piles:
+        view = build_player_personal_piles_view(game, game.current_player_index)
+        if not view.enabled:
             return
-        for owner, player in enumerate(game.players):
-            for pile, cards in enumerate(game.personal_piles[owner]):
-                rule = game.personal_pile_settings[owner][pile]
-                frame = tk.LabelFrame(self.contents, text=f"{player.name} — Pile {pile + 1} ({rule['access']})")
-                frame.pack(fill="x", pady=3)
-                if cards:
-                    listing = tk.Listbox(frame, height=min(4, len(cards)), exportselection=False)
-                    listing.pack(side="left", fill="both", expand=True)
-                    for index, card in enumerate(reversed(cards)):
-                        listing.insert("end", f"{card}{' (top)' if index == 0 else ''}")
-                    bar = tk.Scrollbar(frame, command=listing.yview)
-                    bar.pack(side="left", fill="y")
-                    listing.configure(yscrollcommand=bar.set)
-                else:
-                    tk.Label(frame, text="Empty").pack(side="left")
-                available = action_availability(game, "take_personal_pile", ActionContext(owner=owner, pile_index=pile))
-                tk.Button(frame, text="Take top card", state="normal" if available.allowed else "disabled",
-                          command=lambda o=owner, p=pile: self.gui.run_action(self.take, o, p)).pack(side="right")
+        for entry in view.piles:
+            owner, pile, cards = entry.owner, entry.pile_index, entry.cards
+            frame = tk.LabelFrame(self.contents, text=f"{entry.owner_name} — Pile {pile + 1} ({entry.access})")
+            frame.pack(fill="x", pady=3)
+            if cards:
+                listing = tk.Listbox(frame, height=min(4, len(cards)), exportselection=False)
+                listing.pack(side="left", fill="both", expand=True)
+                for index, card in enumerate(reversed(cards)):
+                    listing.insert("end", f"{card}{' (top)' if index == 0 else ''}")
+                bar = tk.Scrollbar(frame, command=listing.yview)
+                bar.pack(side="left", fill="y")
+                listing.configure(yscrollcommand=bar.set)
+            else:
+                tk.Label(frame, text="Empty").pack(side="left")
+            tk.Button(frame, text="Take top card", state="normal" if entry.take.allowed else "disabled",
+                      command=lambda o=owner, p=pile: self.gui.run_action(self.take, o, p)).pack(side="right")
         self.scroll_area.schedule_resize()
 
     def refresh_hand(self):
@@ -67,11 +66,11 @@ class PersonalPilesUI:
         choices = tk.Listbox(dialog, width=50, height=12, exportselection=False)
         choices.pack(fill="both", expand=True, padx=10, pady=10)
         destinations = []
-        for owner, player in enumerate(game.players):
-            for pile in range(game.personal_pile_counts[owner]):
-                if game.can_access_personal_pile(owner, pile):
-                    destinations.append((owner, pile))
-                    choices.insert("end", f"{player.name} — Pile {pile + 1}")
+        view = build_player_personal_piles_view(game, game.current_player_index, self.gui.selection.hand_index)
+        for entry in view.piles:
+            if entry.play.allowed:
+                destinations.append((entry.owner, entry.pile_index))
+                choices.insert("end", f"{entry.owner_name} — Pile {entry.pile_index + 1}")
         if not destinations:
             dialog.destroy()
             messagebox.showinfo("No accessible piles", "There are no personal piles available to this player.", parent=self.gui.root)

@@ -1,5 +1,6 @@
 """Immutable card projections containing only identities visible to a player."""
 from dataclasses import dataclass
+from .actionavailability import ActionContext, ActionAvailability, action_availability
 
 
 @dataclass(frozen=True)
@@ -83,3 +84,52 @@ def build_player_table_view(game, viewer):
     available = tuple(sorted(game.available_table_positions())) if game.enable_table else ()
     return PlayerTableView(viewer, game.enable_table, game.allow_play_in_front_of_players,
                            tuple(player.name for player in game.players), cards, available)
+
+
+@dataclass(frozen=True)
+class PersonalPileView:
+    owner: int
+    owner_name: str
+    pile_index: int
+    access: str
+    ordered: bool
+    order_by: str
+    new_card: str
+    size_order: str
+    cards: tuple[str, ...]
+    accessible: bool
+    play: ActionAvailability
+    take: ActionAvailability
+
+
+@dataclass(frozen=True)
+class PlayerPersonalPilesView:
+    viewer: int
+    enabled: bool
+    piles: tuple[PersonalPileView, ...]
+
+
+def build_player_personal_piles_view(game, viewer, hand_index=None):
+    """Expose public pile cards in model order (top last), separately from access.
+
+    Play availability refers to the supplied zero-based hand selection. Actions
+    are available only for the current player; access itself is viewer-specific.
+    """
+    _validate_viewer(game, viewer)
+    enabled = game.enable_table and game.enable_personal_piles
+    piles = []
+    if enabled:
+        for owner, group in enumerate(game.personal_piles):
+            for index, cards in enumerate(group):
+                rule = game.personal_pile_settings[owner][index]
+                context = ActionContext(hand_index=hand_index, owner=owner, pile_index=index)
+                def available(action):
+                    if viewer != game.current_player_index:
+                        return ActionAvailability(False, "It is not this player's turn.")
+                    return action_availability(game, action, context)
+                piles.append(PersonalPileView(
+                    owner, game.players[owner].name, index, rule["access"], rule["ordered"],
+                    rule["order_by"], rule["new_card"], rule["size_order"], tuple(cards),
+                    game.can_access_personal_pile(owner, index, viewer=viewer),
+                    available("play_personal_pile"), available("take_personal_pile")))
+    return PlayerPersonalPilesView(viewer, enabled, tuple(piles))

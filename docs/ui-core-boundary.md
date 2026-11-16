@@ -13,8 +13,9 @@ Remaining boundaries to address in separate changes:
 - Rendering still reads model collections directly. Introduce player-specific
   views before using the model with remote clients. Hands now use
   `build_player_hands_view` in both the current hand and Visible hands window;
-  table layouts use `build_player_table_view`; personal piles and other
-  collections remain to be projected.
+  table layouts use `build_player_table_view`; personal piles use
+  `build_player_personal_piles_view`. Discard/deck browsing and other collections
+  remain to be reviewed.
   Neither the status snapshot nor the hand projection is a complete player view.
 
 This audit covers the game UI package. Application settings, save management
@@ -54,3 +55,8 @@ It preserves model indices, stacked positions, available targets and player lane
 names. Table rendering reads this snapshot instead of raw table card entries.
 Actions and selection still use local model/controller APIs; these projections
 alone do not make the application a remote client.
+
+Personal pile cards retain their current public visibility. Their immutable
+projection separates viewer-specific access from turn/selection-dependent play
+and take availability. The GUI reads pile data and destinations from this view;
+session commands remain authoritative when executing an action.

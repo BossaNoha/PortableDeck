@@ -397,6 +397,16 @@ retain their model meaning, including stacked cards. Disabled tables expose no
 cards or targets. Both table layouts render this projection; it does not include
 personal piles or public action history yet.
 
+### Player-specific personal piles
+
+`build_player_personal_piles_view(game, viewer, hand_index=None)` returns immutable
+pile snapshots with owner, indices, ordering rules and cards in model order (top
+last). Cards remain public regardless of manipulation access. `accessible` is
+viewer-specific; `play` and `take` contain availability and reasons for the
+current turn. Play availability uses the optional zero-based hand selection.
+Disabled personal piles expose no entries. The GUI renders this view and uses
+it to offer destinations; execution still revalidates through the controller.
+
 ### Shared session status
 
 Table zoom and scroll offsets are client state, separate from `Game`. The desktop

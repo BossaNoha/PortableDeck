@@ -35,12 +35,12 @@ class PersonalPileActions:
             self.personal_pile_settings.append(group)
         self.personal_piles = [[[] for _ in range(amount)] for amount in self.personal_pile_counts]
 
-    def can_access_personal_pile(self, owner, pile):
-        if self.current_player_index in self.left_players or not self.enable_personal_piles or not self.enable_table:
+    def can_access_personal_pile(self, owner, pile, viewer=None):
+        viewer = self.current_player_index if viewer is None else viewer
+        if viewer in self.left_players or not self.enable_personal_piles or not self.enable_table:
             return False
         if not 0 <= owner < len(self.players) or not 0 <= pile < self.personal_pile_counts[owner]:
             return False
-        viewer = self.current_player_index
         access = self.personal_pile_settings[owner][pile]["access"]
         if access == "everyone_but_owner":
             return viewer != owner
