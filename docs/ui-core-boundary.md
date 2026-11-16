@@ -8,19 +8,10 @@ Legacy table positions are migrated in the core on session load and Undo.
 Rendering the table no longer writes positions into game entries. Valid explicit
 positions are preserved; legacy scalar positions keep their historical ordering.
 
-Remaining boundaries to address in separate changes:
-
-- Rendering still reads model collections directly. Introduce player-specific
-  views before using the model with remote clients. Hands now use
-  `build_player_hands_view` in both the current hand and Visible hands window;
-  table layouts use `build_player_table_view`; personal piles use
-  `build_player_personal_piles_view`. Discard browsing uses
-  `build_player_discard_view`. Full Deck preview renders the immutable definition
-  from `build_deck_preview`; it does not expose remaining draw order. Discard
-  destinations and insertion ranges use immutable options from `core.pileoptions`.
-  Other presentation and action-selection logic still needs review before
-  introducing a complete remote-client interface.
-  Neither the status snapshot nor the hand projection is a complete player view.
+Hands, table layouts, personal piles and discard browsing now render immutable
+core projections. Full Deck preview renders an immutable definition. Discard
+destinations and insertion ranges use `core.pileoptions`. These are useful local
+client boundaries, but they do not yet form a complete remote-client interface.
 
 This audit covers the game UI package. Application settings, save management
 and full network authorization require separate reviews.
@@ -75,3 +66,38 @@ Discard destination dialogs no longer enumerate model pile lists. Insertion
 dialogs receive counts, ranges and middle-position availability without reading
 draw or discard card collections. These options are descriptive; execution
 permissions, selection validity and position rules remain enforced by commands.
+
+## Follow-up audit: remaining dependencies
+
+This follow-up is a static review of `portable_deck/ui` and the supporting core
+queries. The user reported that their manually exercised flows worked after the
+preceding refactors; this is not a claim that every GUI flow was manually tested.
+No gameplay implementation was changed as part of this audit.
+
+| Priority | Boundary | Evidence and implication | Suggested isolated change |
+| --- | --- | --- | --- |
+| 1 | Duplicate chip button availability | `ui/chipbankui.py:update_action_buttons` checks the pot, pending withdrawal and balance itself. `ui/actionavailability.py` also updates those buttons through the shared API, including confirmation blocking. Different refresh paths can therefore use different conditions. | Make chip button refresh delegate to shared availability. Verify confirmation blocking, minimum bet, empty pot and pending withdrawal. Keep dialog input and rendering local. |
+| 2 | Drag and context actions repeat rules | `ui/carddrag.py:drop` checks turn state, flags, positions and indices; `ui/cardcontextmenu.py:card_menu_entries` and `ui/contextactions.py:refresh` repeat parts of confirmation and action checks. Execution still goes through session commands. | Centralize the decision about a proposed drop and its command parameters. Then reuse shared availability in context menus. Preserve the default-position constraint of non-positioned play. |
+| 3 | Interaction and player lifecycle dialogs inspect model players | `ui/interactionsui.py:show` builds targets from active players and reads chip balances; `ui/gameguiactions.py:choose_returning_player` uses departed players directly. Interaction target and amount validation currently occurs during execution, beyond the general availability query. | Add immutable action-specific options for targets and amount limits, with IDs/names and reasons, without passing Player objects. Revalidate on execution. |
+| 4 | Selection still depends on secret model data | `core/selection.py:synchronize` copies actual hand identities and table entry contents to detect collection changes. `ui/cardcontextmenu.py:show_card_menu` and `ui/carddrag.py:drop` inspect model collection lengths. Redacted rendering alone therefore does not remove the client's model dependency. | Design revision/selection tokens or a snapshot-based synchronization contract before using projections remotely. Do not compare only redacted card values: hidden-card replacements must still invalidate stale selection. |
+| 5 | Some read APIs perform compatibility writes | `Game.all_discard_piles` calls `ensure_discard_pile_state`, which can fill/rebuild fields. Core paths such as discard drawing and session persistence call it. New discard projections avoid it. | Move discard compatibility normalization to load/restore boundaries and make enumeration read-only. Review legacy-save and Undo coverage before removing the compatibility behavior. |
+
+Additional boundaries for a later, larger milestone:
+
+- `GameGUIBuilder` uses rule flags to choose which widgets exist. This is
+  reasonable for the present client; consolidate client capabilities when
+  defining a replacement UI contract, rather than adding a snapshot per flag.
+- `GameGUI` retains the entire `Game`; independent projections do not provide
+  authentication or transport. A host must choose the authorized viewer and
+  filter action results/history. In particular, `ActionResult.events` is copied
+  from internal history and must not automatically be broadcast to all clients.
+- Save callbacks, checkpoint error reporting and application lifecycle are
+  separate from widget layout. Their present direct model access is not evidence
+  of game rules belonging to Tkinter.
+- Public log rendering, resetting selection, scroll/zoom, dialog cancellation,
+  label formatting and widget placement can remain client responsibilities.
+
+Recommended next commit: **unify chip button availability** (priority 1). It is
+small, reuses an existing core API and has clear behavioral checks. Subsequent
+work should tackle drop decisions and interaction options before introducing
+network transport or a single aggregate player snapshot.
