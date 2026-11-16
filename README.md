@@ -378,6 +378,16 @@ messages. Undo and failed transactions restore both history and messages. New
 saves use `game_log`; older saves with `gui_log` remain readable, and the old
 attribute is retained as a compatibility alias. Existing saved text is preserved.
 
+### Player-specific hands
+
+`portable_deck.core.playerview.build_player_hands_view(game, viewer)` returns an
+immutable hand snapshot for a zero-based player index. Hidden card slots contain
+`card=None`; individually revealed cards remain visible. Player, team and dealer
+permissions determine full-hand access. Both hand interfaces render this shared
+projection. It supports `dataclasses.asdict` and does not import Tkinter or change
+the game. This is the first part of a player view, not a complete network payload
+or authentication boundary; remote callers must not choose arbitrary viewers.
+
 ### Shared session status
 
 Table zoom and scroll offsets are client state, separate from `Game`. The desktop

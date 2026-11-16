@@ -11,8 +11,10 @@ positions are preserved; legacy scalar positions keep their historical ordering.
 Remaining boundaries to address in separate changes:
 
 - Rendering still reads model collections directly. Introduce player-specific
-  views before using the model with remote clients; the status snapshot alone
-  is not a complete player view.
+  views before using the model with remote clients. Hands now use
+  `build_player_hands_view` in both the current hand and Visible hands window;
+  table cards, personal piles and other collections remain to be projected.
+  Neither the status snapshot nor the hand projection is a complete player view.
 
 This audit covers the game UI package. Application settings, save management
 and full network authorization require separate reviews.
@@ -39,3 +41,9 @@ load. Core-only saves omit client metadata unless explicitly supplied; loading
 with `Game.load_session` intentionally restores only the game, not client views.
 New games and restarts use the default view. Presentation state is excluded from
 gameplay snapshots and Undo.
+
+Hand projections use an explicit validated viewer and existing player/team/dealer
+permissions. Hidden card identities are replaced by `None`; revealed cards are
+visible individually even without full-hand permission. Projections contain
+immutable tuples and dataclasses, never live hand collections. Viewer selection
+is not authentication: a future host must establish the caller's player identity.

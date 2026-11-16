@@ -1,6 +1,7 @@
 """Responsive player hand with at most four visible rows."""
 import math
 import tkinter as tk
+from ..core.playerview import build_player_hands_view
 
 
 class HandFrame(tk.LabelFrame):
@@ -38,12 +39,13 @@ class HandFrame(tk.LabelFrame):
         if owner != self.hand_owner:
             self.canvas.yview_moveto(0)
             self.hand_owner = owner
-        player = self.game_gui.current_player()
-        if self.selected_index is not None and self.selected_index >= len(player.hand):
+        hand = build_player_hands_view(game, owner).hands[owner]
+        if self.selected_index is not None and self.selected_index >= len(hand.cards):
             self.selected_index = None
-        visible = game.can_view_hand(owner, owner)
-        for i, card in enumerate(player.hand):
-            button = tk.Button(self.cards_frame, text=(card + " (revealed)") if i in player.revealed_indices else card if visible else f"Hidden card {i + 1}",
+        for slot in hand.cards:
+            i = slot.index
+            text = (slot.card + " (revealed)" if slot.revealed else slot.card) if slot.card is not None else f"Hidden card {i + 1}"
+            button = tk.Button(self.cards_frame, text=text,
                                width=18, wraplength=120, command=lambda index=i: self.select_card(index))
             button.bind("<MouseWheel>", self.scroll)
             button.bind("<Button-3>", lambda event, index=i: self.open_card_menu(event, index))
