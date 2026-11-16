@@ -1,5 +1,6 @@
 """Optional contextual card controls and compact session menus."""
 import tkinter as tk
+from .actionavailability import selected_action_available
 
 class ContextActions:
     def __init__(self, gui):
@@ -67,7 +68,7 @@ class ContextActions:
             include("flip_hand_button")
             if hasattr(self, "give_button"):
                 shown.append(self.give_button)
-                self.give_button.configure(state="normal" if g.active_player_indices() and not g.current_player_must_confirm_point() and not g.current_player_must_confirm_pot_withdrawal() else "disabled")
+                self.give_button.configure(state="normal" if selected_action_available(gui, "give_card") else "disabled")
             if hasattr(gui, "special_actions_ui"):
                 shown.extend(gui.special_actions_ui.buttons)
         if table:

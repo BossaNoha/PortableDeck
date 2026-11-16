@@ -2,6 +2,7 @@
 import tkinter as tk
 from time import monotonic
 from .cardactions import play_selected, play_at_selected_spot, move_selected_table_card
+from ..core.actionavailability import drop_availability
 
 class CardDrag:
     def __init__(self, gui):
@@ -42,6 +43,9 @@ class CardDrag:
         self.dragging = True
         self.hint.pack(side="right", padx=8)
         target = self.target(event.x_root, event.y_root)
+        if target is not None and not drop_availability(
+                self.gui.game, source, index, target._table_drop_position).availability.allowed:
+            target = None
         if target != (self.highlight[0] if self.highlight else None):
             self.clear_highlight()
             if target is not None:
@@ -100,24 +104,16 @@ class CardDrag:
 
     def drop(self, source, index, position):
         gui, game = self.gui, self.gui.game
-        if (not game.enable_table or game.current_player_index in game.left_players
-                or game.current_player_must_confirm_point() or game.current_player_must_confirm_pot_withdrawal()
-                or tuple(position) not in game.available_table_positions()):
+        proposal = drop_availability(game, source, index, position)
+        if not proposal.availability.allowed:
             return False
         if source == "hand":
-            if not 0 <= index < len(gui.current_player().hand):
-                return False
-            positioned = game.allow_positioned_play or game.allow_play_in_front_of_players
-            if not positioned and tuple(position) != tuple(game.default_table_position()):
-                return False
             gui.selection.hand_index = index
             gui.selection.table_index = None
             gui.selection.target_position = tuple(position)
-            action = play_at_selected_spot if positioned else play_selected
+            action = play_at_selected_spot if proposal.action == "play_at_position" else play_selected
             gui.run_action(action, game, gui.hand_frame, gui.table_frame, gui.render_log, gui.status_panel)
         elif source == "table":
-            if not game.allow_move_cards_on_table or not 0 <= index < len(game.table_cards):
-                return False
             gui.selection.table_index = index
             gui.selection.target_position = tuple(position)
             gui.run_action(move_selected_table_card, game, gui.table_frame, gui.render_log, gui.status_panel)

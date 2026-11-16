@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 
 from .chipdialogs import ask_chip_purchase, ask_pot_recipient
+from ..core.actionavailability import action_availability
 
 
 def session_action(method):
@@ -35,6 +36,8 @@ class ChipBankUI:
     @session_action
     def buy_chips(self):
         game = self.gui.game
+        if not self._check_available("buy_chips"):
+            return
         purchase = ask_chip_purchase(
             self.gui.root,
             game.players,
@@ -56,14 +59,9 @@ class ChipBankUI:
     @session_action
     def play_chips(self):
         game = self.gui.game
-        balance = game.chip_balance(game.current_player_index)
-        if balance < game.minimum_bet:
-            messagebox.showwarning(
-                "Not enough chips",
-                f"You need at least {game.minimum_bet} chips to play a bet.",
-                parent=self.gui.root,
-            )
+        if not self._check_available("play_chips"):
             return
+        balance = game.chip_balance(game.current_player_index)
         amount = simpledialog.askinteger(
             "Play Chips",
             f"How many chips do you want to put in the pot?\nMinimum bet: {game.minimum_bet}",
@@ -82,17 +80,7 @@ class ChipBankUI:
     @session_action
     def take_pot(self):
         game = self.gui.game
-        if game.chip_pot < 1:
-            messagebox.showinfo(
-                "Pot is empty", "There are no chips to take yet.", parent=self.gui.root
-            )
-            return
-        if game.pending_pot_withdrawal is not None:
-            messagebox.showinfo(
-                "Approval pending",
-                "A pot withdrawal is already waiting for the other players.",
-                parent=self.gui.root,
-            )
+        if not self._check_available("take_pot"):
             return
         recipient_index = ask_pot_recipient(
             self.gui.root, game.players, game.current_player_index, game.chip_pot
@@ -104,6 +92,12 @@ class ChipBankUI:
             messagebox.showwarning("Could not take pot", message, parent=self.gui.root)
             return
         self._finish_action()
+
+    def _check_available(self, action):
+        available = action_availability(self.gui.game, action)
+        if not available.allowed:
+            messagebox.showwarning("Action unavailable", available.reason, parent=self.gui.root)
+        return available.allowed
 
     def _finish_action(self):
         self.gui.render_log()
@@ -117,10 +111,6 @@ class ChipBankUI:
         if not self.buttons:
             return
         game = self.gui.game
-        can_play = (
-            game.pending_pot_withdrawal is None
-            and game.chip_balance(game.current_player_index) >= game.minimum_bet
-        )
-        self.play_button.config(state="normal" if can_play else "disabled")
-        can_take = game.chip_pot > 0 and game.pending_pot_withdrawal is None
-        self.take_button.config(state="normal" if can_take else "disabled")
+        for button, action in ((self.buy_button, "buy_chips"), (self.play_button, "play_chips"),
+                               (self.take_button, "take_pot")):
+            button.config(state="normal" if action_availability(game, action).allowed else "disabled")

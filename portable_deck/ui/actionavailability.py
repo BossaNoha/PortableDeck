@@ -47,6 +47,12 @@ def action_reason(gui, button):
     return action_availability(gui.game, action, context).reason
 
 
+def selected_action_available(gui, action):
+    return action_availability(gui.game, action, ActionContext(
+        hand_index=gui.selection.hand_index, table_index=gui.selection.table_index,
+        target_position=gui.selection.target_position)).allowed
+
+
 def refresh_action_availability(gui):
     from .tooltip import Tooltip
     if not hasattr(gui, "chip_bank_ui"):

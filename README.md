@@ -241,6 +241,13 @@ state. Unknown action identifiers raise ValueError. GUI controls and tooltips
 use this same API; the GUI layer only maps widgets and selection to action IDs
 and ActionContext. Game model methods still enforce execution rules.
 
+Chip controls and contextual give/move actions use shared availability checks.
+`drop_availability(game, source, index, position)` resolves and checks a drag
+proposal; `available_move_targets(game, table_index)` filters destination choices.
+The GUI checks again when opening chip dialogs or dropping a card, and
+`session.execute` always checks current availability before executing commands.
+UI checks never replace execution validation, including after modal input.
+
 ## Shared session actions
 
 GUI and non-graphical clients can use the same session controller:

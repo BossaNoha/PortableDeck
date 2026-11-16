@@ -1,5 +1,7 @@
 """Right-click actions reuse the session's existing action buttons."""
 import tkinter as tk
+from .actionavailability import selected_action_available
+from ..core.actionavailability import available_move_targets
 
 
 def card_menu_entries(gui, location):
@@ -17,7 +19,7 @@ def card_menu_entries(gui, location):
             include(name)
         include("play_at_spot_button", gui.selection.target_position is not None)
         if hasattr(gui, "interactions_ui") and game.interaction_allowed("give_card"):
-            entries.append(("Give to player…", lambda: gui.interactions_ui.show("give_card"), "normal" if game.active_player_indices() and not game.current_player_must_confirm_point() and not game.current_player_must_confirm_pot_withdrawal() else "disabled"))
+            entries.append(("Give to player…", lambda: gui.interactions_ui.show("give_card"), "normal" if selected_action_available(gui, "give_card") else "disabled"))
         if hasattr(gui, "special_actions_ui"):
             entries.extend((button.cget("text"), button.invoke, button.cget("state")) for button in gui.special_actions_ui.buttons)
     else:
@@ -26,12 +28,14 @@ def card_menu_entries(gui, location):
         move = getattr(gui, "move_table_card_button", None)
         if move is not None:
             command = move.invoke if gui.selection.target_position is not None else lambda: choose_move_destination(gui)
-            entries.append(("Move to position…", command, "normal" if gui.selection.table_index is not None and gui.game.active_player_indices() and not gui.game.current_player_must_confirm_point() and not gui.game.current_player_must_confirm_pot_withdrawal() else "disabled"))
+            allowed = (selected_action_available(gui, "move_table_card") if gui.selection.target_position is not None
+                       else bool(available_move_targets(game, gui.selection.table_index)))
+            entries.append(("Move to position…", command, "normal" if allowed else "disabled"))
     return entries
 
 
 def choose_move_destination(gui):
-    positions = sorted(gui.game.available_table_positions())
+    positions = available_move_targets(gui.game, gui.selection.table_index)
     if not positions:
         from tkinter import messagebox
         messagebox.showinfo("Move card", "There are no empty positions available.", parent=gui.root)

@@ -67,11 +67,9 @@ def _action_reason(g, action, context):
         return "This action is disabled by the game rules."
     if not g.active_player_indices():
         return "All players have left. Return a player or restart the game."
-    if action in INTERACTIONS and g.current_player_index in g.left_players:
+    if g.current_player_index in g.left_players:
         return "This player has left the session."
     if action == "swap_table_card":
-        if g.current_player_index in g.left_players:
-            return "This player has left the session."
         for index, cards, message in (
             (context.hand_index, g.players[g.current_player_index].hand, "Select an available card in your hand."),
             (context.table_index, g.table_cards, "Select an available card on the table."),
@@ -146,4 +144,40 @@ def _action_reason(g, action, context):
             return "The target position is occupied or outside the available table positions."
     if action in {"play_card", "play_face_down"} and g.enable_table and not g.available_table_positions():
         return "The table has no empty positions within its limits."
+    if action == "play_card" and context.target_position is not None:
+        position = context.target_position
+        if (not isinstance(position, (tuple, list)) or len(position) != 2
+                or any(not isinstance(value, int) or isinstance(value, bool) for value in position)
+                or not g.enable_table or tuple(position) != tuple(g.default_table_position())):
+            return "Choose the default table position."
     return ""
+
+
+@dataclass(frozen=True)
+class DropAvailability:
+    action: str | None
+    availability: ActionAvailability
+
+
+def drop_availability(game, source, index, position):
+    """Resolve a proposed drop and check it through the shared action rules."""
+    if not game.enable_table:
+        return DropAvailability(None, ActionAvailability(False, "The table is disabled."))
+    if (not isinstance(position, (tuple, list)) or len(position) != 2
+            or any(not isinstance(value, int) or isinstance(value, bool) for value in position)):
+        return DropAvailability(None, ActionAvailability(False, "Choose a valid table position."))
+    if source == "hand":
+        action = "play_at_position" if game.allow_positioned_play or game.allow_play_in_front_of_players else "play_card"
+    elif source == "table":
+        action = "move_table_card"
+    else:
+        return DropAvailability(None, ActionAvailability(False, "Choose a hand or table card."))
+    context = ActionContext(hand_index=index, table_index=index, target_position=position)
+    return DropAvailability(action, action_availability(game, action, context))
+
+
+def available_move_targets(game, table_index):
+    """Return only positions passing the shared move availability check."""
+    return tuple(position for position in sorted(game.available_table_positions())
+                 if action_availability(game, "move_table_card",
+                     ActionContext(table_index=table_index, target_position=position)).allowed)

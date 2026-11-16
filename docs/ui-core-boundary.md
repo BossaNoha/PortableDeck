@@ -97,7 +97,25 @@ Additional boundaries for a later, larger milestone:
 - Public log rendering, resetting selection, scroll/zoom, dialog cancellation,
   label formatting and widget placement can remain client responsibilities.
 
-Recommended next commit: **unify chip button availability** (priority 1). It is
-small, reuses an existing core API and has clear behavioral checks. Subsequent
-work should tackle drop decisions and interaction options before introducing
-network transport or a single aggregate player snapshot.
+### Availability follow-up
+
+Priorities 1 and the availability portion of 2 above have now been addressed:
+
+- Chip button refresh and chip dialog entry checks delegate to
+  `action_availability`; modal input is followed by controller validation.
+- `drop_availability` resolves the command and checks hand/table indices, rules
+  and targets. Both drag highlighting and drop submission use it. Ordinary
+  non-positioned hand drops retain their default-position restriction.
+- Contextual give actions query shared availability. Move menus and destination
+  dialogs use `available_move_targets`, or check the selected target directly.
+- The shared check rejects departed current players for gameplay actions.
+- `SessionController.execute` still checks availability immediately before
+  executing commands. Model-level parameter and rule enforcement is retained.
+
+The findings table describes the audit baseline. UI rules for widget visibility,
+dialog layout and selection remain local. Interaction target options and the
+other boundaries in priorities 3–5 remain separate follow-ups.
+
+Regression checks cover stale UI approval followed by confirmation blocking,
+chip-dialog state changes during input, unchanged state/Undo/checkpoints on
+rejection, chip refresh states, invalid drops and filtered move destinations.
