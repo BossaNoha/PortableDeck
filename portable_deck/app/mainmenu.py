@@ -10,6 +10,7 @@ from .settings import BASE_DIR, DISCARD_PATH, load_settings, resolve_deck_path
 from .settingswindow import SettingsWindow
 from .savemanager import SaveManager
 from .sessionbrowser import SessionBrowser
+from .sessionview import TableViewState, load_table_view, save_with_view
 
 SAVES_DIR = os.path.join(BASE_DIR, "saves")
 AUTOSAVE_PATH = os.path.join(SAVES_DIR, "last_session.json")
@@ -169,25 +170,29 @@ class MainMenu:
             return
         try:
             game = Game.load_session(path)
+            table_view = load_table_view(path)
         except (OSError, ValueError, KeyError, TypeError) as error:
             messagebox.showerror("Could not load game", str(error), parent=self.root)
             return
         self.clear_window()
-        self.show_game(game)
+        self.show_game(game, table_view=table_view)
 
     def resume_game(self):
         try:
             game = Game.load_session(AUTOSAVE_PATH)
+            table_view = load_table_view(AUTOSAVE_PATH)
         except (OSError, ValueError, KeyError, TypeError) as error:
             messagebox.showerror("Could not resume game", str(error), parent=self.root)
             return
         self.clear_window()
-        self.show_game(game)
+        self.show_game(game, table_view=table_view)
 
-    def show_game(self, game):
+    def show_game(self, game, table_view=None):
+        self.save_manager.table_view = table_view if table_view is not None else TableViewState()
         GameGUI(
             self.root,
             game,
+            table_view=self.save_manager.table_view,
             on_save=self.save_manager.save_session,
             on_save_as=self.save_manager.save_session_as,
             on_exit_menu=self.exit_to_menu,
@@ -208,7 +213,7 @@ class MainMenu:
                 raise ValueError("Autosaves to keep must be between 1 and 1000.")
             latest = Path(AUTOSAVE_PATH)
             previous = latest.read_bytes() if latest.exists() else None
-            game.save_session(AUTOSAVE_PATH)
+            save_with_view(game, AUTOSAVE_PATH, self.save_manager.table_view)
             archive = Path(SAVES_DIR) / "autosaves"
             archive.mkdir(exist_ok=True)
             if count > 1 and previous is not None and previous != latest.read_bytes():

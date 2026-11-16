@@ -5,14 +5,17 @@ import tkinter.font as tkfont
 class TableFrame(tk.LabelFrame):
     """Shows the shared cards that players have played onto the table."""
 
-    def __init__(self, master, game, selection=None, **kwargs):
+    def __init__(self, master, game, selection=None, view_state=None, **kwargs):
         super().__init__(master, text="Table", padx=8, pady=5, **kwargs)
         self.game = game
         from ..core.selection import SelectionState
         self.selection = selection if selection is not None else SelectionState()
         self.selection.synchronize(game)
         self.restoring_view = True
-        self.saved_view = dict(game.table_view_state)
+        from ..app.sessionview import TableViewState
+        from dataclasses import asdict
+        self.view_state = view_state if view_state is not None else TableViewState()
+        self.saved_view = asdict(self.view_state)
         self.zoom_percent = 100
         self.base_font_size = abs(tkfont.nametofont("TkDefaultFont").actual("size"))
         self.card_font = tkfont.Font(self, font="TkDefaultFont")
@@ -53,7 +56,9 @@ class TableFrame(tk.LabelFrame):
     def capture_view(self):
         if self.restoring_view or not self.game.enable_table:
             return
-        self.game.table_view_state = {"zoom": self.zoom_percent, "x": self.canvas.xview()[0], "y": self.canvas.yview()[0]}
+        self.view_state.zoom = self.zoom_percent
+        self.view_state.x = self.canvas.xview()[0]
+        self.view_state.y = self.canvas.yview()[0]
 
     def restore_view(self):
         if not self.winfo_exists():

@@ -157,7 +157,6 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         self.initialize_special_actions(enable_special_actions, allow_insert_draw_deck, allow_insert_discard_pile)
         self.initialize_leaving(enable_player_leaving, leave_conditions, enable_player_return)
         self.initialize_score_limits(enable_target_score, target_score, enable_score_warning, score_warning)
-        self.table_view_state = {"zoom": 100, "x": 0.0, "y": 0.0}
         self.configuration_info = {"name": "Unknown", "modified": None}
         self.initialize_cards_visibility(enable_cards_visibility, cards_visibility)
         self.initialize_interactions(enable_interactions, interaction_options)
@@ -401,9 +400,9 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         with open(path, "w") as f:
             json.dump(self.discard_pile, f, indent=2)
 
-    def save_session(self, path):
+    def save_session(self, path, *, client_state=None):
         from .gamesession import save_session
-        return save_session(self, path)
+        return save_session(self, path, client_state=client_state)
 
     @classmethod
     def load_session(cls, path):

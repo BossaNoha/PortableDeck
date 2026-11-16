@@ -380,6 +380,12 @@ attribute is retained as a compatibility alias. Existing saved text is preserved
 
 ### Shared session status
 
+Table zoom and scroll offsets are client state, separate from `Game`. The desktop
+app stores them under `client_state.table_view` in named saves and checkpoints,
+and reads the legacy `table_view_state` field from older saves. Other clients can
+save optional metadata using `game.save_session(path, client_state=...)`;
+`Game.load_session` restores game data only. View changes do not affect Undo.
+
 `portable_deck.core.sessionstatus.build_session_status(game)` prepares an immutable
 snapshot of player names, card counts, active/current state, roles, team membership,
 scores, chip accounts, pot and pile counts. Shared chip accounts have stable IDs,

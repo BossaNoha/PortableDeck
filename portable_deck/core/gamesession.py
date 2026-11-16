@@ -6,11 +6,10 @@ from .deck import Deck
 from .player import Player
 
 
-def save_session(game, path):
+def save_session(game, path, *, client_state=None):
     """Save the complete state needed to continue a game later."""
     game.ensure_discard_pile_state()
     state = {
-        "table_view_state": game.table_view_state,
         "enable_team_pile_access": game.enable_team_pile_access,
         "enable_dealer_pile_access": game.enable_dealer_pile_access,
         "enable_flipping": game.enable_flipping, "allow_flip_hand": game.allow_flip_hand,
@@ -96,6 +95,8 @@ def save_session(game, path):
         "pending_pot_withdrawal": game.pending_pot_withdrawal,
         "undo_stack": game.undo_stack,
     }
+    if client_state is not None:
+        state["client_state"] = client_state
     directory = os.path.dirname(os.path.abspath(path))
     os.makedirs(directory, exist_ok=True)
     temporary_path = path + ".tmp"
@@ -260,13 +261,6 @@ def load_session(game_class, path):
     game.initialize_score_limits(state.get("enable_target_score", False), state.get("target_score", 100),
                                  state.get("enable_score_warning", False), state.get("score_warning", 80))
     game.score_alerts_seen = state.get("score_alerts_seen", {})
-    view = state.get("table_view_state", {})
-    game.table_view_state = {"zoom": 100, "x": 0.0, "y": 0.0}
-    if isinstance(view, dict):
-        for key, low, high in (("zoom", 50, 200), ("x", 0, 1), ("y", 0, 1)):
-            value = view.get(key)
-            if isinstance(value, (int, float)) and not isinstance(value, bool) and low <= value <= high:
-                game.table_view_state[key] = value
     game.configuration_info = state.get("configuration_info", {"name": "Unknown", "modified": None})
     game.apply_feature_settings()
     game.ensure_initial_log()

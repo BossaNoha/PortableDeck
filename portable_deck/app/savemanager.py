@@ -2,19 +2,21 @@
 import os
 import re
 from tkinter import messagebox, filedialog
+from .sessionview import TableViewState, save_with_view
 
 
 class SaveManager:
     def __init__(self, root, saves_dir):
         self.root = root
         self.saves_dir = saves_dir
+        self.table_view = TableViewState()
 
     def save_session(self, game):
         path = getattr(game, "named_save_path", None)
         if not path:
             return self.save_session_as(game)
         try:
-            game.save_session(path)
+            save_with_view(game, path, self.table_view)
             messagebox.showinfo("Game saved", f"Saved as {os.path.basename(path)}.", parent=self.root)
             return True
         except (OSError, TypeError, ValueError) as error:
@@ -45,7 +47,7 @@ class SaveManager:
         ):
             return False
         try:
-            game.save_session(path)
+            save_with_view(game, path, self.table_view)
             game.named_save_path = path
             messagebox.showinfo("Game saved", f"Saved as {name}.", parent=self.root)
             return True
