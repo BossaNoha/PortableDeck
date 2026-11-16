@@ -427,6 +427,11 @@ the automatic next-card target instead of surrounding empty slots. Positioned
 play, player lanes and table movement retain spatial targets. These display
 choices do not replace command availability checks.
 
+In ordinary play, dragging a hand card anywhere onto the table area (including
+an occupied card) plays it at the automatic next position. Dropping outside the
+table cancels. Positioned play and player lanes still require an explicit empty
+slot; dragging an existing table card still uses the movement rules.
+
 ### Player-specific personal piles
 
 `build_player_personal_piles_view(game, viewer, hand_index=None)` returns immutable

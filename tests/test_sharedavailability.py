@@ -71,13 +71,14 @@ class SharedAvailabilityTests(unittest.TestCase):
             g = self.game(positioned)
             self.assertTrue(drop_availability(g, "hand", 0, (0, 0)).availability.allowed)
             for source, index, target in (("hand", True, (0, 0)), ("hand", 99, (0, 0)),
-                                          ("hand", 0, None), ("hand", 0, (True, 0)),
-                                          ("invalid", 0, (0, 0)), ("hand", 0, (9, 9))):
+                                          ("hand", 0, (True, 0)),
+                                          ("invalid", 0, (0, 0))):
                 self.assertFalse(drop_availability(g, source, index, target).availability.allowed)
             g.table_cards = [{"card": "B", "player": "Player2", "position": [0, 0]}]
             target = g.default_table_position()
             self.assertTrue(drop_availability(g, "hand", 0, target).availability.allowed)
-            self.assertFalse(drop_availability(g, "hand", 0, (0, 0)).availability.allowed)
+            self.assertEqual(drop_availability(g, "hand", 0, (0, 0)).availability.allowed, not positioned)
+            self.assertEqual(drop_availability(g, "hand", 0, None).availability.allowed, not positioned)
 
     def test_changed_state_is_rechecked_by_controller(self):
         for action, parameters, context in (

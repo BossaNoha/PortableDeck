@@ -12,7 +12,7 @@ class CardDrag:
         self.dragging = False
         self.suppress_release = False
         self.highlight = None
-        self.hint = tk.Label(gui.options_bar, text="Drop on an empty table slot; Esc cancels")
+        self.hint = tk.Label(gui.options_bar, text="Drop on the table; Esc cancels")
         self.escape_binding = gui.root.bind("<Escape>", self.cancel, add="+")
         gui.layout_frame.bind("<Destroy>", self.cleanup, add="+")
 
@@ -28,8 +28,13 @@ class CardDrag:
 
     def target(self, x, y):
         widget = self.gui.root.winfo_containing(x, y)
+        game = self.gui.game
+        automatic = (self.pending is not None and self.pending[0] == "hand"
+                     and not game.allow_positioned_play and not game.allow_play_in_front_of_players)
         while widget is not None:
-            if hasattr(widget, "_table_drop_position"):
+            if automatic and widget is self.gui.table_frame:
+                return self.gui.table_frame.canvas
+            if not automatic and hasattr(widget, "_table_drop_position"):
                 return widget
             widget = widget.master
         return None
@@ -44,7 +49,7 @@ class CardDrag:
         self.hint.pack(side="right", padx=8)
         target = self.target(event.x_root, event.y_root)
         if target is not None and not drop_availability(
-                self.gui.game, source, index, target._table_drop_position).availability.allowed:
+                self.gui.game, source, index, getattr(target, "_table_drop_position", None)).availability.allowed:
             target = None
         if target != (self.highlight[0] if self.highlight else None):
             self.clear_highlight()
@@ -98,11 +103,11 @@ class CardDrag:
         # Reset Tk's pressed-button state before rebuilding any card widgets.
         if event.widget.winfo_exists():
             event.widget.configure(relief="raised")
-        if pending is not None and position is not None:
+        if pending is not None and target is not None:
             self.drop(pending[0], pending[1], position)
         return "break"
 
-    def drop(self, source, index, position):
+    def drop(self, source, index, position=None):
         gui, game = self.gui, self.gui.game
         proposal = drop_availability(game, source, index, position)
         if not proposal.availability.allowed:
@@ -110,12 +115,12 @@ class CardDrag:
         if source == "hand":
             gui.selection.hand_index = index
             gui.selection.table_index = None
-            gui.selection.target_position = tuple(position)
+            gui.selection.target_position = proposal.target_position
             action = play_at_selected_spot if proposal.action == "play_at_position" else play_selected
             gui.run_action(action, game, gui.hand_frame, gui.table_frame, gui.render_log, gui.status_panel)
         elif source == "table":
             gui.selection.table_index = index
-            gui.selection.target_position = tuple(position)
+            gui.selection.target_position = proposal.target_position
             gui.run_action(move_selected_table_card, game, gui.table_frame, gui.render_log, gui.status_panel)
         else:
             return False

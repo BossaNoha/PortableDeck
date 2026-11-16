@@ -157,23 +157,27 @@ def _action_reason(g, action, context):
 class DropAvailability:
     action: str | None
     availability: ActionAvailability
+    target_position: tuple[int, int] | None = None
 
 
-def drop_availability(game, source, index, position):
+def drop_availability(game, source, index, position=None):
     """Resolve a proposed drop and check it through the shared action rules."""
     if not game.enable_table:
         return DropAvailability(None, ActionAvailability(False, "The table is disabled."))
-    if (not isinstance(position, (tuple, list)) or len(position) != 2
+    if position is not None and (not isinstance(position, (tuple, list)) or len(position) != 2
             or any(not isinstance(value, int) or isinstance(value, bool) for value in position)):
         return DropAvailability(None, ActionAvailability(False, "Choose a valid table position."))
     if source == "hand":
         action = "play_at_position" if game.allow_positioned_play or game.allow_play_in_front_of_players else "play_card"
+        if action == "play_card":
+            position = game.default_table_position() if game.available_table_positions() else None
     elif source == "table":
         action = "move_table_card"
     else:
         return DropAvailability(None, ActionAvailability(False, "Choose a hand or table card."))
     context = ActionContext(hand_index=index, table_index=index, target_position=position)
-    return DropAvailability(action, action_availability(game, action, context))
+    return DropAvailability(action, action_availability(game, action, context),
+                            tuple(position) if position is not None else None)
 
 
 def available_move_targets(game, table_index):

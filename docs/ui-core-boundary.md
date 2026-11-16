@@ -166,3 +166,15 @@ spatial-position API is unchanged, and movement/positioned modes retain their
 targets. Full or disabled tables expose no empty target. Shared availability and
 controller checks remain in force. Native Tk mouse-event verification covered
 two successive hand drops, each with exactly one displayed empty target.
+
+### Automatic table-surface drops
+
+Ordinary hand drops now accept the whole table area rather than requiring a hit
+on the automatic empty slot. Widget hit testing stays in the GUI; the shared
+`drop_availability` resolves an ordinary hand drop to `play_card` and the current
+automatic target. Occupied cards and blank table space are accepted surface
+hits; outside drops cancel. Positioned play/player lanes and table-card movement
+still require specific targets. Full tables, confirmations, departed players and
+invalid indices remain blocked. Controller validation remains mandatory.
+Native Tk mouse-event verification covered blank-table and occupied-card drops,
+both resulting in automatic placement.
