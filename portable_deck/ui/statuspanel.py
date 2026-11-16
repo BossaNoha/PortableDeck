@@ -1,5 +1,6 @@
 #statuspanel.py
 import tkinter as tk
+from ..core.sessionstatus import build_session_status
 
 class StatusPanel(tk.LabelFrame):
     """
@@ -10,18 +11,19 @@ class StatusPanel(tk.LabelFrame):
     def __init__(self, master, game, **kwargs):
         super().__init__(master, text="Game Status", padx=5, pady=5, **kwargs)
         self.game = game
+        status = build_session_status(game)
 
         # Create frames for players and decks
         self.player_labels = []
-        for player in game.players:
+        for player in status.players:
             lbl = tk.Label(self, text="")
             lbl.pack(anchor="w")
             self.player_labels.append(lbl)
 
         self.chip_rules_label = None
         self.chip_pot_label = None
-        if game.enable_chip_accounts:
-            self.chip_rules_label = tk.Label(self, text=f"Minimum bet: {game.minimum_bet} chips")
+        if status.minimum_bet is not None:
+            self.chip_rules_label = tk.Label(self, text=f"Minimum bet: {status.minimum_bet} chips")
             self.chip_rules_label.pack(anchor="w")
             self.chip_pot_label = tk.Label(self, text="Pot: 0 chips")
             self.chip_pot_label.pack(anchor="w")
@@ -30,50 +32,41 @@ class StatusPanel(tk.LabelFrame):
         self.deck_label.pack(anchor="w")
 
         self.discard_label = tk.Label(self, text="", justify="left", anchor="w", wraplength=620)
-        if game.enable_discard_pile:
+        if status.discard_piles is not None:
             self.discard_label.pack(anchor="w")
 
         self.table_label = tk.Label(self, text="")
-        if game.enable_table:
+        if status.table_count is not None:
             self.table_label.pack(anchor="w")
 
         # Initial update
         self.update_status()
 
     def update_status(self):
-        # Update player hands
-        for i, player in enumerate(self.game.players):
-            count = len(player.hand)
+        status = build_session_status(self.game)
+        for player in status.players:
+            count = player.card_count
             display = f"{count} card{'s' if count != 1 else ''}" if count < 8 else "many"
-            if self.game.score_enabled:
-                display += f"  |  Score: {self.game.scores[i]}"
-            if self.game.enable_chip_accounts:
-                display += f"  |  Chips: {self.game.chip_balance(i)}"
-            team_name = self.game.player_team_name(i)
-            if team_name:
-                display += f"  |  Team: {team_name}"
-            if self.game.enable_team_score and self.game.player_teams[i]:
-                display += f"  |  Team score: {self.game.team_scores[self.game.player_teams[i]]}"
-            if self.game.player_is_dealer(i):
+            if player.score is not None:
+                display += f"  |  Score: {player.score}"
+            if player.chips is not None:
+                display += f"  |  Chips: {player.chips}"
+            if player.team_name:
+                display += f"  |  Team: {player.team_name}"
+            if player.team_score is not None:
+                display += f"  |  Team score: {player.team_score}"
+            if player.dealer:
                 display += "  |  Role: Dealer"
-            if i in self.game.left_players:
+            if not player.active:
                 display += "  |  Left session"
-            self.player_labels[i].config(text=f"{player.name}: {display}")
+            self.player_labels[player.index].config(text=f"{player.name}: {display}")
 
-        # Update draw deck
-        draw_count = len(self.game.deck.flat_deck)
-        draw_display = str(draw_count) if draw_count < 12 else "many"
+        draw_display = str(status.draw_count) if status.draw_count < 12 else "many"
         self.deck_label.config(text=f"Draw Deck: {draw_display}")
-
-        # Show each shared discard and each player's own private piles.
-        discard_lines = [
-            f"{name}: {len(pile)}"
-            for name, pile in self.game.all_discard_piles()
-        ]
-        self.discard_label.config(text="Discard piles:\n" + "\n".join(discard_lines))
-
-        personal_count = (sum(len(pile) for group in self.game.personal_piles for pile in group)
-                          if self.game.enable_personal_piles else 0)
-        self.table_label.config(text=f"Cards on Table: {len(self.game.table_cards) + personal_count}")
+        if status.discard_piles is not None:
+            discard_lines = [f"{pile.name}: {pile.card_count}" for pile in status.discard_piles]
+            self.discard_label.config(text="Discard piles:\n" + "\n".join(discard_lines))
+        if status.table_count is not None:
+            self.table_label.config(text=f"Cards on Table: {status.table_count}")
         if self.chip_pot_label is not None:
-            self.chip_pot_label.config(text=f"Pot: {self.game.chip_pot} chips")
+            self.chip_pot_label.config(text=f"Pot: {status.chip_pot} chips")

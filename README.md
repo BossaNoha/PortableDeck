@@ -343,3 +343,16 @@ Hidden draws, face-down plays and private peek results are excluded from public
 messages. Undo and failed transactions restore both history and messages. New
 saves use `game_log`; older saves with `gui_log` remain readable, and the old
 attribute is retained as a compatibility alias. Existing saved text is preserved.
+
+### Shared session status
+
+`portable_deck.core.sessionstatus.build_session_status(game)` prepares an immutable
+snapshot of player names, card counts, active/current state, roles, team membership,
+scores, chip accounts, pot and pile counts. Shared chip accounts have stable IDs,
+member indices and one balance per account; player rows reference those IDs.
+`score_owner` distinguishes shared scores from personal scores and `team_score`
+is the separate team counter. Disabled resources use `None`, distinct from zero.
+
+The snapshot does not contain card identities or change the game. Tkinter only
+renders the snapshot and retains display choices such as showing "many". A CLI
+or another GUI can use the same data, for example `dataclasses.asdict(status)`.
