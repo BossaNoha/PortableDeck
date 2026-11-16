@@ -14,9 +14,6 @@ Remaining boundaries to address in separate changes:
   `game.table_view_state`. This is client presentation state, saved with the
   session but excluded from Undo. Separate its ownership from shared game state
   while retaining compatibility with existing saves.
-- `GameGUIActions.handle_turn_start` acknowledges score notifications directly.
-  Acknowledgement changes saved `score_alerts_seen` state. Define controller
-  orchestration without creating an extra gameplay Undo step.
 - Rendering still reads model collections directly. Introduce player-specific
   views before using the model with remote clients; the status snapshot alone
   is not a complete player view.
@@ -27,8 +24,12 @@ and full network authorization require separate reviews.
 Initial turn logging belongs to core lifecycle operations: `Game.start` (also
 used by restart) and session loading. Loading a legacy session with an empty log
 adds a turn entry for an active current player; existing log text is preserved.
-GUI construction only renders this log. Turn-start UI still acknowledges score
-notifications and may request approval decisions, as noted above.
+GUI construction only renders this log. Turn-start UI acknowledges score
+notifications through the controller and may request approval decisions.
+
+`session.acknowledge_score_notifications` persists changed read state without
+an independent gameplay Undo step. Nested acknowledgments share their enclosing
+checkpoint; Undo of a gameplay action restores its prior notification state.
 
 Pot approval prompts are prepared by `game.pot_confirmation_notification()`.
 The immutable result distinguishes the voting player (`recipient`) from the

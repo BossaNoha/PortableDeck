@@ -176,7 +176,7 @@ class GameGUIActions:
         alerts = self.game.score_notifications()
         if alerts:
             messagebox.showinfo(alerts[0].title, "\n\n".join(notice.message for notice in alerts), parent=self.root)
-        self.game.acknowledge_score_notifications(alerts)
+        self.session.acknowledge_score_notifications(alerts)
         if hasattr(self, "personal_piles_ui"):
             self.personal_piles_ui.update()
         self.selection.table_index = None

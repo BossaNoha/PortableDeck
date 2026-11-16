@@ -339,10 +339,18 @@ It lists rules and permissions without exposing cards in players' hands.
 `game.score_notifications()` prepares immutable notifications for the current
 player, with title, message, recipient, kind, score and threshold. Querying does
 not mark them as read. A client displays them and then calls
-`game.acknowledge_score_notifications(notices)` (also with an empty sequence when
+`game.session.acknowledge_score_notifications(notices)` (also with an empty sequence when
 there is nothing to display). This removes expired events and allows later
 threshold crossings to notify again. The GUI acknowledges after the user closes
 the notice; CLI clients can use the same protocol without Tkinter.
+
+Acknowledgment checkpoints changed read state without adding a gameplay Undo
+step. Inside `session.run`, it shares the enclosing checkpoint and is restored
+with that gameplay action on Undo. A transaction that only changes notification
+read state also creates no Undo step. Results report `changed` and
+`checkpoint_error`; an unchanged acknowledgment does not save again.
+`game.acknowledge_score_notifications` remains a low-level compatibility method
+without persistence orchestration.
 
 `game.score_confirmation_notification()` prepares a pending score approval
 prompt, including requester and delta. Submit the decision through

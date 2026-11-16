@@ -44,10 +44,27 @@ class SessionController:
             g.undo_stack, g.enable_undo = stack, enabled
 
     def record_state(self, before):
-        changed = before != self.game.capture_undo_state()
-        if changed and self.game.enable_undo:
+        after = self.game.capture_undo_state()
+        changed = before != after
+        gameplay_changed = any(before[key] != after[key] for key in before if key != "score_alerts_seen")
+        if gameplay_changed and self.game.enable_undo:
             self.game.undo_stack.append(before)
         return changed
+
+    def acknowledge_score_notifications(self, notifications):
+        """Persist delivered notices without creating a separate gameplay Undo step.
+
+        Inside a transaction, defer persistence to its checkpoint. A gameplay
+        action's snapshot still restores the earlier notification state on Undo.
+        """
+        before = copy.deepcopy(self.game.score_alerts_seen)
+        if not self.depth:
+            self.last_checkpoint_error = None
+        self.game.acknowledge_score_notifications(notifications)
+        changed = before != self.game.score_alerts_seen
+        if changed and not self.depth:
+            self.checkpoint()
+        return ActionResult(True, changed=changed, checkpoint_error=self.last_checkpoint_error)
 
     def run(self, operation, *args, **kwargs):
         """Group nested model actions into one Undo step and one checkpoint.

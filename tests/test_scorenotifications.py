@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from dataclasses import FrozenInstanceError
+from unittest.mock import Mock
 from portable_deck.core.game import Game
 
 
@@ -33,10 +34,10 @@ class ScoreNotificationTests(unittest.TestCase):
         g.scores[1] = 7
         notices = g.score_notifications()
         g.scores[1] = 8
-        g.acknowledge_score_notifications(notices)
+        g.session.acknowledge_score_notifications(notices)
         self.assertEqual(len(g.score_notifications()), 1)
         g.current_player_index = 1
-        g.acknowledge_score_notifications(notices)
+        g.session.acknowledge_score_notifications(notices)
         g.current_player_index = 0
         self.assertEqual(len(g.score_notifications()), 1)
 
@@ -70,7 +71,10 @@ class ScoreNotificationTests(unittest.TestCase):
         g = self.game(enable_undo=True)
         g.scores[1] = 7
         notices = g.score_notifications()
-        g.session.run(g.acknowledge_score_notifications, notices)
+        def action():
+            g.session.execute('draw_card')
+            g.session.acknowledge_score_notifications(notices)
+        g.session.run(action)
         self.assertFalse(g.score_notifications())
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / 'session.json')
@@ -79,6 +83,62 @@ class ScoreNotificationTests(unittest.TestCase):
             self.assertFalse(loaded.score_notifications())
         self.assertTrue(g.session.undo())
         self.assertEqual(g.score_notifications(), notices)
+
+    def test_standalone_acknowledgment_checkpoints_without_undo_step(self):
+        for nested in (False, True):
+            with self.subTest(nested=nested):
+                g = self.game(enable_undo=True)
+                g.scores[1] = 7
+                notices = g.score_notifications()
+                saved = Mock(return_value=None)
+                g.session.checkpoint_callback = saved
+                operation = lambda: g.session.acknowledge_score_notifications(notices)
+                result = g.session.run(operation) if nested else operation()
+                self.assertTrue(result.changed)
+                self.assertEqual(g.undo_stack, [])
+                saved.assert_called_once_with(g)
+                result = g.session.acknowledge_score_notifications(notices)
+                self.assertFalse(result.changed)
+                saved.assert_called_once()
+
+    def test_grouped_acknowledgment_shares_gameplay_checkpoint_and_undo(self):
+        g = self.game(enable_undo=True)
+        g.scores[1] = 7
+        before = g.capture_undo_state()
+        saved = Mock(return_value=None)
+        g.session.checkpoint_callback = saved
+        def operation():
+            g.session.execute('draw_card')
+            g.session.acknowledge_score_notifications(g.score_notifications())
+        g.session.run(operation)
+        saved.assert_called_once_with(g)
+        self.assertEqual(len(g.undo_stack), 1)
+        self.assertTrue(g.session.undo())
+        self.assertEqual(g.capture_undo_state(), before)
+
+    def test_acknowledgment_failure_is_reported_without_losing_seen_state(self):
+        g = self.game()
+        g.scores[1] = 7
+        g.session.checkpoint_callback = Mock(return_value='Disk full')
+        result = g.session.acknowledge_score_notifications(g.score_notifications())
+        self.assertTrue(result.success)
+        self.assertTrue(result.changed)
+        self.assertEqual(result.checkpoint_error, 'Disk full')
+        self.assertEqual(g.score_notifications(), ())
+
+    def test_empty_acknowledgment_prunes_expired_events_without_undo(self):
+        g = self.game(enable_undo=True)
+        g.scores[1] = 7
+        g.session.acknowledge_score_notifications(g.score_notifications())
+        g.scores[1] = 0
+        saved = Mock(return_value=None)
+        g.session.checkpoint_callback = saved
+        result = g.session.acknowledge_score_notifications(())
+        self.assertTrue(result.changed)
+        saved.assert_called_once_with(g)
+        self.assertEqual(g.undo_stack, [])
+        g.scores[1] = 7
+        self.assertEqual(len(g.score_notifications()), 1)
 
     def test_disabled_scoring_and_no_active_players(self):
         g = self.game()
