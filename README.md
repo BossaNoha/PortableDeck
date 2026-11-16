@@ -417,6 +417,12 @@ mode lists cards top first with their original zero-based card indices.
 execution rechecks the current rules. No draw-deck order is included.
 The separate Full Deck preview displays the deck definition, not remaining order.
 
+`portable_deck.core.deckpreview.build_deck_preview(deck)` prepares an immutable
+definition snapshot with a card count and symbol groups. Symbol order and
+duplicate values are preserved, while values are sorted for display. It never
+reads the remaining draw order. The session, settings and library previews all
+render this shared data without preparing their own card ordering.
+
 ### Shared session status
 
 Table zoom and scroll offsets are client state, separate from `Game`. The desktop

@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 from ..core.deck import Deck
+from ..core.deckpreview import build_deck_preview
 
 
 def show_deck_preview(parent, path):
@@ -21,12 +22,13 @@ def show_deck_preview(parent, path):
             messagebox.showerror("Could not preview deck", str(error), parent=parent)
             return
 
+    preview = build_deck_preview(deck)
     window = tk.Toplevel(parent)
     window.title(f"Deck preview — {title}")
     window.transient(parent)
     tk.Label(
         window,
-        text=f"{title}  •  {Deck.validate_data({'types': deck.types, 'cards': deck.cards})} cards  •  {len(deck.types)} symbols",
+        text=f"{title}  •  {preview.card_count} cards  •  {len(preview.symbols)} symbols",
         font=("TkDefaultFont", 12, "bold"),
         padx=12,
         pady=10,
@@ -45,11 +47,11 @@ def show_deck_preview(parent, path):
     cards_frame = tk.Frame(canvas)
     frame_id = canvas.create_window((0, 0), window=cards_frame, anchor="nw")
     cards = []
-    for type_name, values in zip(deck.types, deck.cards):
-        for value in sorted(values, key=_card_sort_key):
+    for symbol in preview.symbols:
+        for value in symbol.values:
             cards.append(tk.Button(
                 cards_frame,
-                text=f"{value}\n{type_name}",
+                text=f"{value}\n{symbol.name}",
                 width=18,
                 wraplength=150,
                 command=lambda: None,
@@ -117,22 +119,3 @@ def show_deck_preview(parent, path):
     height = min(window.winfo_reqheight(), screen_height - 100)
     window.minsize(min(width, max(320, card_width + 70)), min(height, 200))
     window.geometry(f"{width}x{height}")
-
-
-
-def _card_sort_key(value):
-    """Sort numeric ranks first, then common face-card names, then other values."""
-    text = str(value).strip()
-    face_values = {
-        "j": 11, "jack": 11, "knight": 11,
-        "q": 12, "queen": 12,
-        "k": 13, "king": 13,
-        "a": 14, "ace": 14,
-    }
-    lowered = text.casefold()
-    try:
-        return 0, float(text)
-    except ValueError:
-        if lowered in face_values:
-            return 1, face_values[lowered]
-        return 2, lowered

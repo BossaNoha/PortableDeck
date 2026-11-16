@@ -15,8 +15,8 @@ Remaining boundaries to address in separate changes:
   `build_player_hands_view` in both the current hand and Visible hands window;
   table layouts use `build_player_table_view`; personal piles use
   `build_player_personal_piles_view`. Discard browsing uses
-  `build_player_discard_view`. Full Deck preview still reads the deck definition
-  directly; it does not expose remaining draw order. Discard destination choices
+  `build_player_discard_view`. Full Deck preview renders the immutable definition
+  from `build_deck_preview`; it does not expose remaining draw order. Discard destination choices
   and special insertion dialogs still inspect pile counts in the model.
   Neither the status snapshot nor the hand projection is a complete player view.
 
