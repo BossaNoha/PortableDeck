@@ -122,6 +122,8 @@ class PlayerViewTests(unittest.TestCase):
                   "assert build_player_table_view(g,1).viewer==1; "
                   "assert build_player_personal_piles_view(g,1).viewer==1; "
                   "assert build_player_discard_view(g,1).viewer==1; "
+                  "from portable_deck.core.pileoptions import discard_destinations, insertion_options; "
+                  "assert discard_destinations(g,1); assert insertion_options(g,'draw')==(); "
                   "assert 'tkinter' not in sys.modules")
         result = subprocess.run([sys.executable, "-B", "-c", script],
                                 cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)

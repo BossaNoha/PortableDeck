@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog
+from ..core.pileoptions import insertion_options
 
 class SpecialActionsUI:
     def __init__(self, gui):
@@ -21,15 +22,19 @@ class SpecialActionsUI:
             messagebox.showwarning("No selection", "Select a card in your hand first.", parent=gui.root)
             return
         pile_index = 0
-        if destination == "discard" and len(game.discard_piles) > 1:
-            chosen = simpledialog.askinteger("Choose discard pile", f"Discard pile (1–{len(game.discard_piles)}):",
-                                            minvalue=1, maxvalue=len(game.discard_piles), parent=gui.root)
+        options = insertion_options(game, destination)
+        if not options:
+            messagebox.showwarning("Cannot place card", "This placement is disabled.", parent=gui.root)
+            return
+        if destination == "discard" and len(options) > 1:
+            chosen = simpledialog.askinteger("Choose discard pile", f"Discard pile (1–{len(options)}):",
+                                            minvalue=1, maxvalue=len(options), parent=gui.root)
             if chosen is None:
                 return
             pile_index = chosen - 1
-        pile = game.deck.flat_deck if destination == "draw" else game.discard_piles[pile_index]
+        option = options[pile_index]
         position = simpledialog.askstring("Choose card position",
-            f"1–10: from the top (1 = top)\n-1–-10: from the bottom (-1 = bottom)\nX: random middle position, outside the first/last 10\nAvailable positions from either end: {min(10, len(pile) + 1)}",
+            f"1–10: from the top (1 = top)\n-1–-10: from the bottom (-1 = bottom)\nX: random middle position, outside the first/last 10\nAvailable positions from either end: {option.positions_from_end}",
             parent=gui.root)
         if position is None:
             return

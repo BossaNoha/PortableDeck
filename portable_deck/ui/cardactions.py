@@ -1,6 +1,7 @@
 # cardactions.py
 from .sessionactions import execute_value
 from ..core.playerview import build_player_discard_view
+from ..core.pileoptions import discard_destinations
 import tkinter as tk
 from tkinter import messagebox
 
@@ -166,15 +167,8 @@ def _choose_discard_destination(game, hand_frame, render_log, status_panel, sele
 
 
 def _current_player_discard_destinations(game):
-    destinations = [
-        (f"Shared discard {index + 1}", index, False)
-        for index in range(len(game.discard_piles))
-    ]
-    destinations.extend(
-        (f"Your personal discard {index + 1}", index, True)
-        for index in range(len(game.personal_discard_piles[game.current_player_index]))
-    )
-    return destinations
+    return [(target.name, target.pile_index, target.personal)
+            for target in discard_destinations(game, game.current_player_index)]
 
 
 def play_selected(game, hand_frame, table_frame, render_log, status_panel):

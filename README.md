@@ -425,6 +425,12 @@ render this shared data without preparing their own card ordering.
 
 ### Shared session status
 
+Pile dialogs use `portable_deck.core.pileoptions.discard_destinations(game, viewer)`
+for shared and the viewer's personal discard destinations, and
+`insertion_options(game, "draw")` or `"discard"` for insertion counts and ranges.
+These immutable options contain no card identities and do not authorize actions;
+the session controller revalidates submitted commands.
+
 Table zoom and scroll offsets are client state, separate from `Game`. The desktop
 app stores them under `client_state.table_view` in named saves and checkpoints,
 and reads the legacy `table_view_state` field from older saves. Other clients can

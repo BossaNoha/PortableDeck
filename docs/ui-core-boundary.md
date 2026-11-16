@@ -16,8 +16,10 @@ Remaining boundaries to address in separate changes:
   table layouts use `build_player_table_view`; personal piles use
   `build_player_personal_piles_view`. Discard browsing uses
   `build_player_discard_view`. Full Deck preview renders the immutable definition
-  from `build_deck_preview`; it does not expose remaining draw order. Discard destination choices
-  and special insertion dialogs still inspect pile counts in the model.
+  from `build_deck_preview`; it does not expose remaining draw order. Discard
+  destinations and insertion ranges use immutable options from `core.pileoptions`.
+  Other presentation and action-selection logic still needs review before
+  introducing a complete remote-client interface.
   Neither the status snapshot nor the hand projection is a complete player view.
 
 This audit covers the game UI package. Application settings, save management
@@ -68,3 +70,8 @@ card indices, without holding live pile lists or finding sources by object
 identity. Empty piles retain their source indices. Top-only browsing omits deeper
 identities; any-card browsing retains existing visibility. The controller checks
 draw permissions and current indices again when a choice is submitted.
+
+Discard destination dialogs no longer enumerate model pile lists. Insertion
+dialogs receive counts, ranges and middle-position availability without reading
+draw or discard card collections. These options are descriptive; execution
+permissions, selection validity and position rules remain enforced by commands.
