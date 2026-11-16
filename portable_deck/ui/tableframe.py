@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.font as tkfont
+from ..core.playerview import build_player_table_view
 
 
 class TableFrame(tk.LabelFrame):
@@ -109,9 +110,10 @@ class TableFrame(tk.LabelFrame):
         for widget in self.contents.winfo_children():
             widget.destroy()
         self.card_buttons = []
-        if not self.game.enable_table:
+        self.table_view = build_player_table_view(self.game, self.game.current_player_index)
+        if not self.table_view.enabled:
             return
-        if self.game.allow_play_in_front_of_players:
+        if self.table_view.player_lanes:
             self._draw_player_lanes()
             self.after_idle(self._expand_window_for_table)
             return
@@ -120,13 +122,13 @@ class TableFrame(tk.LabelFrame):
 
     def _draw_player_lanes(self):
         occupied = {}
-        for index, entry in enumerate(self.game.table_cards):
-            occupied.setdefault(tuple(entry["position"]), []).append((index, entry))
-        available = self.game.available_table_positions()
-        for player_index, player in enumerate(self.game.players):
+        for entry in self.table_view.cards:
+            occupied.setdefault(entry.position, []).append((entry.index, entry))
+        available = set(self.table_view.available_positions)
+        for player_index, name in enumerate(self.table_view.player_names):
             lane = tk.Frame(self.contents)
             lane.pack(anchor="w", fill="x", pady=2)
-            tk.Label(lane, text=f"{player.name}:", width=14, anchor="w").pack(side="left")
+            tk.Label(lane, text=f"{name}:", width=14, anchor="w").pack(side="left")
             columns = sorted(
                 column for row, column in set(occupied) | available
                 if row == player_index
@@ -177,10 +179,12 @@ class TableFrame(tk.LabelFrame):
 
     def _draw_spatial_table(self):
         occupied = {}
-        for index, entry in enumerate(self.game.table_cards):
-            occupied.setdefault(tuple(entry["position"]), []).append((index, entry))
-        available = self.game.available_table_positions()
+        for entry in self.table_view.cards:
+            occupied.setdefault(entry.position, []).append((entry.index, entry))
+        available = set(self.table_view.available_positions)
         positions = set(occupied) | available
+        if not positions:
+            return
         min_row = min(row for row, _ in positions)
         min_column = min(column for _, column in positions)
 
@@ -221,7 +225,7 @@ class TableFrame(tk.LabelFrame):
             self.contents.grid_columnconfigure(column - min_column, weight=1)
 
     def _draw_card(self, index):
-        entry = self.game.table_cards[index]
+        entry = self.table_view.cards[index]
         button = tk.Button(
             self.contents,
             text=self._card_text(entry),
@@ -237,9 +241,9 @@ class TableFrame(tk.LabelFrame):
 
     @staticmethod
     def _card_text(entry):
-        if not entry.get("face_up", True):
+        if not entry.face_up:
             return "Face down"
-        return f"{entry['card']}\n{entry['player']}"
+        return f"{entry.card}\n{entry.player}"
 
     def open_card_menu(self, event, index):
         if hasattr(self, "on_card_context"):

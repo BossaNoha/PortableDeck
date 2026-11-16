@@ -13,7 +13,8 @@ Remaining boundaries to address in separate changes:
 - Rendering still reads model collections directly. Introduce player-specific
   views before using the model with remote clients. Hands now use
   `build_player_hands_view` in both the current hand and Visible hands window;
-  table cards, personal piles and other collections remain to be projected.
+  table layouts use `build_player_table_view`; personal piles and other
+  collections remain to be projected.
   Neither the status snapshot nor the hand projection is a complete player view.
 
 This audit covers the game UI package. Application settings, save management
@@ -47,3 +48,9 @@ permissions. Hidden card identities are replaced by `None`; revealed cards are
 visible individually even without full-hand permission. Projections contain
 immutable tuples and dataclasses, never live hand collections. Viewer selection
 is not authentication: a future host must establish the caller's player identity.
+
+The table projection removes every face-down card identity, even for its owner.
+It preserves model indices, stacked positions, available targets and player lane
+names. Table rendering reads this snapshot instead of raw table card entries.
+Actions and selection still use local model/controller APIs; these projections
+alone do not make the application a remote client.

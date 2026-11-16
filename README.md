@@ -388,6 +388,15 @@ projection. It supports `dataclasses.asdict` and does not import Tkinter or chan
 the game. This is the first part of a player view, not a complete network payload
 or authentication boundary; remote callers must not choose arbitrary viewers.
 
+### Player-specific table
+
+`build_player_table_view(game, viewer)` in the same module prepares immutable
+table cards, positions, available targets and player lane names. Face-down cards
+always have `card=None`, including for the player who played them. Card indices
+retain their model meaning, including stacked cards. Disabled tables expose no
+cards or targets. Both table layouts render this projection; it does not include
+personal piles or public action history yet.
+
 ### Shared session status
 
 Table zoom and scroll offsets are client state, separate from `Game`. The desktop
