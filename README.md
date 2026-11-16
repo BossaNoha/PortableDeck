@@ -422,6 +422,11 @@ retain their model meaning, including stacked cards. Disabled tables expose no
 cards or targets. Both table layouts render this projection; it does not include
 personal piles or public action history yet.
 
+With positioned play and table movement disabled, the table view exposes only
+the automatic next-card target instead of surrounding empty slots. Positioned
+play, player lanes and table movement retain spatial targets. These display
+choices do not replace command availability checks.
+
 ### Player-specific personal piles
 
 `build_player_personal_piles_view(game, viewer, hand_index=None)` returns immutable

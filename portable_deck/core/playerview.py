@@ -81,7 +81,12 @@ def build_player_table_view(game, viewer):
         i, entry["card"] if entry.get("face_up", True) else None,
         entry["player"], tuple(entry.get("position", (0, i))), bool(entry.get("face_up", True)))
         for i, entry in enumerate(game.table_cards)) if game.enable_table else ()
-    available = tuple(sorted(game.available_table_positions())) if game.enable_table else ()
+    positions = game.available_table_positions() if game.enable_table else set()
+    if (game.enable_table and not game.allow_positioned_play
+            and not game.allow_play_in_front_of_players and not game.allow_move_cards_on_table):
+        default = game.default_table_position() if positions else None
+        positions = {tuple(default)} if default is not None and tuple(default) in positions else set()
+    available = tuple(sorted(positions))
     return PlayerTableView(viewer, game.enable_table, game.allow_play_in_front_of_players,
                            tuple(player.name for player in game.players), cards, available)
 

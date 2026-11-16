@@ -11,6 +11,33 @@ from portable_deck.ui.tableframe import TableFrame
 
 
 class PlayerViewTests(unittest.TestCase):
+    def test_ordinary_table_displays_only_the_automatic_play_target(self):
+        g = self.game()
+        g.players[0].hand = ["A", "B"]
+        self.assertEqual(build_player_table_view(g, 0).available_positions, ((0, 0),))
+        self.assertTrue(g.session.execute("play_card", card_index=0).success)
+        view = build_player_table_view(g, 0)
+        self.assertEqual(view.available_positions, ((0, 1),))
+        self.assertEqual(len(g.available_table_positions()), 4)
+        self.assertTrue(g.session.execute("play_card", card_index=0).success)
+        self.assertEqual(build_player_table_view(g, 0).available_positions, ((0, 2),))
+        self.assertEqual([entry["card"] for entry in g.table_cards], ["A", "B"])
+
+    def test_positioned_play_and_table_moves_keep_spatial_targets(self):
+        for option in ("allow_positioned_play", "allow_move_cards_on_table"):
+            with self.subTest(option=option):
+                g = self.game(**{option: True})
+                g.table_cards = [{"card": "A", "player": "Player1", "position": [0, 0]}]
+                self.assertEqual(set(build_player_table_view(g, 0).available_positions),
+                                 g.available_table_positions())
+
+    def test_ordinary_table_honors_limits_and_full_table_has_no_target(self):
+        g = self.game(enable_table_limits=True, max_table_rows=1, max_table_columns=2)
+        g.table_cards = [{"card": "A", "player": "Player1", "position": [0, 0]}]
+        self.assertEqual(build_player_table_view(g, 0).available_positions, ((0, 1),))
+        g.table_cards.append({"card": "B", "player": "Player1", "position": [0, 1]})
+        self.assertEqual(build_player_table_view(g, 0).available_positions, ())
+
     def test_table_hides_face_down_cards_for_every_player(self):
         g = self.game()
         g.table_cards = [

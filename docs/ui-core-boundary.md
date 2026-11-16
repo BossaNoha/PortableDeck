@@ -156,3 +156,13 @@ already delegate to shared core availability. Layout/rule flags are still read
 locally; no claim is made that these UI components can operate remotely yet.
 Tests verify valid toggling, repeated context selection, retained move targets
 and rejection of invalid indices without needing a client-side card collection.
+
+### Ordinary-table target display
+
+For ordinary play without positioned placement, player lanes or table movement,
+the table projection now exposes only the automatic next-card position. This
+prevents rendering surrounding empty slots that reject hand drops. The model's
+spatial-position API is unchanged, and movement/positioned modes retain their
+targets. Full or disabled tables expose no empty target. Shared availability and
+controller checks remain in force. Native Tk mouse-event verification covered
+two successive hand drops, each with exactly one displayed empty target.
