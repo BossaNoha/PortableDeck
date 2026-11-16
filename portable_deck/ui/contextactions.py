@@ -74,7 +74,7 @@ class ContextActions:
             for name in ("take_table_button", "table_discard_button", "flip_table_card_button"):
                 include(name)
             include("move_table_card_button")
-        if hand and spot:
+        if hand and (spot or table):
             include("play_at_spot_button")
         self.shown = list(dict.fromkeys(shown))
         self.layout()

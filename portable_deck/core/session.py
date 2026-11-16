@@ -79,6 +79,8 @@ class SessionController:
         position = parameters.get("target_position")
         context = ActionContext(hand_index=card, table_index=card, target_position=position,
                                 owner=parameters.get("owner"), pile_index=parameters.get("pile_index"))
+        if action == "swap_table_card":
+            context = ActionContext(hand_index=card, table_index=parameters.get("table_index"))
         lifecycle = {"end_turn", "confirm_point", "confirm_pot", "return_player"}
         if action in lifecycle:
             reason = ""
@@ -114,6 +116,7 @@ class SessionController:
             "play_face_down": lambda: g.play_to_table(card + 1, position, face_up=False),
             "discard_card": lambda: g.discard_from_current(card + 1, parameters.get("pile_index", 0), parameters.get("personal", False)),
             "take_table_card": lambda: g.take_from_table(card),
+            "swap_table_card": lambda: g.swap_with_table(card + 1, parameters["table_index"]),
             "discard_table_card": lambda: g.move_table_card_to_discard(card, parameters.get("pile_index", 0), parameters.get("personal", False)),
             "flip_hand_card": lambda: g.flip_hand_card(card),
             "flip_table_card": lambda: g.flip_table_card(card),

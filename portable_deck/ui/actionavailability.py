@@ -38,6 +38,9 @@ def action_reason(gui, button):
     action = next((action for widget, action in gui_action_bindings(gui) if widget is button), None)
     if action is None:
         return ""
+    if (action == "play_at_position" and gui.selection.target_position is None
+            and gui.selection.table_index is not None):
+        action = "swap_table_card"
     context = ActionContext(hand_index=gui.selection.hand_index,
                             table_index=gui.selection.table_index,
                             target_position=gui.selection.target_position)

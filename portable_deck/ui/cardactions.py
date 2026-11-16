@@ -259,17 +259,11 @@ def play_at_selected_spot(game, hand_frame, table_frame, render_log, status_pane
         messagebox.showwarning("No selection", "Select a card from your hand first!")
         return
     if table_frame.selection.target_position is None and table_frame.selection.table_index is not None:
-        if game.occupied_slot_action == "invalid":
-            messagebox.showwarning(
-                "Occupied spot", "This spot is occupied. Choose an empty slot or enable swapping in Settings."
-            )
+        result = game.session.execute("swap_table_card", card_index=selected_hand,
+                                      table_index=table_frame.selection.table_index)
+        if not result.success:
+            messagebox.showwarning("Cannot swap cards", result.message)
             return
-        result = game.swap_with_table(selected_hand + 1, table_frame.selection.table_index)
-        if result is None:
-            messagebox.showwarning("Invalid", "The selected card could not be swapped.")
-            return
-        played_card, returned_card = result
-        player_name = game.players[game.current_player_index].name
         hand_frame.game_gui.selection.hand_index = None
         hand_frame.update_hand()
         table_frame.clear_selection()

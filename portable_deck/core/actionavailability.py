@@ -22,7 +22,7 @@ class ActionAvailability:
 
 
 ACTIONS = frozenset((
-    "draw_card", "discard_card", "play_card", "play_face_down", "play_personal_pile", "take_personal_pile",
+    "draw_card", "discard_card", "play_card", "play_face_down", "play_personal_pile", "take_personal_pile", "swap_table_card",
     "flip_hand_card", "play_at_position", "take_table_card", "discard_table_card",
     "flip_table_card", "move_table_card", "request_point", "reduce_score",
     "draw_from_discard", "recycle_discard", "clear_table", "leave_session",
@@ -42,6 +42,7 @@ def _action_reason(g, action, context):
         "draw_card": True,
         "discard_card": g.enable_discard_pile,
         "play_card": g.enable_table or (not g.enable_discard_pile and not g.enable_interactions),
+        "swap_table_card": g.enable_table and g.allow_positioned_play and g.occupied_slot_action == "swap",
         "play_face_down": g.enable_table and g.allow_face_down_table_cards,
         "play_personal_pile": g.enable_table and g.enable_personal_piles,
         "take_personal_pile": g.enable_table and g.enable_personal_piles,
@@ -68,6 +69,15 @@ def _action_reason(g, action, context):
         return "All players have left. Return a player or restart the game."
     if action in INTERACTIONS and g.current_player_index in g.left_players:
         return "This player has left the session."
+    if action == "swap_table_card":
+        if g.current_player_index in g.left_players:
+            return "This player has left the session."
+        for index, cards, message in (
+            (context.hand_index, g.players[g.current_player_index].hand, "Select an available card in your hand."),
+            (context.table_index, g.table_cards, "Select an available card on the table."),
+        ):
+            if not isinstance(index, int) or isinstance(index, bool) or not 0 <= index < len(cards):
+                return message
     if g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal():
         return "Complete the pending confirmation first."
     if action in {"play_personal_pile", "take_personal_pile"}:

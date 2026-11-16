@@ -277,6 +277,12 @@ Private peek commands return cards only in `ActionResult.value["cards"]`, outsid
 public events and messages. They still record that a peek occurred, so the
 history change participates in Undo and checkpoints.
 
+Swap a hand card with an occupied table slot using
+`execute("swap_table_card", card_index=0, table_index=1)`. Both indices are
+zero-based and refer to different collections. The command requires an enabled
+table, positioned play and the `swap` occupied-slot rule. It preserves the slot's
+position and face orientation and returns `(played_card, returned_card)`.
+
 Set `game.session.checkpoint_callback` to a function accepting the game to save
 changed sessions automatically. A save failure is reported without reversing
 the action. `session.run(operation)` groups nested operations and presentation
