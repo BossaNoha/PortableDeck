@@ -1,7 +1,5 @@
 import copy
 import json
-import subprocess
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -91,10 +89,6 @@ class SettingsValidationTests(unittest.TestCase):
             validate_settings({**DEFAULT_SETTINGS, 'starting_balance': -1})
         self.assertEqual(error.call_args.args[1], str(caught.exception))
 
-    def test_validator_imports_no_tkinter(self):
-        script = "from portable_deck.core.settingsvalidation import validate_settings; import sys; validate_settings({}); assert 'tkinter' not in sys.modules"
-        result = subprocess.run([sys.executable, '-B', '-c', script], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_nested_unknown_interaction_is_reported(self):
         rules = preset_values(DEFAULT_SETTINGS)

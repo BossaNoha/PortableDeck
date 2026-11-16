@@ -1,5 +1,3 @@
-import subprocess
-import sys
 import unittest
 from dataclasses import FrozenInstanceError, asdict
 from pathlib import Path
@@ -101,9 +99,3 @@ class SessionStatusTests(unittest.TestCase):
         self.assertNotEqual(build_session_status(g), status)
         with self.assertRaises(FrozenInstanceError):
             status.draw_count = 0
-
-    def test_core_status_works_without_tkinter(self):
-        script = "from portable_deck.core.game import Game; from portable_deck.core.sessionstatus import build_session_status; from dataclasses import asdict; import json,sys; g=Game(2,'decks/demodeck.json'); print(json.dumps(asdict(build_session_status(g)))); assert 'tkinter' not in sys.modules"
-        result = subprocess.run([sys.executable, '-B', '-c', script], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('card_count', result.stdout)

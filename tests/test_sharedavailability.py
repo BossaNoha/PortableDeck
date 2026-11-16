@@ -66,7 +66,7 @@ class SharedAvailabilityTests(unittest.TestCase):
         self.assertEqual(g.undo_stack, [])
         saved.assert_not_called()
 
-    def test_drop_checks_indices_targets_rules_and_default_position(self):
+    def test_drop_checks_indices_and_respects_automatic_or_positioned_mode(self):
         for positioned in (False, True):
             g = self.game(positioned)
             self.assertTrue(drop_availability(g, "hand", 0, (0, 0)).availability.allowed)

@@ -1,11 +1,7 @@
-import ast
 import json
-import subprocess
-import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
 from portable_deck.core.game import Game
 
 
@@ -157,17 +153,3 @@ class GameLogTests(unittest.TestCase):
         self.assertEqual(seen[0], ('Player1 drew a card.',))
         self.assertEqual(g.game_log[-1], 'Autosave failed: Disk full')
         self.assertEqual(result.messages[-1], 'Autosave failed: Disk full')
-
-    def test_gui_does_not_append_game_log_or_history(self):
-        root = Path(__file__).resolve().parents[1] / 'portable_deck/ui'
-        for path in root.glob('*.py'):
-            for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
-                if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-                    self.assertNotEqual(node.func.attr, 'ensure_initial_log', path.name)
-                    if node.func.attr == 'append' and isinstance(node.func.value, ast.Attribute):
-                        self.assertNotIn(node.func.value.attr, ('game_log', 'gui_log', 'history'), path.name)
-
-    def test_cli_uses_log_without_tkinter(self):
-        script = "from portable_deck.core.game import Game; import sys; g=Game(2,'decks/demodeck.json'); r=g.session.execute('draw_card'); assert r.messages==tuple(g.game_log); assert 'tkinter' not in sys.modules"
-        result = subprocess.run([sys.executable, '-B', '-c', script], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)

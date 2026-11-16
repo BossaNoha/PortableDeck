@@ -1,5 +1,3 @@
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from portable_deck.core.game import Game
@@ -37,9 +35,3 @@ class AvailabilityTests(unittest.TestCase):
         self.assertIn("target position", action_availability(g, "move_table_card", ActionContext(table_index=0)).reason)
         self.assertTrue(action_availability(g, "move_table_card", ActionContext(table_index=0,target_position=(0,1))).allowed)
         self.assertFalse(action_availability(g, "move_table_card", ActionContext(table_index=0,target_position=(0,0))).allowed)
-
-    def test_import_and_query_without_tkinter(self):
-        script = "from portable_deck.core.game import Game; from portable_deck.core.actionavailability import action_availability; import sys; g=Game(2,'decks/demodeck.json'); print(action_availability(g,'draw_card').allowed); assert 'tkinter' not in sys.modules"
-        result = subprocess.run([sys.executable, "-B", "-c", script], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), "True")

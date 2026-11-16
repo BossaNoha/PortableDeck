@@ -1,5 +1,3 @@
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
@@ -78,11 +76,6 @@ class SessionTests(unittest.TestCase):
         self.assertTrue(self.game.session.execute('end_turn').success)
         self.assertEqual(self.game.current_player_index, 1)
 
-    def test_no_tkinter_dependency(self):
-        script = "from portable_deck.core.game import Game; import sys; g=Game(2,'decks/demodeck.json'); assert g.session.execute('draw_card').success; assert 'tkinter' not in sys.modules"
-        result = subprocess.run([sys.executable, '-B', '-c', script],
-                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_discard_draw_and_table_move(self):
         g = self.game

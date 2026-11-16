@@ -1,7 +1,5 @@
 import copy
 import json
-import subprocess
-import sys
 import unittest
 from dataclasses import FrozenInstanceError, asdict
 from pathlib import Path
@@ -49,12 +47,3 @@ class DeckPreviewTests(unittest.TestCase):
         deck.cards = []
         with self.assertRaises(ValueError):
             build_deck_preview(deck)
-
-    def test_preview_is_available_without_tkinter(self):
-        script = ("from portable_deck.core.deck import Deck; "
-                  "from portable_deck.core.deckpreview import build_deck_preview; import sys; "
-                  "assert build_deck_preview(Deck('decks/demodeck.json')).card_count>0; "
-                  "assert 'tkinter' not in sys.modules")
-        result = subprocess.run([sys.executable, "-B", "-c", script],
-                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)

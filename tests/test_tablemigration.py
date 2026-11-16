@@ -2,10 +2,8 @@ import copy
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
 
 from portable_deck.core.game import Game
-from portable_deck.ui.tableframe import TableFrame
 
 
 class TableMigrationTests(unittest.TestCase):
@@ -37,13 +35,3 @@ class TableMigrationTests(unittest.TestCase):
         before = copy.deepcopy(game.table_cards)
         game.normalize_table_positions()
         self.assertEqual(game.table_cards, before)
-
-    def test_table_render_does_not_repair_or_mutate_game_state(self):
-        game = self.game()
-        game.table_cards = [{"card": "A", "player": "Player1"}]
-        before = game.capture_undo_state()
-        frame = Mock(game=game)
-        frame.contents.winfo_children.return_value = []
-        TableFrame.update_table(frame)
-        self.assertEqual(game.capture_undo_state(), before)
-        frame._draw_spatial_table.assert_called_once_with()

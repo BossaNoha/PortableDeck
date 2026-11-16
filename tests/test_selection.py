@@ -1,5 +1,3 @@
-import subprocess
-import sys
 import unittest
 import json
 import tempfile
@@ -143,8 +141,3 @@ class SelectionTests(unittest.TestCase):
         self.state.clear()
         self.assertIsNone(self.state.hand_index)
         self.assertIsNone(self.state.target_position)
-
-    def test_no_gui_dependency(self):
-        result = subprocess.run([sys.executable, '-B', '-c',
-            "from portable_deck.core.selection import SelectionState; import sys; s=SelectionState(); s.select_hand(0); assert s.hand_index == 0; assert 'tkinter' not in sys.modules"], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)

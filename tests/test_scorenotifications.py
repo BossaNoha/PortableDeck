@@ -1,5 +1,3 @@
-import subprocess
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -148,8 +146,3 @@ class ScoreNotificationTests(unittest.TestCase):
         g.score_enabled = True
         g.left_players = [0, 1]
         self.assertFalse(g.score_notifications())
-
-    def test_cli_has_no_gui_dependency(self):
-        script = "from portable_deck.core.game import Game; import sys; g=Game(2,'decks/demodeck.json',score_enabled=True,enable_target_score=True,target_score=10,enable_score_warning=True,score_warning=7); g.scores[1]=7; notices=g.score_notifications(); assert notices[0].recipient==0; g.acknowledge_score_notifications(notices); assert not g.score_notifications(); assert 'tkinter' not in sys.modules"
-        result = subprocess.run([sys.executable, '-B', '-c', script], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)

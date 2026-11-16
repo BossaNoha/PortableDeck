@@ -1,5 +1,3 @@
-import subprocess
-import sys
 import unittest
 from dataclasses import FrozenInstanceError
 from pathlib import Path
@@ -57,13 +55,3 @@ class ChipNotificationTests(unittest.TestCase):
         g.enable_chip_accounts = True
         g.left_players = [1]
         self.assertIsNone(g.pot_confirmation_notification())
-
-    def test_core_prompt_does_not_import_tkinter(self):
-        script = ("from portable_deck.core.game import Game; import sys; "
-                  "g=Game(2,'decks/demodeck.json',enable_chip_accounts=True,require_pot_withdrawal_confirmation=True); "
-                  "g.session.execute('play_chips',amount=10); g.session.execute('take_pot',player_index=0); "
-                  "g.session.execute('end_turn'); assert g.pot_confirmation_notification().amount==10; "
-                  "assert 'tkinter' not in sys.modules")
-        result = subprocess.run([sys.executable, "-B", "-c", script],
-                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)

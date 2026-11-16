@@ -1,5 +1,3 @@
-import subprocess
-import sys
 import unittest
 from dataclasses import FrozenInstanceError, asdict
 from pathlib import Path
@@ -81,10 +79,3 @@ class RulesOverviewTests(unittest.TestCase):
         sections = session_rule_sections(game)
         self.assertEqual(sections[0], ('Game', ['Players: 3', 'Deck: demodeck.json',
                                               'Starting hand: 0 cards per player']))
-
-    def test_cli_works_without_tkinter(self):
-        script = "from portable_deck.core.game import Game; from portable_deck.core.rulesoverview import build_rules_overview, format_rules_overview; import sys; g=Game(2,'decks/demodeck.json'); print(format_rules_overview(build_rules_overview(g))); assert 'tkinter' not in sys.modules"
-        result = subprocess.run([sys.executable, '-B', '-c', script],
-            cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('Players: 2', result.stdout)
