@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 from .cardactions import request_point
 from .sessionactions import execute_value
+from ..core.selectionsnapshot import build_selection_snapshot
 
 class GameGUIActions:
 
@@ -10,10 +11,10 @@ class GameGUIActions:
         self.chip_bank_ui.update_action_buttons()
 
     def run_action(self, action, *args):
-        self.selection.synchronize(self.game)
+        self.selection.synchronize(build_selection_snapshot(self.game))
         self.session.run(action, *args)
         self.render_log()
-        self.selection.synchronize(self.game)
+        self.selection.synchronize(build_selection_snapshot(self.game))
         if hasattr(self, "personal_piles_ui"):
             self.personal_piles_ui.update()
         self.update_undo_button()

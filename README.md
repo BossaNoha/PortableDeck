@@ -311,9 +311,17 @@ and the target table position without importing Tkinter. GUI controls share one
 instance; the frames only render that selection. Use `select_hand`,
 `select_table`, `select_target` and `clear` to control it. Selection methods
 support toggling and keeping a table card selected while choosing its destination.
-Call `synchronize(game)` after game changes: changing players clears selection,
+Call `synchronize(build_selection_snapshot(game))` after game changes, importing
+`build_selection_snapshot` from `portable_deck.core.selectionsnapshot`.
+Changing players or sessions clears selection,
 and changing a card collection clears its selection to avoid targeting a different
-card at the old index. Selection is local input state and is excluded from saves,
+card at the old index. The immutable snapshot carries only random opaque change
+markers, player index and collection counts. It can be serialized with
+`dataclasses.asdict`; synchronization needs no card identities or Game reference.
+The core privately compares collections to refresh markers, including direct
+model changes and Undo. Markers are transient and are not card hashes or stable
+card IDs. The old `synchronize(game)` call remains a local compatibility adapter.
+Selection is local input state and is excluded from saves,
 Undo and game rules. A CLI can use it or pass action parameters directly.
 
 ### Settings validation and preset compatibility

@@ -1,5 +1,6 @@
 """Transient input selection shared by clients; independent of rendering and saves."""
 from dataclasses import dataclass, field
+from .selectionsnapshot import SelectionSnapshot, build_selection_snapshot
 
 
 @dataclass
@@ -8,8 +9,9 @@ class SelectionState:
     table_index: int | None = None
     target_position: tuple[int, int] | None = None
     _owner: int | None = field(default=None, init=False, repr=False)
-    _hand: tuple = field(default=(), init=False, repr=False)
-    _table: tuple = field(default=(), init=False, repr=False)
+    _session: str | None = field(default=None, init=False, repr=False)
+    _hand_revision: str | None = field(default=None, init=False, repr=False)
+    _table_revision: str | None = field(default=None, init=False, repr=False)
 
     def clear(self):
         self.hand_index = self.table_index = self.target_position = None
@@ -27,25 +29,27 @@ class SelectionState:
         if not keep_card:
             self.table_index = None
 
-    def synchronize(self, game):
+    def synchronize(self, snapshot):
         """Discard stale selections after a turn change or card mutation.
 
         Clearing on collection changes also prevents an index from silently
         selecting the next card after the selected card has been removed.
         """
-        owner = game.current_player_index
-        hand = tuple(game.players[owner].hand)
-        table = tuple(tuple(sorted(entry.items())) for entry in game.table_cards)
-        if owner != self._owner:
+        # Keep the previous local API usable; clients can pass only the DTO.
+        if not isinstance(snapshot, SelectionSnapshot):
+            snapshot = build_selection_snapshot(snapshot)
+        owner = snapshot.owner
+        if snapshot.session != self._session or owner != self._owner:
             self.clear()
         else:
-            if hand != self._hand:
+            if snapshot.hand_revision != self._hand_revision:
                 self.hand_index = None
-            if table != self._table:
+            if snapshot.table_revision != self._table_revision:
                 self.table_index = None
                 self.target_position = None
-        if self.hand_index is not None and not 0 <= self.hand_index < len(hand):
+        if self.hand_index is not None and not 0 <= self.hand_index < snapshot.hand_count:
             self.hand_index = None
-        if self.table_index is not None and not 0 <= self.table_index < len(table):
+        if self.table_index is not None and not 0 <= self.table_index < snapshot.table_count:
             self.table_index = None
-        self._owner, self._hand, self._table = owner, hand, table
+        self._owner, self._session = owner, snapshot.session
+        self._hand_revision, self._table_revision = snapshot.hand_revision, snapshot.table_revision

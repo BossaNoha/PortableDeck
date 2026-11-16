@@ -1,6 +1,7 @@
 import tkinter as tk
 import tkinter.font as tkfont
 from ..core.playerview import build_player_table_view
+from ..core.selectionsnapshot import build_selection_snapshot
 
 
 class TableFrame(tk.LabelFrame):
@@ -11,7 +12,7 @@ class TableFrame(tk.LabelFrame):
         self.game = game
         from ..core.selection import SelectionState
         self.selection = selection if selection is not None else SelectionState()
-        self.selection.synchronize(game)
+        self.selection.synchronize(build_selection_snapshot(game))
         self.restoring_view = True
         from ..app.sessionview import TableViewState
         from dataclasses import asdict
@@ -106,7 +107,7 @@ class TableFrame(tk.LabelFrame):
         self.selection.target_position = value
 
     def update_table(self):
-        self.selection.synchronize(self.game)
+        self.selection.synchronize(build_selection_snapshot(self.game))
         for widget in self.contents.winfo_children():
             widget.destroy()
         self.card_buttons = []

@@ -15,8 +15,9 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         from ..app.sessionview import TableViewState
         self.table_view = table_view if table_view is not None else TableViewState()
         from ..core.selection import SelectionState
+        from ..core.selectionsnapshot import build_selection_snapshot
         self.selection = SelectionState()
-        self.selection.synchronize(game)
+        self.selection.synchronize(build_selection_snapshot(game))
         self.on_save = on_save
         self.on_save_as = on_save_as
         self.on_exit_menu = on_exit_menu

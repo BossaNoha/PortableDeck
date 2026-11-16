@@ -2,6 +2,7 @@
 import math
 import tkinter as tk
 from ..core.playerview import build_player_hands_view
+from ..core.selectionsnapshot import build_selection_snapshot
 
 
 class HandFrame(tk.LabelFrame):
@@ -30,7 +31,7 @@ class HandFrame(tk.LabelFrame):
         self.game_gui.selection.hand_index = value
 
     def update_hand(self):
-        self.game_gui.selection.synchronize(self.game_gui.game)
+        self.game_gui.selection.synchronize(build_selection_snapshot(self.game_gui.game))
         for widget in self.cards_frame.winfo_children():
             widget.destroy()
         self.card_buttons = []

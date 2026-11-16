@@ -126,3 +126,26 @@ priority 3 remain a separate follow-up.
 Regression checks cover stale UI approval followed by confirmation blocking,
 chip-dialog state changes during input, unchanged state/Undo/checkpoints on
 rejection, chip refresh states, invalid drops and filtered move destinations.
+
+### Selection synchronization follow-up
+
+The synchronization portion of priority 4 is now separated from secret client
+data. `SelectionSnapshot` contains a session scope, current player, hand/table
+counts and random opaque change markers. `SelectionState.synchronize` accepts
+this DTO without a Game reference; GUI synchronization sites explicitly request
+the DTO from the core. The old Game argument is retained as a local adapter.
+
+`build_selection_snapshot` compares authoritative collection snapshots in a
+private core cache and refreshes markers when queried after a change. No card
+hashes, card values or private cache data enter the DTO or SelectionState.
+Deep copies detect in-place table-position changes as well as hidden identity
+replacement. Unchanged collections retain their markers; Undo is compared by
+the same mechanism. New/loaded game instances have distinct session scopes.
+Markers and cache are excluded from saves, gameplay snapshots and Undo.
+
+These are change markers observed at query time, not a history of every
+intermediate mutation or authorization tokens. They do not reject stale command
+parameters by themselves; controller validation remains mandatory. A future
+host can send the DTO to its authenticated current player. Direct length reads
+in other selection/drag handlers and full client/model separation remain later
+work.
