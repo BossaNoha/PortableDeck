@@ -17,8 +17,6 @@ Remaining boundaries to address in separate changes:
 - `GameGUIActions.handle_turn_start` acknowledges score notifications directly.
   Acknowledgement changes saved `score_alerts_seen` state. Define controller
   orchestration without creating an extra gameplay Undo step.
-- `GameGUIBuilder` calls `ensure_initial_log`. Move lifecycle initialization
-  away from interface construction so attaching a client is read-only.
 - Pot approval prompt data is still assembled in the GUI. Prepare a structured
   core notification, following score approvals.
 - Rendering still reads model collections directly. Introduce player-specific
@@ -27,3 +25,9 @@ Remaining boundaries to address in separate changes:
 
 This audit covers the game UI package. Application settings, save management
 and full network authorization require separate reviews.
+
+Initial turn logging belongs to core lifecycle operations: `Game.start` (also
+used by restart) and session loading. Loading a legacy session with an empty log
+adds a turn entry for an active current player; existing log text is preserved.
+GUI construction only renders this log. Turn-start UI still acknowledges score
+notifications and may request approval decisions, as noted above.

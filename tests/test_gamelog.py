@@ -10,6 +10,50 @@ from portable_deck.core.game import Game
 
 
 class GameLogTests(unittest.TestCase):
+    def test_start_and_restart_initialize_log_without_gui(self):
+        g = self.game(enable_undo=True)
+        g.start(cards_per_player=0)
+        self.assertEqual(g.game_log, ["Player1's turn starts."])
+        g.ensure_initial_log()
+        self.assertEqual(len(g.history), 1)
+        restarted = g.restart()
+        self.assertEqual(restarted.game_log, ["Player1's turn starts."])
+        before = restarted.capture_undo_state()
+        self.assertTrue(restarted.session.execute("draw_card").success)
+        self.assertTrue(restarted.session.undo())
+        self.assertEqual(restarted.capture_undo_state(), before)
+
+    def test_load_initializes_empty_log_once_and_preserves_existing_text(self):
+        for log in ([], ["Existing saved message"]):
+            for legacy in (False, True):
+                with self.subTest(log=log, legacy=legacy), tempfile.TemporaryDirectory() as folder:
+                    g = self.game()
+                    g.current_player_index = 1
+                    g.game_log = list(log)
+                    path = Path(folder) / "session.json"
+                    g.save_session(str(path))
+                    if legacy:
+                        state = json.loads(path.read_text(encoding="utf-8"))
+                        state["gui_log"] = state.pop("game_log")
+                        path.write_text(json.dumps(state), encoding="utf-8")
+                    loaded = Game.load_session(str(path))
+                    self.assertEqual(loaded.game_log, log or ["Player2's turn starts."])
+                    self.assertEqual(len(loaded.history), 0 if log else 1)
+                    loaded.save_session(str(path))
+                    reloaded = Game.load_session(str(path))
+                    self.assertEqual(reloaded.game_log, loaded.game_log)
+                    self.assertEqual(reloaded.history, loaded.history)
+
+    def test_load_does_not_start_turn_when_everyone_has_left(self):
+        g = self.game(enable_player_leaving=True)
+        g.left_players = [0, 1]
+        with tempfile.TemporaryDirectory() as folder:
+            path = str(Path(folder) / "session.json")
+            g.save_session(path)
+            loaded = Game.load_session(path)
+            self.assertEqual(loaded.game_log, [])
+            self.assertEqual(loaded.history, [])
+
     def game(self, **options):
         return Game(2, str(Path(__file__).resolve().parents[1] / 'decks/demodeck.json'), **options)
 
@@ -119,6 +163,7 @@ class GameLogTests(unittest.TestCase):
         for path in root.glob('*.py'):
             for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                    self.assertNotEqual(node.func.attr, 'ensure_initial_log', path.name)
                     if node.func.attr == 'append' and isinstance(node.func.value, ast.Attribute):
                         self.assertNotIn(node.func.value.attr, ('game_log', 'gui_log', 'history'), path.name)
 

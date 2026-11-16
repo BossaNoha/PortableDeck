@@ -269,6 +269,7 @@ def load_session(game_class, path):
                 game.table_view_state[key] = value
     game.configuration_info = state.get("configuration_info", {"name": "Unknown", "modified": None})
     game.apply_feature_settings()
+    game.ensure_initial_log()
     if os.path.basename(path).lower() != "last_session.json" and os.path.basename(os.path.dirname(os.path.abspath(path))).lower() != "autosaves":
         game.named_save_path = os.path.abspath(path)
     return game
