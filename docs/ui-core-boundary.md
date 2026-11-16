@@ -116,6 +116,13 @@ The findings table describes the audit baseline. UI rules for widget visibility,
 dialog layout and selection remain local. Interaction target options and the
 other boundaries in priorities 3–5 remain separate follow-ups.
 
+Interaction dialogs now use `build_interaction_options` for target IDs/names,
+eligibility reasons and amount limits. They refresh options on action changes
+and before submitting input. Shared target validation is reused by execution,
+which rejects stale targets or changed balances without mutation. Departed
+players remain listed with an explanation. Returning-player dialogs from
+priority 3 remain a separate follow-up.
+
 Regression checks cover stale UI approval followed by confirmation blocking,
 chip-dialog state changes during input, unchanged state/Undo/checkpoints on
 rejection, chip refresh states, invalid drops and filtered move destinations.

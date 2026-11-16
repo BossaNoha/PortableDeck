@@ -1,7 +1,7 @@
 """Choose another player and perform an enabled interaction."""
 import tkinter as tk
 from tkinter import messagebox, simpledialog
-from ..core.interactions import INTERACTIONS
+from ..core.interactions import INTERACTIONS, build_interaction_options
 
 class InteractionsUI:
     def __init__(self, gui):
@@ -22,25 +22,42 @@ class InteractionsUI:
         selected_action = tk.StringVar(value=INTERACTIONS[initial_action if initial_action in actions else actions[0]])
         tk.OptionMenu(dialog, selected_action, *[INTERACTIONS[key] for key in actions]).pack(fill="x", padx=10, pady=8)
         tk.Label(dialog, text="Choose a player (ignored for random discard):").pack(anchor="w", padx=10)
-        targets = [i for i in game.active_player_indices() if i != game.current_player_index]
-        players = tk.Listbox(dialog, height=max(1, min(10, len(targets))), exportselection=False)
+        targets = []
+        players = tk.Listbox(dialog, height=6, exportselection=False)
         players.pack(fill="both", expand=True, padx=10, pady=8)
-        for target in targets:
-            players.insert("end", game.players[target].name)
-        if targets:
-            players.selection_set(0)
+
+        def current_action():
+            return next(key for key in actions if INTERACTIONS[key] == selected_action.get())
+
+        def refresh_targets(*_):
+            options = build_interaction_options(game, current_action(), gui.selection.hand_index)
+            targets[:] = options.targets
+            players.delete(0, "end")
+            for target in targets:
+                players.insert("end", target.name + (f" — {target.reason}" if not target.allowed else ""))
+            if targets:
+                players.selection_set(next((i for i, target in enumerate(targets) if target.allowed), 0))
+
+        selected_action.trace_add("write", refresh_targets)
+        refresh_targets()
 
         def perform():
-            action = next(key for key in actions if INTERACTIONS[key] == selected_action.get())
+            action = current_action()
             selection = players.curselection()
-            target = targets[selection[0]] if selection else None
+            target = targets[selection[0]].index if selection else None
+            options = build_interaction_options(game, action, gui.selection.hand_index)
+            target_option = next((item for item in options.targets if item.index == target), None)
+            reason = options.reason
+            if not options.random_target:
+                reason = reason or (target_option.reason if target_option else "Choose another player.")
+            if reason:
+                messagebox.showwarning("Cannot interact", reason, parent=dialog)
+                refresh_targets()
+                return
             amount = None
             if action == "steal_chips" and target is not None:
-                balance = game.chip_balance(target)
-                if balance < 1:
-                    messagebox.showinfo("No chips", "This player has no chips to steal.", parent=dialog)
-                    return
-                amount = simpledialog.askinteger("Steal chips", "How many chips?", minvalue=1, maxvalue=balance, parent=dialog)
+                amount = simpledialog.askinteger("Steal chips", "How many chips?", minvalue=1,
+                                                maxvalue=target_option.max_amount, parent=dialog)
                 if amount is None:
                     return
             selected = gui.selection.hand_index
@@ -50,7 +67,7 @@ class InteractionsUI:
                     messagebox.showwarning("Cannot interact", outcome.message, parent=dialog)
                     return
                 result = outcome.value
-                name = game.players[result["target"]].name
+                name = next(item.name for item in options.targets if item.index == result["target"])
                 if action.startswith("peek_"):
                     gui.render_log()
                     messagebox.showinfo(f"{name}'s cards — private view", "\n".join(result["cards"]), parent=dialog)

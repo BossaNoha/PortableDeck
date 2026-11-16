@@ -284,6 +284,13 @@ Private peek commands return cards only in `ActionResult.value["cards"]`, outsid
 public events and messages. They still record that a peek occurred, so the
 history change participates in Undo and checkpoints.
 
+`portable_deck.core.interactions.build_interaction_options(game, action,
+hand_index=None)` prepares immutable target IDs, names, eligibility reasons and
+chip amount limits for the current player. No hand identities are included.
+Random discard marks that its target is selected by the core. Dialogs refresh
+these options before prompting; commands still revalidate targets and amounts
+after input, so stale options cannot authorize execution.
+
 Swap a hand card with an occupied table slot using
 `execute("swap_table_card", card_index=0, table_index=1)`. Both indices are
 zero-based and refer to different collections. The command requires an enabled

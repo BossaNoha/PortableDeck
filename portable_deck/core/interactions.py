@@ -1,5 +1,6 @@
 """Optional player-to-player actions with model-level permission checks."""
 import random
+from dataclasses import dataclass
 
 INTERACTIONS = {
     "take_random_card": "Take a random card from a chosen player",
@@ -9,6 +10,62 @@ INTERACTIONS = {
     "peek_random_card": "Look at a random card of a chosen player",
     "peek_all_cards": "Look at all cards of a chosen player",
 }
+
+
+def interaction_target_reason(game, action, target):
+    if (not isinstance(target, int) or isinstance(target, bool)
+            or not 0 <= target < len(game.players) or target == game.current_player_index):
+        return "Choose another player."
+    if target in game.left_players:
+        return "This player has left the session."
+    if action in {"take_random_card", "discard_random_card", "peek_random_card", "peek_all_cards"} and not game.players[target].hand:
+        return "The chosen player has no cards."
+    if action == "steal_chips":
+        if game.chip_account_index(target) == game.chip_account_index(game.current_player_index):
+            return "Both players share the same chip account."
+        if game.pending_pot_withdrawal is not None:
+            return "Wait for the pending pot withdrawal to finish."
+        if game.chip_balance(target) < 1:
+            return "This player has no chips to steal."
+    return ""
+
+
+@dataclass(frozen=True)
+class InteractionTarget:
+    index: int
+    name: str
+    allowed: bool
+    reason: str
+    max_amount: int | None
+
+
+@dataclass(frozen=True)
+class InteractionOptions:
+    action: str
+    label: str
+    allowed: bool
+    reason: str
+    random_target: bool
+    targets: tuple[InteractionTarget, ...]
+
+
+def build_interaction_options(game, action, hand_index=None):
+    """Immutable options for the current actor, containing no hand identities."""
+    from .actionavailability import ActionContext, action_availability
+    if action not in INTERACTIONS:
+        raise ValueError(f"Unknown interaction: {action}")
+    available = action_availability(game, action, ActionContext(hand_index=hand_index))
+    targets = []
+    for index, player in enumerate(game.players):
+        if index == game.current_player_index:
+            continue
+        reason = available.reason or interaction_target_reason(game, action, index)
+        maximum = game.chip_balance(index) if action == "steal_chips" and game.enable_chip_accounts else None
+        targets.append(InteractionTarget(index, player.name, not reason, reason, maximum))
+    allowed = available.allowed and any(target.allowed for target in targets)
+    reason = available.reason if not available.allowed else "" if allowed else "No eligible players for this interaction."
+    return InteractionOptions(action, INTERACTIONS[action], allowed, reason,
+                              action == "discard_random_card", tuple(targets))
 
 
 class PlayerInteractions:
@@ -32,14 +89,11 @@ class PlayerInteractions:
             if not candidates:
                 raise ValueError("No other player has cards to discard.")
             target = random.choice(candidates)
-        if not isinstance(target, int) or isinstance(target, bool) or not 0 <= target < len(self.players) or target == actor:
-            raise ValueError("Choose another player.")
-        if target in self.left_players:
-            raise ValueError("This player has left the session.")
+        reason = interaction_target_reason(self, action, target)
+        if reason:
+            raise ValueError(reason)
         other = self.players[target]
         result = {"target": target}
-        if action in {"take_random_card", "discard_random_card", "peek_random_card", "peek_all_cards"} and not other.hand:
-            raise ValueError("The chosen player has no cards.")
         if action == "give_card":
             if not isinstance(hand_index, int) or isinstance(hand_index, bool) or not 1 <= hand_index <= len(self.players[actor].hand):
                 raise ValueError("Select a card in your hand first.")
@@ -48,10 +102,6 @@ class PlayerInteractions:
             result["card"] = card
         elif action == "steal_chips":
             source, destination = self.chip_account_index(target), self.chip_account_index(actor)
-            if source == destination:
-                raise ValueError("Both players share the same chip account.")
-            if self.pending_pot_withdrawal is not None:
-                raise ValueError("Wait for the pending pot withdrawal to finish.")
             if not isinstance(amount, int) or isinstance(amount, bool) or not 1 <= amount <= self.chip_balance(target):
                 raise ValueError("Choose an amount available in the target's account.")
             self.chip_balances[source] -= amount
