@@ -13,6 +13,16 @@ class SelectionSnapshot:
     hand_count: int
     table_count: int
 
+    def contains(self, location, index):
+        """Check a selectable index without needing card collection access."""
+        if not isinstance(index, int) or isinstance(index, bool):
+            return False
+        if location == "hand":
+            return 0 <= index < self.hand_count
+        if location == "table":
+            return 0 <= index < self.table_count
+        return False
+
 
 class _CollectionMarkers:
     """Private core cache; never serialized or sent to a client."""

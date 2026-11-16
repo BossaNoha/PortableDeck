@@ -2,6 +2,7 @@
 import tkinter as tk
 from .actionavailability import selected_action_available
 from ..core.actionavailability import available_move_targets
+from ..core.selectionsnapshot import build_selection_snapshot
 
 
 def card_menu_entries(gui, location):
@@ -64,17 +65,17 @@ def choose_move_destination(gui):
 
 
 def show_card_menu(gui, event, location, index):
+    snapshot = build_selection_snapshot(gui.game)
+    if not snapshot.contains(location, index):
+        return "break"
+    gui.selection.synchronize(snapshot)
     if location == "hand":
-        if not 0 <= index < len(gui.current_player().hand):
-            return "break"
         # Selecting through a context menu must never toggle the card off.
         gui.selection.hand_index = None
         gui.hand_frame.select_card(index)
         gui.selection.table_index = None
         gui.table_frame.update_table()
     else:
-        if not 0 <= index < len(gui.game.table_cards):
-            return "break"
         gui.selection.table_index = None
         gui.table_frame.select_card(index)
     if hasattr(gui, "context_actions"):

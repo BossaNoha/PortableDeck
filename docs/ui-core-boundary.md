@@ -146,6 +146,13 @@ Markers and cache are excluded from saves, gameplay snapshots and Undo.
 These are change markers observed at query time, not a history of every
 intermediate mutation or authorization tokens. They do not reject stale command
 parameters by themselves; controller validation remains mandatory. A future
-host can send the DTO to its authenticated current player. Direct length reads
-in other selection/drag handlers and full client/model separation remain later
-work.
+host can send the DTO to its authenticated current player. Full client/model
+separation remains later work.
+
+Hand and table click handlers and context menus now validate indices through
+`SelectionSnapshot.contains` and synchronize from that snapshot. Context menus
+no longer inspect real hand/table collections for bounds checks. Drag checks
+already delegate to shared core availability. Layout/rule flags are still read
+locally; no claim is made that these UI components can operate remotely yet.
+Tests verify valid toggling, repeated context selection, retained move targets
+and rejection of invalid indices without needing a client-side card collection.

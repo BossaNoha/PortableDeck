@@ -252,6 +252,10 @@ class TableFrame(tk.LabelFrame):
         return "break"
 
     def select_card(self, index):
+        snapshot = build_selection_snapshot(self.game)
+        if not snapshot.contains("table", index):
+            return
+        self.selection.synchronize(snapshot)
         self.selection.select_table(index, keep_target=self.game.allow_move_cards_on_table)
         self.update_table()
         if hasattr(self, "on_selection_changed"):

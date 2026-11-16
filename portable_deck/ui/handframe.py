@@ -101,6 +101,10 @@ class HandFrame(tk.LabelFrame):
         return show_card_menu(self.game_gui, event, "hand", index)
 
     def select_card(self, index):
+        snapshot = build_selection_snapshot(self.game_gui.game)
+        if not snapshot.contains("hand", index):
+            return
+        self.game_gui.selection.synchronize(snapshot)
         self.game_gui.selection.select_hand(index)
         if hasattr(self.game_gui, "context_actions"):
             self.game_gui.table_frame.selected_index = None

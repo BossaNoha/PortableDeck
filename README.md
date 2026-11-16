@@ -321,6 +321,9 @@ markers, player index and collection counts. It can be serialized with
 The core privately compares collections to refresh markers, including direct
 model changes and Undo. Markers are transient and are not card hashes or stable
 card IDs. The old `synchronize(game)` call remains a local compatibility adapter.
+`SelectionSnapshot.contains("hand" or "table", index)` checks collection bounds
+without exposing cards. Click handlers and context menus use this before changing
+selection; boolean, stale out-of-range and unknown-location indices are rejected.
 Selection is local input state and is excluded from saves,
 Undo and game rules. A CLI can use it or pass action parameters directly.
 
