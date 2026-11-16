@@ -1,6 +1,9 @@
 """Chip-account and shared-pot operations for the Game model."""
 
 class ChipBankActions:
+    def pot_confirmation_notification(self):
+        from .chipnotifications import pot_confirmation_notification
+        return pot_confirmation_notification(self)
 
     def buy_chips(self, player_index, amount):
         """Add chips to one player's account."""

@@ -350,6 +350,13 @@ prompt, including requester and delta. Submit the decision through
 The existing `turn_score_alerts()` method remains a compatibility adapter that
 returns message strings and acknowledges them immediately.
 
+`game.pot_confirmation_notification()` similarly returns an immutable pot
+approval prompt, or `None` when the current player has nothing to approve.
+It includes `kind`, `recipient` (the voter), `requester`, `beneficiary` (the player
+receiving the pot), `amount`, `title` and `message`. Querying changes no state.
+Submit the decision using `game.session.execute("confirm_pot", approved=True)`
+or `approved=False`; the query does not authorize or execute the withdrawal.
+
 ### Core-owned game log
 
 Game operations record structured events in `game.history` and public messages

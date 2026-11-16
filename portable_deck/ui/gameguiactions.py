@@ -197,17 +197,9 @@ class GameGUIActions:
             self.render_log()
             self.status_panel.update_status()
 
-        if self.game.current_player_must_confirm_pot_withdrawal():
-            request = self.game.pending_pot_withdrawal
-            requester_name = self.game.players[request["requester"]].name
-            recipient_name = self.game.players[request["recipient"]].name
-            voter_name = self.current_player_name()
-            approved = messagebox.askyesno(
-                "Confirm pot withdrawal",
-                f"{requester_name} requested to give the {self.game.chip_pot}-chip pot "
-                f"to {recipient_name}.\n\nAs {voter_name}, do you approve?",
-                parent=self.root,
-            )
+        notice = self.game.pot_confirmation_notification()
+        if notice is not None:
+            approved = messagebox.askyesno(notice.title, notice.message, parent=self.root)
             _, result = execute_value(self.game, "confirm_pot", approved=approved)
             self.render_log()
             self.status_panel.update_status()

@@ -17,8 +17,6 @@ Remaining boundaries to address in separate changes:
 - `GameGUIActions.handle_turn_start` acknowledges score notifications directly.
   Acknowledgement changes saved `score_alerts_seen` state. Define controller
   orchestration without creating an extra gameplay Undo step.
-- Pot approval prompt data is still assembled in the GUI. Prepare a structured
-  core notification, following score approvals.
 - Rendering still reads model collections directly. Introduce player-specific
   views before using the model with remote clients; the status snapshot alone
   is not a complete player view.
@@ -31,3 +29,8 @@ used by restart) and session loading. Loading a legacy session with an empty log
 adds a turn entry for an active current player; existing log text is preserved.
 GUI construction only renders this log. Turn-start UI still acknowledges score
 notifications and may request approval decisions, as noted above.
+
+Pot approval prompts are prepared by `game.pot_confirmation_notification()`.
+The immutable result distinguishes the voting player (`recipient`) from the
+player receiving the pot (`beneficiary`). GUI code only displays the prompt and
+submits `confirm_pot` through the controller.
