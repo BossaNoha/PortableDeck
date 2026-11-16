@@ -54,6 +54,7 @@ class GameUndoActions:
             [[] for _ in self.players],
         ))
         self.table_cards = copy.deepcopy(state["table_cards"])
+        self.normalize_table_positions()
         self.current_player_index = state["current_player_index"]
         self.history = copy.deepcopy(state["history"])
         self.cards_drawn_this_turn = state["cards_drawn_this_turn"]

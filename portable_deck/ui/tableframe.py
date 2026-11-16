@@ -110,10 +110,6 @@ class TableFrame(tk.LabelFrame):
             self._draw_player_lanes()
             self.after_idle(self._expand_window_for_table)
             return
-        # Legacy saves may contain table cards without explicit positions.
-        for index, entry in enumerate(self.game.table_cards):
-            if not isinstance(entry.get("position"), (tuple, list)):
-                entry["position"] = [0, index]
         self._draw_spatial_table()
         self.after_idle(self._expand_window_for_table)
 

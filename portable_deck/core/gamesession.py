@@ -200,27 +200,7 @@ def load_session(game_class, path):
     game.pending_pot_withdrawal = state.get("pending_pot_withdrawal")
     game.undo_stack = state.get("undo_stack", [])
 
-    if game.allow_positioned_play or game.allow_move_cards_on_table or game.allow_play_in_front_of_players:
-        positions = [entry.get("position") for entry in game.table_cards]
-        if not all(
-            isinstance(position, (tuple, list))
-            and len(position) == 2
-            and all(isinstance(value, int) and not isinstance(value, bool) for value in position)
-            for position in positions
-        ):
-            game.table_cards = [
-                entry for _, entry in sorted(
-                    enumerate(game.table_cards),
-                    key=lambda pair: pair[1].get("position", pair[0])
-                    if isinstance(pair[1].get("position", pair[0]), int)
-                    else pair[0],
-                )
-            ]
-            for index, entry in enumerate(game.table_cards):
-                entry["position"] = [0, index]
-        else:
-            for entry in game.table_cards:
-                entry["position"] = list(entry["position"])
+    game.normalize_table_positions()
 
     if game.cards_per_player is None:
         drawn = sum(

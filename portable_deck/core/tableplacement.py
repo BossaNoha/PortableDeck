@@ -1,6 +1,20 @@
 """Table placement and position calculations for the Game model."""
 
 class TablePlacementActions:
+    def normalize_table_positions(self):
+        """Upgrade legacy table entries before clients read or render them."""
+        positions = [entry.get("position") for entry in self.table_cards]
+        if all(isinstance(position, (tuple, list)) and len(position) == 2
+               and all(isinstance(value, int) and not isinstance(value, bool) for value in position)
+               for position in positions):
+            return
+        self.table_cards = [entry for _, entry in sorted(
+            enumerate(self.table_cards),
+            key=lambda pair: pair[1].get("position", pair[0])
+            if isinstance(pair[1].get("position", pair[0]), int) else pair[0])]
+        for index, entry in enumerate(self.table_cards):
+            entry["position"] = [0, index]
+
     def initialize_table_limits(self, enabled=False, rows=3, columns=5, limit_rows=True, limit_columns=True):
         if any(not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= 20 for value in (rows, columns)):
             raise ValueError("Maximum table rows and columns must be between 1 and 20.")
