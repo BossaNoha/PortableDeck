@@ -8,6 +8,32 @@ from portable_deck.core.game import Game
 
 
 class PersonalPileTests(unittest.TestCase):
+    def test_direct_actions_reject_malformed_targets_before_moving_cards(self):
+        game = self.game()
+        game.players[0].hand = ["3 of Test"]
+        game.players[0].revealed_indices = {0}
+        game.personal_piles[0][0] = ["2 of Test"]
+        game.personal_piles[1][0] = ["4 of Test"]
+        before = game.capture_undo_state()
+        cases = [(value, 0) for value in (True, False, 0.0, 1.0, -1, 2, "0", None, [], {})]
+        cases += [(0, value) for value in (True, False, 0.0, 1.0, -1, 2, "0", None, [], {})]
+        for owner, pile in cases:
+            with self.subTest(owner=owner, pile=pile):
+                self.assertFalse(game.can_access_personal_pile(owner, pile))
+                self.assertIsNone(game.play_to_personal_pile(1, owner, pile))
+                self.assertIsNone(game.take_from_personal_pile(owner, pile))
+                self.assertEqual(game.capture_undo_state(), before)
+
+    def test_access_query_rejects_invalid_viewer_even_for_public_piles(self):
+        game = self.game([[{"access": "everyone"}]])
+        before = game.capture_undo_state()
+        for viewer in (True, False, 0.0, 1.0, -1, 2, "0", [], {}):
+            with self.subTest(viewer=viewer):
+                self.assertFalse(game.can_access_personal_pile(0, 0, viewer=viewer))
+                self.assertEqual(game.capture_undo_state(), before)
+        self.assertTrue(game.can_access_personal_pile(0, 0, viewer=0))
+        self.assertTrue(game.can_access_personal_pile(0, 0, viewer=1))
+
     def test_session_actions_share_one_undo_and_checkpoint(self):
         for action in ("play_personal_pile", "take_personal_pile"):
             with self.subTest(action=action):
@@ -33,7 +59,8 @@ class PersonalPileTests(unittest.TestCase):
     def test_session_rejects_invalid_or_inaccessible_piles_without_changes(self):
         for action in ("play_personal_pile", "take_personal_pile"):
             for owner, pile in ((1, 0), (-1, 0), (0, -1), (99, 0), (0, 99),
-                                (True, 0), (0, False), ("0", 0), (None, None)):
+                                (True, 0), (0, False), (0.0, 0), (0, 1.0),
+                                ("0", 0), ([], 0), (0, {}), (None, None)):
                 with self.subTest(action=action, owner=owner, pile=pile):
                     game = self.game()
                     game.players[0].hand = ["3 of Test"]

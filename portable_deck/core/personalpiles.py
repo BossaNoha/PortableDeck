@@ -37,9 +37,12 @@ class PersonalPileActions:
 
     def can_access_personal_pile(self, owner, pile, viewer=None):
         viewer = self.current_player_index if viewer is None else viewer
+        if (any(not isinstance(index, int) or isinstance(index, bool) for index in (owner, pile, viewer))
+                or not 0 <= owner < len(self.players) or not 0 <= viewer < len(self.players)):
+            return False
         if viewer in self.left_players or not self.enable_personal_piles or not self.enable_table:
             return False
-        if not 0 <= owner < len(self.players) or not 0 <= pile < self.personal_pile_counts[owner]:
+        if not 0 <= pile < self.personal_pile_counts[owner]:
             return False
         access = self.personal_pile_settings[owner][pile]["access"]
         if access == "everyone_but_owner":

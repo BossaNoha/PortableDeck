@@ -85,6 +85,8 @@ Discarding from hand/table validates the destination before removing a card:
 `pile_index` must be an in-range integer excluding bool, and `personal` a bool.
 Invalid destinations return `invalid_pile` through the controller or `None`
 from direct model calls, preserving the source card and reveal state.
+Personal-pile access validates owner, pile and viewer indices as in-range
+integers excluding bool before permission checks or card transfers.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

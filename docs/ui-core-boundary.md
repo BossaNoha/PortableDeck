@@ -49,6 +49,14 @@ rejection. Existing top/bottom/middle position and successful Undo tests remain.
 Invalid selections retain `invalid_selection`; other malformed insertion
 parameters currently retain `invalid_parameters`.
 
+Personal-pile access now validates owner/pile/viewer integer types (excluding
+bool) and ranges before looking up settings or evaluating access rules. Invalid
+queries return False and direct play/take calls return None before moving cards.
+This also rejects invalid viewers for public piles. Existing owner/team/dealer,
+departure and feature checks remain. Tests cover malformed direct targets and
+viewers, controller refusal without Undo/checkpoints, plus existing permission,
+ordering, valid-transfer and Undo regressions.
+
 The three-player lifecycle regression now covers draw, face-down play, concurrent
 score/pot requests, first-voter approvals, saving pending decisions, loading into
 the CLI, blocking premature actions, final approvals, persisted Undo, reloading
