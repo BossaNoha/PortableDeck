@@ -173,6 +173,17 @@ preferences/metadata are unchanged. Tests cover initial unmodified status,
 later rule-change detection, preserved app preferences, input independence,
 failed replacement/cleanup and GUI success/cancellation/failure.
 
+The preset lifecycle integration test now chains save, load with changed current
+preferences/player count, legacy-option recovery and new-game creation. It
+checks configuration baseline/modified status before and after a rule edit.
+A temporary native Tk probe passed the same flow through actual settings form
+buttons/variables, including legacy warning display and canceled loading. It
+preserved current player count, Undo/autosave preferences and game rules, then
+created a game with modified configuration metadata. The probe used temporary
+presets and intercepted application-settings persistence; no user configuration
+was written. Probe files/windows were removed. No application-code fix was
+needed; this was automated GUI verification rather than exhaustive manual QA.
+
 Game-changing card, chip, score, turn and player interaction actions in
 `portable_deck/ui` now execute through `SessionController`. Model methods remain
 available to core code. Selection and widget updates are local client state.
