@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 from portable_deck.app.sessionview import TableViewState, load_table_view, save_with_view
 from portable_deck.app.savemanager import SaveManager
 from portable_deck.app.mainmenu import MainMenu
+from portable_deck.app.sessionstorage import load_session_with_view
 from portable_deck.core.game import Game
 from portable_deck.ui.tableframe import TableFrame
 
@@ -14,6 +15,55 @@ from portable_deck.ui.tableframe import TableFrame
 class SessionViewTests(unittest.TestCase):
     def game(self):
         return Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"), enable_undo=True)
+
+    def test_combined_load_reads_once_and_preserves_current_and_legacy_views(self):
+        game = self.game()
+        game.start(1)
+        game.session.execute("draw_card")
+        view = TableViewState(150, .25, .75)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "named.json"
+            save_with_view(game, path, view)
+            base = json.loads(path.read_text(encoding="utf-8"))
+            for metadata, expected in (
+                ({"client_state": base["client_state"]}, view),
+                ({"table_view_state": {"zoom": 125, "x": .5, "y": 1}}, TableViewState(125, .5, 1)),
+                ({}, TableViewState()),
+                ({"client_state": {"table_view": {"zoom": True, "x": -1}}}, TableViewState()),
+            ):
+                with self.subTest(metadata=metadata):
+                    state = {key: value for key, value in base.items() if key != "client_state"}
+                    state.update(metadata)
+                    path.write_text(json.dumps(state), encoding="utf-8")
+                    with patch("builtins.open", wraps=open) as source:
+                        loaded, loaded_view = load_session_with_view(Game, path)
+                    source.assert_called_once_with(path, "r", encoding="utf-8")
+                    self.assertEqual(loaded_view, expected)
+                    self.assertEqual(loaded.capture_undo_state(), game.capture_undo_state())
+                    self.assertEqual(loaded.named_save_path, str(path.absolute()))
+                    self.assertFalse(hasattr(loaded, "table_view_state"))
+                    self.assertTrue(loaded.session.undo())
+                    self.assertEqual(loaded.capture_undo_state(), game.undo_stack[-1])
+
+    def test_gui_load_and_resume_use_the_combined_read(self):
+        with tempfile.TemporaryDirectory() as folder:
+            for name, method in (("named.json", MainMenu.load_game),
+                                 ("last_session.json", MainMenu.resume_game)):
+                with self.subTest(name=name):
+                    path = str(Path(folder) / name)
+                    view = TableViewState(125, .1, .2)
+                    save_with_view(self.game(), path, view)
+                    menu = Mock(root=None)
+                    with patch("portable_deck.app.mainmenu.SessionBrowser") as browser, patch(
+                            "portable_deck.app.mainmenu.AUTOSAVE_PATH", path), patch(
+                            "builtins.open", wraps=open) as source:
+                        browser.return_value.show.return_value = path
+                        method(menu)
+                    source.assert_called_once_with(path, "r", encoding="utf-8")
+                    menu.clear_window.assert_called_once()
+                    loaded = menu.show_game.call_args.args[0]
+                    self.assertEqual(menu.show_game.call_args.kwargs, {"table_view": view})
+                    self.assertEqual(hasattr(loaded, "named_save_path"), name == "named.json")
 
     def test_view_roundtrip_is_separate_from_game_and_undo(self):
         g = self.game()

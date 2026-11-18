@@ -41,6 +41,8 @@ atomic writes, legacy external-deck lookup and named-save association belong to
 delegate to this service for compatibility; the save format is unchanged.
 GUI load/resume, CLI load, named saves, table-view saves and checkpoints call
 the application service directly.
+GUI load/resume uses `load_session_with_view(Game, path)` to restore the game
+and its separate table view from one file read. CLI still loads game state only.
 
 A small hotseat client exercises the shared core without Tkinter:
 

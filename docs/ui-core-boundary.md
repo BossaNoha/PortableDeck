@@ -500,8 +500,13 @@ existing GUI/CLI behavior are unchanged. Tests verify a JSON round trip with
 file access blocked, pending confirmations, draw order, Undo, independent
 mutable state, and the existing storage failure and legacy-save cases.
 
-GUI load/resume and CLI load now call `app.sessionstorage.load_session`
-directly. Named-save, checkpoint and table-view services likewise use
+GUI load/resume calls `app.sessionstorage.load_session_with_view`, returning
+the game and separate table view from a single file read. CLI load uses
+`app.sessionstorage.load_session` for game state only. Both share restoration,
+legacy deck resolution and named-save association. `table_view_from_state`
+shares current/legacy metadata decoding with standalone `load_table_view`.
+Tests verify one read for both GUI paths, default/invalid/legacy views and Undo.
+Named-save, checkpoint and table-view services likewise use
 `app.sessionstorage.save_session`, leaving the Game methods as compatibility
 entry points only. Cancellation/reserved-path tests assert that the storage
 service is not called; the existing round-trip, client-state, retention and

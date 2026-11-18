@@ -9,10 +9,10 @@ from .settings import BASE_DIR, DISCARD_PATH, load_settings
 from .settingswindow import SettingsWindow
 from .savemanager import SaveManager
 from .sessionbrowser import SessionBrowser
-from .sessionview import TableViewState, load_table_view
+from .sessionview import TableViewState
 from .checkpoints import save_checkpoint
 from .newgame import create_game
-from .sessionstorage import load_session
+from .sessionstorage import load_session_with_view
 
 SAVES_DIR = os.path.join(BASE_DIR, "saves")
 AUTOSAVE_PATH = os.path.join(SAVES_DIR, "last_session.json")
@@ -91,8 +91,7 @@ class MainMenu:
         if not path:
             return
         try:
-            game = load_session(Game, path)
-            table_view = load_table_view(path)
+            game, table_view = load_session_with_view(Game, path)
         except (OSError, ValueError, KeyError, TypeError) as error:
             messagebox.showerror("Could not load game", str(error), parent=self.root)
             return
@@ -101,8 +100,7 @@ class MainMenu:
 
     def resume_game(self):
         try:
-            game = load_session(Game, AUTOSAVE_PATH)
-            table_view = load_table_view(AUTOSAVE_PATH)
+            game, table_view = load_session_with_view(Game, AUTOSAVE_PATH)
         except (OSError, ValueError, KeyError, TypeError) as error:
             messagebox.showerror("Could not resume game", str(error), parent=self.root)
             return
