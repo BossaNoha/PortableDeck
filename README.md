@@ -105,6 +105,15 @@ fresh game with the same setup and can keep or reset scores when scoring is on.
 
 ## Saves and checkpoints
 
+`portable_deck.app.sessioncatalog.list_sessions(directory, source="saves")`
+returns immutable metadata entries; `source="autosaves"` includes the latest
+checkpoint followed by archived saves. Entries contain filename/path, player
+names, next player, configuration, modification flag, timestamp and a per-file
+error. Corrupt files remain listed without hiding healthy sessions. Missing
+folders produce an empty catalog and are not created; directory access errors
+propagate. Metadata reading does not load or validate the full game or expose
+card identities. The browser formats these values for display.
+
 `portable_deck.app.namedsaves` provides GUI-independent named-save operations:
 `next_session_number(directory)`, `validate_named_save_path(path)` and
 `save_named_session(game, path, client_state=None, overwrite=False)` (the last

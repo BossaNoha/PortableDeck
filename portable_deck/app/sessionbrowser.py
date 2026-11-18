@@ -1,10 +1,10 @@
 """A compact library for browsing named game sessions."""
-import json
 import os
 from datetime import datetime
 from tkinter import filedialog, messagebox, simpledialog, ttk
 import tkinter as tk
 from .sessionfiles import rename_session, delete_session
+from .sessioncatalog import list_sessions
 
 
 class SessionBrowser:
@@ -73,31 +73,19 @@ class SessionBrowser:
 
     def refresh(self, select_name=None):
         self.tree.delete(*self.tree.get_children())
-        os.makedirs(self.saves_dir, exist_ok=True)
-        filenames = sorted(
-            (name for name in os.listdir(self.saves_dir)
-             if name.lower().endswith(".json") and name.lower() != "last_session.json"),
-            key=str.casefold,
-        )
-        if self.source.get() == "autosaves" and os.path.isfile(os.path.join(self.base_saves_dir, "last_session.json")):
-            filenames.insert(0, "last_session.json")
-        for filename in filenames:
-            path = self.session_path(filename)
-            configuration, modified = "Unknown", "Unknown"
-            try:
-                with open(path, "r", encoding="utf-8") as session_file:
-                    state = json.load(session_file)
-                info = state.get("configuration_info", {})
-                configuration = info.get("name", "Unknown")
-                modified = {True: "Yes", False: "No"}.get(info.get("modified"), "Unknown")
-                players = state.get("players", [])
-                names = ", ".join(player.get("name", "Player") for player in players)
-                current = state.get("current_player_index", 0)
-                next_turn = players[current].get("name", "Unknown") if players and 0 <= current < len(players) else "Unknown"
-            except (OSError, ValueError, TypeError, AttributeError):
-                names, next_turn = "Could not read session", "Unavailable"
-            saved_at = datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M")
-            self.tree.insert("", "end", iid=filename, values=(filename, names, next_turn, configuration, modified, saved_at))
+        try:
+            entries = list_sessions(self.base_saves_dir, self.source.get())
+        except OSError as error:
+            messagebox.showerror('Could not list sessions', str(error), parent=self.window)
+            return
+        for entry in entries:
+            names = ', '.join(entry.player_names) if entry.error is None else 'Could not read session'
+            next_turn = entry.next_player or ('Unavailable' if entry.error else 'Unknown')
+            saved_at = (datetime.fromtimestamp(entry.saved_at).strftime('%Y-%m-%d %H:%M')
+                        if entry.saved_at is not None else 'Unavailable')
+            modified = {True: 'Yes', False: 'No'}.get(entry.modified, 'Unknown')
+            self.tree.insert('', 'end', iid=entry.filename, values=(entry.filename, names, next_turn,
+                             entry.configuration or 'Unknown', modified, saved_at))
         if select_name and self.tree.exists(select_name):
             self.tree.selection_set(select_name)
             self.tree.focus(select_name)

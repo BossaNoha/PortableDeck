@@ -18,13 +18,13 @@ flow. All 223 tests passed; no application-code fix was required in this audit.
 
 | Area | Current evidence | Next bounded step |
 | --- | --- | --- |
-| Save application services | Checkpoints use `app/checkpoints.py`, named writes use `app/namedsaves.py`, and rename/delete use `app/sessionfiles.py`, all headless. Session listing/metadata parsing still lives in `SessionBrowser.refresh`. | Extract a read-only session catalog if another client needs browsing. Keep selection and confirmation dialogs local. |
+| Save application services | Checkpoints, named writes, rename/delete and metadata catalog reads now use headless application services. `SessionBrowser` renders entries and collects user decisions. | Basic save management is separated; add services only for concrete new client needs. |
 | Chip input data | `ui/chipbankui.py` still passes model Player objects to chip dialogs and reads current balances/minimums. Validation is shared, but inputs are not fully projection-based. | Pass existing immutable status/player summaries to chip dialogs and prepare amount limits without live Player references. |
 | Client lifecycle/capabilities | `GameGUI` owns Game, core execution and client state; `GameGUIBuilder` uses many rule flags to construct widgets. CLI exercises a subset of actions and does not offer saves or every dialog. | Define a client-facing application facade only after services and concrete client needs are clear; do not add a snapshot per widget flag. |
 | Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
 
-Recommendation: save-operation extraction is complete; session catalog reads or
-chip dialog inputs are the next bounded tasks, without touching card interaction
+Recommendation: save-service extraction is complete; chip dialog inputs are
+the next bounded task, without touching card interaction
 or drag-and-drop. Authentication, actor authorization, revision checks, transport
 and concurrency remain a future online milestone, separate from replacing the
 local GUI. Existing player snapshots alone do not implement those guarantees.
@@ -405,3 +405,17 @@ missing files, IO failures, refused deletion, canceled GUI input and service
 execution without Tkinter. Read-only session metadata listing remains in the
 browser; these file operations do not update an already-open game's associated
 save path, matching prior behavior.
+
+### Read-only session catalog
+
+`app.sessioncatalog` prepares immutable SessionEntry records with paths, names,
+turn/configuration metadata, timestamps and per-file errors. It lists named
+saves or latest-plus-archived checkpoints. The GUI handles formatting, source
+selection and list selection, without parsing save JSON or creating directories
+while refreshing. Missing folders are empty; directory access failures remain
+errors rather than silently appearing empty. Individual corrupt/unreadable
+files remain error entries and do not prevent healthy rows from being listed.
+
+This is metadata inspection, not full Game validation or card data projection.
+Tests cover ordering, missing archives, malformed JSON/metadata/UTF-8, missing
+files, access errors, immutable rows, browser rendering and headless execution.
