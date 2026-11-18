@@ -314,3 +314,17 @@ recipient, amount, minimum-bet and balance checks. Direct model return types
 remain compatible. The controller still applies global availability first and
 restores failed transactions. Tests cover stale targets, changed balances,
 matching target/result codes and rejection without state/Undo/checkpoint changes.
+
+### Client use of rejection codes
+
+CLI `--json` emits typed JSON Lines with stable command codes and public result
+messages. It does not serialize raw ActionResult objects, internal events or
+private values. Player views and pending notices/prompts have separate record
+types; ordinary terminal output remains compatible.
+
+The interaction dialog now refreshes options after execution rejection as well
+as before input. It refreshes all rejection types, so unknown future codes do
+not leave stale targets/limits behind. The next attempt queries current options
+and still executes through the controller. Tests simulate a reduced balance
+during modal input and verify the subsequent amount range, plus JSON-line
+parsing, process entry, private-result exclusion and unchanged text-mode tests.

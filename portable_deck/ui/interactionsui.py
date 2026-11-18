@@ -65,6 +65,7 @@ class InteractionsUI:
                 outcome = game.session.execute(action, target=target, card_index=selected, amount=amount)
                 if not outcome.success:
                     messagebox.showwarning("Cannot interact", outcome.message, parent=dialog)
+                    refresh_targets()
                     return
                 result = outcome.value
                 name = next(item.name for item in options.targets if item.index == result["target"])

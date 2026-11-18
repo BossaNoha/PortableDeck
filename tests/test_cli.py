@@ -1,4 +1,5 @@
 import io
+import json
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,32 @@ from portable_deck.core.game import Game
 
 
 class CLITests(unittest.TestCase):
+    def test_json_lines_expose_codes_and_public_results_only(self):
+        g = self.game()
+        output = io.StringIO()
+        run_cli(g, io.StringIO("draw\nplay 99\nplay 0\napprove\nshow\nundo\nquit\n"),
+                output, structured=True)
+        records = [json.loads(line) for line in output.getvalue().splitlines()]
+        results = [r for r in records if r["type"] == "result"]
+        self.assertTrue(results[0]["success"])
+        self.assertEqual(results[1]["code"], "invalid_selection")
+        self.assertEqual(results[2]["code"], "confirmation_not_required")
+        self.assertTrue(results[-1]["success"])
+        self.assertTrue(any(r["type"] == "error" and r["code"] == "invalid_command" for r in records))
+        for result in results:
+            self.assertNotIn("value", result)
+            self.assertNotIn("events", result)
+            self.assertNotIn("DRAW SECRET", json.dumps(result))
+        view = next(r["view"] for r in records if r["type"] == "view")
+        self.assertNotIn("OTHER SECRET", json.dumps(view))
+
+    def test_json_process_entrypoint_emits_parseable_command_stream(self):
+        result = subprocess.run([sys.executable, "-B", "-m", "portable_deck.cli", "--json", "--hand", "0"],
+                                input="draw\nplay 99\nquit\n", text=True, capture_output=True,
+                                cwd=Path(__file__).resolve().parents[1])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        records = [json.loads(line) for line in result.stdout.splitlines()]
+        self.assertEqual([r["code"] for r in records if r["type"] == "result"], ["", "invalid_selection"])
     def game(self, **options):
         g = Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
                  enable_undo=True, **options)

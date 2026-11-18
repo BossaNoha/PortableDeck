@@ -15,25 +15,41 @@ HELP = "Commands: show, draw, play CARD, end, undo, pending, approve, reject, po
 
 
 class CLIClient:
-    def __init__(self, game, output):
+    def __init__(self, game, output, structured=False):
         self.game = game
         self.session = game.session
         self.output = output
+        self.structured = structured
+
+    def emit(self, kind, **values):
+        print(json.dumps({"type": kind, **values}, ensure_ascii=False), file=self.output)
 
     def write(self, text):
-        print(text, file=self.output)
+        if self.structured:
+            self.emit("message", message=text)
+        else:
+            print(text, file=self.output)
 
     def turn_work(self):
         work = build_turn_start_view(self.game)
         for notice in work.notifications:
-            self.write(f"{notice.title}: {notice.message}")
+            if self.structured:
+                self.emit("notification", notice=asdict(notice))
+            else:
+                self.write(f"{notice.title}: {notice.message}")
         result = self.session.acknowledge_score_notifications(work.notifications) if work.active else None
         if result and result.checkpoint_error:
-            self.write(f"Checkpoint failed: {result.checkpoint_error}")
+            if self.structured:
+                self.emit("checkpoint_error", code="checkpoint_failed", message=result.checkpoint_error)
+            else:
+                self.write(f"Checkpoint failed: {result.checkpoint_error}")
         prompt = work.next_confirmation
         if prompt:
-            self.write(f"{prompt.notice.title}: {prompt.notice.message}")
-            self.write("Use approve or reject for this request.")
+            if self.structured:
+                self.emit("confirmation", action=prompt.action, notice=asdict(prompt.notice))
+            else:
+                self.write(f"{prompt.notice.title}: {prompt.notice.message}")
+                self.write("Use approve or reject for this request.")
 
     @staticmethod
     def positive(value):
@@ -61,13 +77,24 @@ class CLIClient:
                 return True
             if command == "show":
                 viewer = build_turn_start_view(self.game).player
-                self.write(json.dumps(asdict(build_player_session_view(self.game, viewer)), indent=2, ensure_ascii=False))
+                view = asdict(build_player_session_view(self.game, viewer))
+                if self.structured:
+                    self.emit("view", view=view)
+                else:
+                    self.write(json.dumps(view, indent=2, ensure_ascii=False))
                 return True
             if command == "pending":
                 self.turn_work()
                 return True
             if command == "undo":
-                self.write("Undone." if self.session.undo() else "Nothing to undo.")
+                success = self.session.undo()
+                message = "Undone." if success else "Nothing to undo."
+                if self.structured:
+                    self.emit("result", action="undo", success=success, changed=success,
+                              code="" if success else "nothing_to_undo", message=message,
+                              checkpoint_error=self.session.last_checkpoint_error if success else None)
+                else:
+                    self.write(message)
                 self.turn_work()
                 return True
             parameters = {}
@@ -76,6 +103,10 @@ class CLIClient:
             if command in {"approve", "reject"}:
                 prompt = build_turn_start_view(self.game).next_confirmation
                 if prompt is None:
+                    if self.structured:
+                        self.emit("result", action=command, success=False, changed=False,
+                                  code="confirmation_not_required", message="No confirmation is required from this player.")
+                        return True
                     raise ValueError("No confirmation is required from this player.")
                 action, parameters = prompt.action, {"approved": command == "approve"}
             else:
@@ -88,7 +119,13 @@ class CLIClient:
                     parameters["player_index"] = self.positive(args[0]) - 1
             result = self.session.execute(action, **parameters)
             # Internal events/values may contain private cards: never print them.
-            if result.success:
+            if self.structured:
+                self.emit("result", action=action, success=result.success, changed=result.changed,
+                          code=result.code, message=result.message, messages=result.messages,
+                          checkpoint_error=result.checkpoint_error)
+                if result.success:
+                    self.turn_work()
+            elif result.success:
                 for message in result.messages:
                     self.write(message)
                 if not result.messages:
@@ -96,15 +133,18 @@ class CLIClient:
                 self.turn_work()
             else:
                 self.write(f"Unavailable: {result.message}")
-            if result.checkpoint_error:
+            if result.checkpoint_error and not self.structured:
                 self.write(f"Checkpoint failed: {result.checkpoint_error}")
         except ValueError as error:
-            self.write(f"Error: {error}")
+            if self.structured:
+                self.emit("error", code="invalid_command", message=str(error))
+            else:
+                self.write(f"Error: {error}")
         return True
 
 
-def run_cli(game, source, output):
-    client = CLIClient(game, output)
+def run_cli(game, source, output, structured=False):
+    client = CLIClient(game, output, structured=structured)
     client.write(HELP)
     client.turn_work()
     for line in source:
@@ -116,6 +156,7 @@ def run_cli(game, source, output):
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Development hotseat client; no automatic saves.")
     parser.add_argument("--load", help="Load a session without modifying its save file")
+    parser.add_argument("--json", action="store_true", help="Emit command-stream output as JSON Lines")
     parser.add_argument("--deck", default=str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"))
     parser.add_argument("--players", type=int, default=2)
     parser.add_argument("--hand", type=int, default=3)
@@ -133,7 +174,7 @@ def main(argv=None):
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     try:
-        return run_cli(game, sys.stdin, sys.stdout)
+        return run_cli(game, sys.stdin, sys.stdout, structured=args.json)
     except KeyboardInterrupt:
         return 0
 

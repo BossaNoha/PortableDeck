@@ -22,6 +22,7 @@ A small hotseat client exercises the shared core without Tkinter:
 python -m portable_deck.cli --players 2 --hand 3
 python -m portable_deck.cli --confirmations
 python -m portable_deck.cli --load saves/session1.json
+python -m portable_deck.cli --json --confirmations
 ```
 
 Commands are `show`, `draw`, `play CARD`, `end`, `undo`, `pending`, `approve`,
@@ -33,6 +34,15 @@ are acknowledged after display. `--confirmations` enables score/chip approvals
 for a new game; loaded sessions retain their saved rules. EOF also exits.
 This development client has no save command or autosave and does not overwrite
 a loaded session file. The regular `python main.py` GUI entry point is unchanged.
+
+`--json` switches command-stream output to JSON Lines. Each line has a `type`:
+`message`, `result`, `error`, `view`, `notification`, `confirmation` or
+`checkpoint_error`. Command results include `action`, `success`, `changed`,
+`code`, `message` and, for executed commands, public `messages` and
+`checkpoint_error`. Internal event/value payloads are excluded. Local input
+errors use `invalid_command`; absent approvals use `confirmation_not_required`.
+`show` emits a structured player view rather than an encoded JSON string.
+Argument-parser help/startup errors retain argparse's usual output.
 
 ## Main menu
 
