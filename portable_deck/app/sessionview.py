@@ -1,6 +1,7 @@
 """Client-owned table presentation state and save compatibility."""
 import json
 from dataclasses import asdict, dataclass
+from .sessionstorage import save_session
 
 
 @dataclass
@@ -29,4 +30,4 @@ def load_table_view(path):
 
 
 def save_with_view(game, path, view):
-    game.save_session(path, client_state={"table_view": asdict(view)})
+    save_session(game, path, client_state={"table_view": asdict(view)})

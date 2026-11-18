@@ -39,6 +39,8 @@ between a game and independent save data without file access. JSON files,
 atomic writes, legacy external-deck lookup and named-save association belong to
 `app.sessionstorage`. Existing `Game.save_session` / `Game.load_session` methods
 delegate to this service for compatibility; the save format is unchanged.
+GUI load/resume, CLI load, named saves, table-view saves and checkpoints call
+the application service directly.
 
 A small hotseat client exercises the shared core without Tkinter:
 

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .core.game import Game
 from .app.newgame import create_game
+from .app.sessionstorage import load_session
 from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
@@ -165,7 +166,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.load:
-            game = Game.load_session(args.load)
+            game = load_session(Game, args.load)
         else:
             game = create_game({
                 "num_players": args.players,

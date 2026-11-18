@@ -17,13 +17,14 @@ class CheckpointTests(unittest.TestCase):
         return g
 
     def test_disabled_and_invalid_retention_do_not_touch_files(self):
-        with tempfile.TemporaryDirectory() as folder:
+        with tempfile.TemporaryDirectory() as folder, patch(
+                "portable_deck.app.checkpoints.save_session") as save:
             latest = Path(folder) / "new" / "last_session.json"
             game = Mock()
             self.assertIsNone(save_checkpoint(game, latest, enabled=False, count="invalid"))
             for count in (0, 1001, "invalid", None):
                 self.assertTrue(save_checkpoint(game, latest, count=count))
-            game.save_session.assert_not_called()
+            save.assert_not_called()
             self.assertFalse(latest.parent.exists())
 
     def test_unchanged_checkpoint_has_no_version_and_retention_includes_latest(self):

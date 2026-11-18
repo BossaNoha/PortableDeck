@@ -2,6 +2,7 @@
 import os
 import re
 from pathlib import Path
+from .sessionstorage import save_session
 
 
 def validate_named_save_path(path):
@@ -35,5 +36,5 @@ def save_named_session(game, path, *, client_state=None, overwrite=False):
     target = validate_named_save_path(path)
     if target.exists() and not overwrite:
         raise FileExistsError(f"A save named '{target.name}' already exists.")
-    game.save_session(str(target), client_state=client_state)
+    save_session(game, str(target), client_state=client_state)
     game.named_save_path = str(target)

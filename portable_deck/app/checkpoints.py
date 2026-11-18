@@ -1,6 +1,7 @@
 """GUI-independent checkpoint persistence and autosave retention."""
 from pathlib import Path
 from time import time_ns
+from .sessionstorage import save_session
 
 
 def save_checkpoint(game, latest_path, *, enabled=True, count=5, client_state=None):
@@ -18,7 +19,7 @@ def save_checkpoint(game, latest_path, *, enabled=True, count=5, client_state=No
             raise ValueError("Autosaves to keep must be between 1 and 1000.")
         latest = Path(latest_path)
         previous = latest.read_bytes() if latest.exists() else None
-        game.save_session(str(latest), client_state=client_state)
+        save_session(game, str(latest), client_state=client_state)
         archive = latest.parent / "autosaves"
         archive.mkdir(exist_ok=True)
         if count > 1 and previous is not None and previous != latest.read_bytes():

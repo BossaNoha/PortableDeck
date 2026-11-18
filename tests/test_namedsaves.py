@@ -26,7 +26,8 @@ class NamedSaveTests(unittest.TestCase):
             self.assertEqual(next_session_number(folder), 11)
 
     def test_reserved_paths_and_implicit_overwrite_never_write(self):
-        with tempfile.TemporaryDirectory() as folder:
+        with tempfile.TemporaryDirectory() as folder, patch(
+                "portable_deck.app.namedsaves.save_session") as save:
             game = Mock(named_save_path="previous.json")
             for name in ("LAST_SESSION.JSON", "autosaves/named.json", "AUTOSAVES/named.json"):
                 with self.assertRaises(ValueError):
@@ -37,7 +38,7 @@ class NamedSaveTests(unittest.TestCase):
                 save_named_session(game, existing)
             self.assertEqual(existing.read_text(), "original")
             self.assertEqual(game.named_save_path, "previous.json")
-            game.save_session.assert_not_called()
+            save.assert_not_called()
 
     def test_success_and_explicit_overwrite_preserve_client_metadata(self):
         g = self.game()
@@ -66,7 +67,8 @@ class NamedSaveTests(unittest.TestCase):
             self.assertFalse(Path(str(path) + ".tmp").exists())
 
     def test_gui_cancel_and_declined_overwrite_do_not_save(self):
-        with tempfile.TemporaryDirectory() as folder:
+        with tempfile.TemporaryDirectory() as folder, patch(
+                "portable_deck.app.namedsaves.save_session") as save:
             path = Path(folder) / "existing.json"
             path.write_text("original")
             manager = SaveManager(None, folder)
@@ -76,7 +78,7 @@ class NamedSaveTests(unittest.TestCase):
                     with patch("portable_deck.app.savemanager.filedialog.asksaveasfilename", return_value=chosen), patch(
                             "portable_deck.app.savemanager.messagebox.askyesno", return_value=False):
                         self.assertFalse(manager.save_session_as(g))
-                    g.save_session.assert_not_called()
+                    save.assert_not_called()
                     self.assertEqual(g.named_save_path, "previous.json")
                     self.assertEqual(path.read_text(), "original")
 

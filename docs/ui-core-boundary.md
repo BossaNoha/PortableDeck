@@ -499,3 +499,10 @@ compatibility delegates to this application service. The on-disk shape and
 existing GUI/CLI behavior are unchanged. Tests verify a JSON round trip with
 file access blocked, pending confirmations, draw order, Undo, independent
 mutable state, and the existing storage failure and legacy-save cases.
+
+GUI load/resume and CLI load now call `app.sessionstorage.load_session`
+directly. Named-save, checkpoint and table-view services likewise use
+`app.sessionstorage.save_session`, leaving the Game methods as compatibility
+entry points only. Cancellation/reserved-path tests assert that the storage
+service is not called; the existing round-trip, client-state, retention and
+write-failure tests cover the application routes.
