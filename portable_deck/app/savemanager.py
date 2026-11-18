@@ -1,8 +1,9 @@
 """Named save management and save-name validation."""
 import os
-import re
+from dataclasses import asdict
 from tkinter import messagebox, filedialog
-from .sessionview import TableViewState, save_with_view
+from .sessionview import TableViewState
+from .namedsaves import save_named_session, validate_named_save_path, next_session_number
 
 
 class SaveManager:
@@ -16,7 +17,7 @@ class SaveManager:
         if not path:
             return self.save_session_as(game)
         try:
-            save_with_view(game, path, self.table_view)
+            save_named_session(game, path, client_state={"table_view": asdict(self.table_view)}, overwrite=True)
             messagebox.showinfo("Game saved", f"Saved as {os.path.basename(path)}.", parent=self.root)
             return True
         except (OSError, TypeError, ValueError) as error:
@@ -24,7 +25,6 @@ class SaveManager:
             return False
 
     def save_session_as(self, game):
-        os.makedirs(self.saves_dir, exist_ok=True)
         path = filedialog.asksaveasfilename(
             title="Save as",
             initialdir=self.saves_dir,
@@ -37,18 +37,20 @@ class SaveManager:
         if not path:
             return False
         name = os.path.basename(path)
-        if name.lower() == "last_session.json" or os.path.basename(os.path.dirname(os.path.abspath(path))).lower() == "autosaves":
-            messagebox.showerror("Reserved save", "Choose a named session outside the automatic checkpoint files.", parent=self.root)
+        try:
+            validate_named_save_path(path)
+        except (TypeError, ValueError) as error:
+            messagebox.showerror("Reserved save", str(error), parent=self.root)
             return False
-        if os.path.exists(path) and not messagebox.askyesno(
+        existing = os.path.exists(path)
+        if existing and not messagebox.askyesno(
             "Replace save?",
             f"A save named '{name}' already exists. Replace it?",
             parent=self.root,
         ):
             return False
         try:
-            save_with_view(game, path, self.table_view)
-            game.named_save_path = path
+            save_named_session(game, path, client_state={"table_view": asdict(self.table_view)}, overwrite=existing)
             messagebox.showinfo("Game saved", f"Saved as {name}.", parent=self.root)
             return True
         except (OSError, TypeError, ValueError) as error:
@@ -56,9 +58,4 @@ class SaveManager:
             return False
 
     def next_session_number(self):
-        numbers = []
-        for filename in os.listdir(self.saves_dir):
-            match = re.fullmatch(r"session(\d+)\.json", filename, re.IGNORECASE)
-            if match:
-                numbers.append(int(match.group(1)))
-        return max(numbers, default=0) + 1
+        return next_session_number(self.saves_dir)

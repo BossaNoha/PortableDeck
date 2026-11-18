@@ -18,12 +18,12 @@ flow. All 223 tests passed; no application-code fix was required in this audit.
 
 | Area | Current evidence | Next bounded step |
 | --- | --- | --- |
-| Save application services | Checkpoint saving/rotation now uses headless `app/checkpoints.py`. `app/savemanager.py` still mixes named-file rules, persistence and Tk dialogs; `app/sessionbrowser.py` mixes rename/delete rules with widgets. | Extract named-save operations next. Keep choosing paths, overwrite/delete decisions and error display in clients. |
+| Save application services | Checkpoints use headless `app/checkpoints.py`; named-save persistence, reserved paths and numbering use `app/namedsaves.py`. `app/sessionbrowser.py` still mixes rename/delete rules with widgets. | Extract rename/delete operations next. Keep path selection and overwrite/delete decisions in clients. |
 | Chip input data | `ui/chipbankui.py` still passes model Player objects to chip dialogs and reads current balances/minimums. Validation is shared, but inputs are not fully projection-based. | Pass existing immutable status/player summaries to chip dialogs and prepare amount limits without live Player references. |
 | Client lifecycle/capabilities | `GameGUI` owns Game, core execution and client state; `GameGUIBuilder` uses many rule flags to construct widgets. CLI exercises a subset of actions and does not offer saves or every dialog. | Define a client-facing application facade only after services and concrete client needs are clear; do not add a snapshot per widget flag. |
 | Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
 
-Recommendation: checkpoint extraction is complete; named-save operations are
+Recommendation: checkpoint and named-write extraction are complete; rename/delete operations are
 the next bounded application-service task, without touching card interaction or
 drag-and-drop. Authentication, actor authorization, revision checks, transport
 and concurrency remain a future online milestone, separate from replacing the
@@ -375,3 +375,17 @@ checkpoint; errors archiving or pruning are reported after the latest save may
 already have succeeded, matching existing behavior. Tests cover disabled saves,
 invalid limits, unchanged content, rotation, metadata, write/cleanup failures
 and use from a process that never imports Tkinter.
+
+### Named-save write service
+
+`app.namedsaves` owns reserved checkpoint-path checks, session-number suggestions
+and named writes with optional client metadata. It requires an explicit overwrite
+flag for existing files and updates the game's named path only after successful
+serialization. It raises ordinary filesystem/validation exceptions for clients.
+The Tk adapter retains path selection, overwrite consent and message display;
+ordinary Save intentionally overwrites the already-associated named file.
+
+Tests cover missing directories, numbering, reserved names/directories,
+explicit overwrite, metadata, atomic replacement failures, canceled dialogs,
+declined overwrites and standalone use without importing Tkinter. This extraction
+does not add a concurrency protocol or change browser rename/delete behavior.

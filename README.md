@@ -105,6 +105,14 @@ fresh game with the same setup and can keep or reset scores when scoring is on.
 
 ## Saves and checkpoints
 
+`portable_deck.app.namedsaves` provides GUI-independent named-save operations:
+`next_session_number(directory)`, `validate_named_save_path(path)` and
+`save_named_session(game, path, client_state=None, overwrite=False)` (the last
+two arguments are keyword-only). Existing files require explicit overwrite
+authorization. Reserved checkpoint destinations are rejected, and the game's
+associated named-save path changes only after a successful write. Clients choose
+paths and collect overwrite decisions; exceptions are left for clients to display.
+
 Other clients can use `portable_deck.app.checkpoints.save_checkpoint(game, path,
 enabled=True, count=5, client_state=None)` without Tkinter. Retention includes
 the latest checkpoint. The service returns `None` on success or an error string
