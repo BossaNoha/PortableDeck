@@ -76,6 +76,9 @@ missing/non-boolean decisions return `invalid_confirmation` without changing
 game state, Undo or checkpoints. Direct model calls reject these values too.
 `Game.request_point(delta)` accepts only integer `-1` or `1`; invalid values
 raise `ActionValidationError` with code `invalid_score_change` before mutation.
+`Player.play_card` accepts only in-range one-based integer indices, excluding
+booleans/floats. Invalid input returns `None` without changing hand/reveal state.
+Controller card indices remain zero-based and retain `invalid_selection` errors.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

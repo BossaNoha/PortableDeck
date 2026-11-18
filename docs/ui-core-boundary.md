@@ -16,6 +16,15 @@ direct/transactional calls, Undo and checkpoints untouched. Named controller
 actions still supply fixed +1/-1 values; no new command parameter was added.
 Tests cover valid changes with/without confirmation, Undo and disabled reduction.
 
+Hand removal now validates integer type (excluding bool) and one-based range in
+`Player.play_card` before changing revealed indices or popping a card. Invalid
+direct model inputs return None, preserving the existing refusal contract.
+Controller play commands retain zero-based indices and `invalid_selection`.
+Regression coverage includes hand/reveal preservation, direct table placement,
+normal/positioned/face-down controller play, checkpoints and valid Undo. Other
+actions using Player.play_card inherit the same guard; table-card indices are a
+separate remaining validation area.
+
 The three-player lifecycle regression now covers draw, face-down play, concurrent
 score/pot requests, first-voter approvals, saving pending decisions, loading into
 the CLI, blocking premature actions, final approvals, persisted Undo, reloading

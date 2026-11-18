@@ -10,7 +10,7 @@ class Player:
             self.hand.append(card)
 
     def play_card(self, index):
-        if 1 <= index <= len(self.hand):
+        if isinstance(index, int) and not isinstance(index, bool) and 1 <= index <= len(self.hand):
             self.revealed_indices = {i - 1 if i > index - 1 else i for i in self.revealed_indices if i != index - 1}
             return self.hand.pop(index - 1)
         return None
