@@ -117,12 +117,11 @@ def load_session(game_class, path):
     game = game_class.__new__(game_class)
     game.enable_table = state.get("enable_table", True)
     game.enable_discard_pile = state.get("enable_discard_pile", True)
-    game.deck = Deck(state["deck_path"])
-    if "deck_types" in state and "deck_cards" in state:
-        original_deck = {"types": state["deck_types"], "cards": state["deck_cards"]}
-        Deck.validate_data(original_deck)
-        game.deck.types = state["deck_types"]
-        game.deck.cards = state["deck_cards"]
+    if "deck_types" in state or "deck_cards" in state:
+        original_deck = {"types": state.get("deck_types"), "cards": state.get("deck_cards")}
+        game.deck = Deck.from_definition(original_deck, path=state.get("deck_path"))
+    else:
+        game.deck = Deck(state["deck_path"])
     game.deck.flat_deck = state["remaining_deck"]
     game.players = []
     for saved_player in state["players"]:

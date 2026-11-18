@@ -1,8 +1,20 @@
 #deck.py
 import json
 import random
+import copy
 
 class Deck:
+    @classmethod
+    def from_definition(cls, data, *, path=None):
+        """Build an independent deck without opening its optional source path."""
+        cls.validate_data(data)
+        deck = cls.__new__(cls)
+        deck.path = path
+        deck.types = copy.deepcopy(data["types"])
+        deck.cards = copy.deepcopy(data["cards"])
+        deck.flatten()
+        return deck
+
     def __init__(self, path):
         self.path = path
         self.types = []

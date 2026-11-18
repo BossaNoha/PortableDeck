@@ -101,7 +101,10 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
             Player(player_names[i] if player_names is not None else f"Player{i+1}")
             for i in range(num_players)
         ]
-        self.deck = Deck(deck_path)
+        # Internal callers may supply the session's definition instead of a file.
+        self.deck = (Deck.from_definition(
+            {"types": deck_path.types, "cards": deck_path.cards}, path=deck_path.path
+        ) if isinstance(deck_path, Deck) else Deck(deck_path))
         self.shared_discard_pile_count = shared_discard_pile_count
         self.personal_discard_pile_count = personal_discard_pile_count
         self.discard_piles = [[] for _ in range(shared_discard_pile_count)]

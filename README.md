@@ -29,6 +29,11 @@ current session's effective rules, rather than current application settings.
 scores are optionally retained, while chip balances/pot follow the existing
 `reset_chip_accounts_on_restart` rule. The original session is not modified.
 
+Saves contain the session's deck definition as well as its remaining draw order.
+Loading and restarting use this embedded definition without opening the original
+deck file. Editing a deck file affects new games only. Older saves without an
+embedded definition still require their external deck file.
+
 A small hotseat client exercises the shared core without Tkinter:
 
 ```bash

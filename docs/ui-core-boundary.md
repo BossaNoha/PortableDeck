@@ -461,7 +461,7 @@ the next separate lifecycle task.
 `core.gamecreation` now owns configured construction and starting, reused by
 settings validation/application startup and restart. `Game.restart` is a
 compatibility entry point. Restart derives constructor parameters from current
-effective game rules (with explicit player-count, deck-path and name aliases),
+effective game rules (with explicit player-count, deck-definition and name aliases),
 not global app settings. Configuration collections are independently copied;
 there is no second hand-written list of all constructor options.
 
@@ -472,3 +472,14 @@ hands and initial log are recreated. Save association/checkpoint callbacks are
 not copied. Tests cover restart after load with concurrent pending approvals,
 all score/chip policies, preserved names/teams/permissions, independent rules and
 headless execution. The source session remains unchanged.
+
+### Session deck portability
+
+The existing `deck_types` and `deck_cards` save fields are authoritative for
+loading and restart; `deck_path` is source metadata. `Deck.from_definition`
+validates and copies these fields without file access. Restart constructs a
+fresh deck from the session definition, rather than reopening its source.
+Remaining draw order and Undo remain separate session state. Only legacy saves
+with both definition fields absent fall back to the external file; incomplete
+or invalid embedded definitions are rejected. Tests cover changed, deleted and
+invalid source files, legacy fallback, Undo and independent restart definitions.

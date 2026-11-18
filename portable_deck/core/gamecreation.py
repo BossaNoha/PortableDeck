@@ -17,7 +17,7 @@ def start_prepared_game(game, cards_per_player, configuration_info):
 def restart_game(game, keep_scores=False):
     """Recreate current rules, independently of app settings or any interface."""
     from .game import Game
-    aliases = {"num_players": len(game.players), "deck_path": game.deck.path,
+    aliases = {"num_players": len(game.players), "deck_path": game.deck,
                "player_names": [player.name for player in game.players]}
     parameters = {name: aliases[name] if name in aliases else getattr(game, name)
                   for name in inspect.signature(Game).parameters}
