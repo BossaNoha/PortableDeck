@@ -96,7 +96,7 @@ class ActionCodeTests(unittest.TestCase):
             ("pending", "end_turn", {}, "confirmation_required"),
             ("normal", "confirm_point", {"approved": True}, "confirmation_not_required"),
             ("normal", "confirm_pot", {"approved": True}, "confirmation_not_required"),
-            ("pending", "confirm_point", {}, "invalid_parameters"),
+            ("pending", "confirm_point", {}, "invalid_confirmation"),
         )
         for setup, action, parameters, expected in cases:
             with self.subTest(setup=setup, action=action):

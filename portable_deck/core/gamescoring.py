@@ -1,4 +1,5 @@
 """Point requests, scoring, and player confirmations for the Game model."""
+from .confirmationvalidation import validate_confirmation
 
 class GameScoringActions:
 
@@ -44,6 +45,8 @@ class GameScoringActions:
     def confirm_point_request(self, approved):
         if not self.current_player_must_confirm_point():
             return False, "There is no point request awaiting your confirmation."
+
+        validate_confirmation(approved)
 
         request = self.pending_point_request
         delta = request.get("delta", 1)

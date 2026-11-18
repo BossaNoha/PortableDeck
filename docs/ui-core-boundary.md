@@ -2,6 +2,13 @@
 
 ## Current hotseat checkpoint
 
+Score/pot confirmation inputs now share strict boolean validation in the model.
+Available confirmation commands with missing/non-boolean `approved` values
+return `invalid_confirmation`; direct model calls raise the corresponding
+`ActionValidationError`. Availability still takes precedence when no vote is
+required. Invalid decisions leave state, Undo, events and checkpoints unchanged.
+True/False approvals retain existing effects and can be undone.
+
 The three-player lifecycle regression now covers draw, face-down play, concurrent
 score/pot requests, first-voter approvals, saving pending decisions, loading into
 the CLI, blocking premature actions, final approvals, persisted Undo, reloading

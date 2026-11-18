@@ -71,6 +71,9 @@ a loaded session file. The regular `python main.py` GUI entry point is unchanged
 `code`, `message` and, for executed commands, public `messages` and
 `checkpoint_error`. Internal event/value payloads are excluded. Local input
 errors use `invalid_command`; absent approvals use `confirmation_not_required`.
+Score and pot confirmation actions accept only boolean `approved` values;
+missing/non-boolean decisions return `invalid_confirmation` without changing
+game state, Undo or checkpoints. Direct model calls reject these values too.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

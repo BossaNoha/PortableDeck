@@ -1,5 +1,6 @@
 """Chip-account and shared-pot operations for the Game model."""
 from .chipvalidation import chip_action_error
+from .confirmationvalidation import validate_confirmation
 
 class ChipBankActions:
     def pot_confirmation_notification(self):
@@ -64,6 +65,7 @@ class ChipBankActions:
     def confirm_pot_withdrawal(self, approved):
         if not self.current_player_must_confirm_pot_withdrawal():
             return False, "There is no pot withdrawal awaiting your confirmation."
+        validate_confirmation(approved)
         request = self.pending_pot_withdrawal
         voter = self.current_player_index
         voter_name = self.players[voter].name
