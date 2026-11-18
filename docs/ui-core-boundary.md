@@ -1,5 +1,37 @@
 # UI/core boundary audit
 
+## Current hotseat checkpoint
+
+The three-player lifecycle regression now covers draw, face-down play, concurrent
+score/pot requests, first-voter approvals, saving pending decisions, loading into
+the CLI, blocking premature actions, final approvals, persisted Undo, reloading
+that Undo state, denial and return to the first player's turn. Player-view
+serialization still omits hidden identities, internal history and draw order.
+
+A separate probe using actual Tk widgets and scripted dialog answers passed
+actions, first-voter approvals, checkpoint/load, final approval/denial, Undo and
+alternate decisions. Probe files and checkpoint files were temporary. This was
+automated Tk execution, not exhaustive manual testing of every settings/editor
+flow. All 223 tests passed; no application-code fix was required in this audit.
+
+### Remaining work before replacing the complete desktop interface
+
+| Area | Current evidence | Next bounded step |
+| --- | --- | --- |
+| Save/checkpoint application services | `app/savemanager.py` mixes named-file rules, persistence and Tk dialogs. `app/mainmenu.py:checkpoint_game` owns archive rotation; `app/sessionbrowser.py` mixes rename/delete rules with widgets. Core serialization itself is headless. | Extract checkpoint saving/rotation into a GUI-independent application service first. Keep choosing paths, overwrite/delete decisions and error display in clients. |
+| Chip input data | `ui/chipbankui.py` still passes model Player objects to chip dialogs and reads current balances/minimums. Validation is shared, but inputs are not fully projection-based. | Pass existing immutable status/player summaries to chip dialogs and prepare amount limits without live Player references. |
+| Client lifecycle/capabilities | `GameGUI` owns Game, core execution and client state; `GameGUIBuilder` uses many rule flags to construct widgets. CLI exercises a subset of actions and does not offer saves or every dialog. | Define a client-facing application facade only after services and concrete client needs are clear; do not add a snapshot per widget flag. |
+| Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
+
+Recommendation: start with the checkpoint service extraction. It makes another
+part of the desktop lifecycle reusable without touching card interaction or
+drag-and-drop. Authentication, actor authorization, revision checks, transport
+and concurrency remain a future online milestone, separate from replacing the
+local GUI. Existing player snapshots alone do not implement those guarantees.
+
+The sections below retain the original findings and subsequent implementation
+notes; the table above is the current remaining-work summary.
+
 Game-changing card, chip, score, turn and player interaction actions in
 `portable_deck/ui` now execute through `SessionController`. Model methods remain
 available to core code. Selection and widget updates are local client state.
