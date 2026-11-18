@@ -221,3 +221,17 @@ supplied snapshots without reading the game; their no-argument refresh methods
 remain available for existing individual action helpers. Those helpers may
 still perform intermediate panel refreshes before the common final refresh.
 Hand/table rendering and drag-and-drop are unchanged in this step.
+
+### Shared hand/table refresh
+
+The common refresh now synchronizes selection first, builds one session view,
+and passes its sections to all four main panels (status, personal piles, hand
+and table). Hand/table renderers accept prepared sections without querying the
+model for card data or synchronizing again. Their no-argument methods preserve
+standalone refresh behavior for existing action helpers and selection callbacks.
+Availability and execution checks remain independent of rendering.
+
+Tests cover turn changes, Undo and snapshot-only rendering. Native Tk mouse
+events verified successive automatic hand drops, a positioned table move and
+Undo. Intermediate standalone refreshes in action helpers remain to be removed
+in a separate change.

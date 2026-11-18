@@ -30,17 +30,19 @@ class HandFrame(tk.LabelFrame):
     def selected_index(self, value):
         self.game_gui.selection.hand_index = value
 
-    def update_hand(self):
-        self.game_gui.selection.synchronize(build_selection_snapshot(self.game_gui.game))
+    def update_hand(self, view=None):
+        if view is None:
+            game = self.game_gui.game
+            self.game_gui.selection.synchronize(build_selection_snapshot(game))
+            view = build_player_hands_view(game, game.current_player_index)
         for widget in self.cards_frame.winfo_children():
             widget.destroy()
         self.card_buttons = []
-        game = self.game_gui.game
-        owner = game.current_player_index
+        owner = view.viewer
         if owner != self.hand_owner:
             self.canvas.yview_moveto(0)
             self.hand_owner = owner
-        hand = build_player_hands_view(game, owner).hands[owner]
+        hand = view.hands[owner]
         if self.selected_index is not None and self.selected_index >= len(hand.cards):
             self.selected_index = None
         for slot in hand.cards:

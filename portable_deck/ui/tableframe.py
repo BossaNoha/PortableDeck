@@ -106,12 +106,14 @@ class TableFrame(tk.LabelFrame):
     def selected_position(self, value):
         self.selection.target_position = value
 
-    def update_table(self):
-        self.selection.synchronize(build_selection_snapshot(self.game))
+    def update_table(self, view=None):
+        if view is None:
+            self.selection.synchronize(build_selection_snapshot(self.game))
+            view = build_player_table_view(self.game, self.game.current_player_index)
         for widget in self.contents.winfo_children():
             widget.destroy()
         self.card_buttons = []
-        self.table_view = build_player_table_view(self.game, self.game.current_player_index)
+        self.table_view = view
         if not self.table_view.enabled:
             return
         if self.table_view.player_lanes:

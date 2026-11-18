@@ -10,11 +10,14 @@ from ..core.playersessionview import build_player_session_view
 class GameGUIActions:
 
     def refresh_session_panels(self):
+        self.selection.synchronize(build_selection_snapshot(self.game))
         view = build_player_session_view(self.game, self.game.current_player_index,
                                          hand_index=self.selection.hand_index)
         self.status_panel.update_status(view.status)
         if hasattr(self, "personal_piles_ui"):
             self.personal_piles_ui.update(view.personal_piles)
+        self.hand_frame.update_hand(view.hands)
+        self.table_frame.update_table(view.table)
 
     def update_chip_action_buttons(self):
         self.chip_bank_ui.update_action_buttons()
