@@ -95,6 +95,29 @@ class ActionRefreshTests(unittest.TestCase):
         self.assert_single_refresh(gui)
         self.assertEqual(g.chip_pot, 5)
 
+    def test_turn_dialog_order_is_score_notice_then_score_and_pot_approval(self):
+        g = self.game(score_enabled=True, require_point_confirmation=True,
+                      enable_chip_accounts=True, require_pot_withdrawal_confirmation=True,
+                      enable_target_score=True, target_score=10, enable_score_warning=True, score_warning=7)
+        g.session.execute("request_point")
+        g.session.execute("play_chips", amount=5)
+        g.session.execute("take_pot", player_index=0)
+        g.scores[0] = 7
+        gui = HeadlessGUI(g)
+        titles = []
+        def notice(title, *args, **kwargs):
+            titles.append(title)
+        def decide(title, *args, **kwargs):
+            titles.append(title)
+            return False
+        with patch("portable_deck.ui.gameguiactions.messagebox.showinfo", side_effect=notice), patch(
+                "portable_deck.ui.gameguiactions.messagebox.askyesno", side_effect=decide):
+            gui.run_action(end_turn, g, gui.hand_frame, gui.render_log, gui.status_panel, gui.handle_turn_start)
+        self.assertEqual(titles, ["Score notice", "Confirm point request", "Confirm pot withdrawal"])
+        self.assertIsNone(g.pending_point_request)
+        self.assertIsNone(g.pending_pot_withdrawal)
+        self.assertEqual(g.chip_pot, 5)
+
     def test_failed_transaction_restores_state_and_next_action_refreshes(self):
         g = self.game()
         gui = HeadlessGUI(g)

@@ -6,6 +6,7 @@ from .sessionactions import execute_value
 from ..core.selectionsnapshot import build_selection_snapshot
 from ..core.playerleaving import build_player_return_options
 from ..core.playersessionview import build_player_session_view
+from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
 
@@ -171,37 +172,33 @@ class GameGUIActions:
         self.update_leave_button()
         self.selection.table_index = None
         self.selection.target_position = None
-        if not self.game.active_player_indices():
+        work = build_turn_start_view(self.game)
+        if not work.active:
             if not getattr(self, "_action_depth", 0):
                 self.refresh_session_panels()
             return
-        alerts = self.game.score_notifications()
-        needs_point_confirmation = self.game.current_player_must_confirm_point()
-        needs_pot_confirmation = self.game.current_player_must_confirm_pot_withdrawal()
-        if alerts or needs_point_confirmation or needs_pot_confirmation or not getattr(self, "_action_depth", 0):
+        if work.notifications or work.confirmations or not getattr(self, "_action_depth", 0):
             self.refresh_session_panels()
-        if alerts:
-            messagebox.showinfo(alerts[0].title, "\n\n".join(notice.message for notice in alerts), parent=self.root)
-        self.session.acknowledge_score_notifications(alerts)
-        if not needs_point_confirmation and not needs_pot_confirmation:
+        if work.notifications:
+            messagebox.showinfo(work.notifications[0].title,
+                "\n\n".join(notice.message for notice in work.notifications), parent=self.root)
+        self.session.acknowledge_score_notifications(work.notifications)
+        work = build_turn_start_view(self.game)
+        if not work.confirmations:
             self.update_chip_action_buttons()
             return
 
         for button in self._turn_action_buttons():
             button.config(state="disabled")
-        if needs_point_confirmation:
-            notice = self.game.score_confirmation_notification()
-            approved = messagebox.askyesno(notice.title, notice.message, parent=self.root)
-            _, result = execute_value(self.game, "confirm_point", approved=approved)
-            if not getattr(self, "_action_depth", 0) or self.game.pot_confirmation_notification() is not None:
-                self.render_log()
-                self.refresh_session_panels()
-
-        notice = self.game.pot_confirmation_notification()
-        if notice is not None:
-            approved = messagebox.askyesno(notice.title, notice.message, parent=self.root)
-            _, result = execute_value(self.game, "confirm_pot", approved=approved)
-            if not getattr(self, "_action_depth", 0):
+        while work.next_confirmation is not None:
+            prompt = work.next_confirmation
+            approved = messagebox.askyesno(prompt.notice.title, prompt.notice.message, parent=self.root)
+            result = self.session.execute(prompt.action, approved=approved)
+            if not result.success:
+                messagebox.showwarning("Cannot confirm", result.message, parent=self.root)
+                break
+            work = build_turn_start_view(self.game)
+            if not getattr(self, "_action_depth", 0) or work.next_confirmation is not None:
                 self.render_log()
                 self.refresh_session_panels()
 

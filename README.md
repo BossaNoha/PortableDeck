@@ -367,6 +367,17 @@ print(format_rules_overview(overview))
 The snapshot is immutable, imports no Tkinter and does not change the session.
 It lists rules and permissions without exposing cards in players' hands.
 
+### Turn entry work
+
+`portable_deck.core.turnstart.build_turn_start_view(game)` returns immutable
+current-player work: `active`, `notifications` and ordered `confirmations`.
+Clients display and acknowledge score notices first. Each confirmation contains
+the session `action` and its structured `notice`; `next_confirmation` selects
+score approval before pot approval. Submit the decision through
+`session.execute(prompt.action, approved=...)` and rebuild the view after each
+decision. Querying does not acknowledge notices or change game state, and an
+inactive current player receives no work. The GUI follows this same protocol.
+
 ### Shared score notifications
 
 `game.score_notifications()` prepares immutable notifications for the current

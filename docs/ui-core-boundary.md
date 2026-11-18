@@ -251,3 +251,19 @@ after a decision. Standalone initialization and Undo refresh through turn-start
 handling. Selection clicks and view interactions keep their independent refresh
 paths. Tests cover refresh counts, grouped Undo/checkpoints and error recovery;
 native Tk events verified hand/table dragging, Undo, chip status and next turn.
+
+### Core-owned turn entry work
+
+`build_turn_start_view` prepares an immutable current-player work list: score
+notices followed by score approval and pot approval, with command identifiers
+and structured prompts. Inactive players receive no work. GUI code displays and
+acknowledges initial notices, then submits each next decision through the
+controller and queries again. It no longer determines approval ordering or
+constructs an independent queue from game flags. Rejected decisions display a
+reason and stop the loop rather than repeating a stale prompt.
+
+The query is read-only, does not execute actions and does not authenticate a
+remote caller. New threshold notices created by approval remain pending for the
+next turn-entry notification pass, matching the prior behavior. Tests cover
+concurrent pending requests, GUI dialog order, approval/denial, explicit notice
+acknowledgment, inactive players and Undo restoration.
