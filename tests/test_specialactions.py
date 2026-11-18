@@ -1,10 +1,65 @@
 import unittest
 import tempfile
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from pathlib import Path
 from portable_deck.core.game import Game
 
 class SpecialActionTests(unittest.TestCase):
+    def test_invalid_direct_inputs_preserve_reveals_and_do_not_choose_random_position(self):
+        for destination in ("draw", "discard"):
+            game = self.game()
+            game.players[0].hand = ["A of Test", "B of Test"]
+            game.players[0].revealed_indices = {0, 1}
+            game.deck.flat_deck[:] = [str(i) for i in range(30)]
+            game.discard_piles[0][:] = [str(i) for i in range(30)]
+            before = game.capture_undo_state()
+            cases = [(value, destination, "X", 0) for value in
+                     (True, False, 1.0, 2.0, 0, -1, 3, "1", None, [], {})]
+            cases += [(1, destination, value, 0) for value in
+                      (True, False, 1.0, -1.0, None, [], {}, "", "1.0", 0, 11, -11)]
+            cases += [(1, value, "X", 0) for value in (None, True, [], {}, "unknown")]
+            if destination == "discard":
+                cases += [(1, destination, "X", value) for value in
+                          (True, False, 0.0, 1.0, -1, 2, "0", None, [], {})]
+            with patch("portable_deck.core.specialactions.random.randrange") as random_position:
+                for hand, target, position, pile in cases:
+                    with self.subTest(hand=hand, target=target, position=position, pile=pile):
+                        with self.assertRaises(ValueError):
+                            game.insert_hand_card(hand, target, position, pile)
+                        self.assertEqual(game.capture_undo_state(), before)
+                        self.assertEqual(game.undo_stack, [])
+                        random_position.assert_not_called()
+
+    def test_malformed_controller_inputs_preserve_state_undo_and_checkpoint(self):
+        for action in ("insert_draw_deck", "insert_discard_pile"):
+            game = self.game()
+            game.players[0].hand = ["A of Test"]
+            game.players[0].revealed_indices = {0}
+            game.deck.flat_deck[:] = [str(i) for i in range(30)]
+            game.discard_piles[0][:] = [str(i) for i in range(30)]
+            game.session.checkpoint_callback = saved = Mock(return_value=None)
+            before = game.capture_undo_state()
+            cases = [({"card_index": value, "position": "X"}, "invalid_selection")
+                     for value in (True, False, 0.0, -1, 1, "0", [], {})]
+            cases += [({"card_index": 0, "position": value}, "invalid_parameters")
+                      for value in (True, False, 1.0, None, [], {}, 0, 11)]
+            cases.append(({"card_index": 0}, "invalid_parameters"))
+            if action == "insert_discard_pile":
+                cases += [({"card_index": 0, "position": "X", "pile_index": value}, "invalid_parameters")
+                          for value in (True, False, 0.0, -1, 2, "0", None, [], {})]
+            with patch("portable_deck.core.specialactions.random.randrange") as random_position:
+                for parameters, code in cases:
+                    with self.subTest(action=action, parameters=parameters):
+                        result = game.session.execute(action, **parameters)
+                        self.assertFalse(result.success)
+                        self.assertFalse(result.changed)
+                        self.assertEqual(result.code, code)
+                        self.assertEqual(result.events, ())
+                        self.assertEqual(game.capture_undo_state(), before)
+                        self.assertEqual(game.undo_stack, [])
+                        saved.assert_not_called()
+                        random_position.assert_not_called()
+
     def test_session_placement_has_one_undo_step_and_checkpoint(self):
         for destination in ("draw", "discard"):
             with self.subTest(destination=destination):

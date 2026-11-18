@@ -40,6 +40,15 @@ model calls retain None on refusal, while available controller actions return
 preservation for malformed targets and successful shared/personal transfers
 with Undo. Table discard now also respects disabled discard on direct calls.
 
+Special-action insertion audit found that hand index, destination and insertion
+position already validate before source removal, and random middle-position
+selection happens only after validation. No application-code change was needed.
+Expanded regression tests cover malformed direct/controller inputs, hand/reveal
+and log preservation, no Undo/checkpoint/events and no random selection on
+rejection. Existing top/bottom/middle position and successful Undo tests remain.
+Invalid selections retain `invalid_selection`; other malformed insertion
+parameters currently retain `invalid_parameters`.
+
 The three-player lifecycle regression now covers draw, face-down play, concurrent
 score/pot requests, first-voter approvals, saving pending decisions, loading into
 the CLI, blocking premature actions, final approvals, persisted Undo, reloading
