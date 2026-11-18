@@ -18,14 +18,14 @@ flow. All 223 tests passed; no application-code fix was required in this audit.
 
 | Area | Current evidence | Next bounded step |
 | --- | --- | --- |
-| Save application services | Checkpoints use headless `app/checkpoints.py`; named-save persistence, reserved paths and numbering use `app/namedsaves.py`. `app/sessionbrowser.py` still mixes rename/delete rules with widgets. | Extract rename/delete operations next. Keep path selection and overwrite/delete decisions in clients. |
+| Save application services | Checkpoints use `app/checkpoints.py`, named writes use `app/namedsaves.py`, and rename/delete use `app/sessionfiles.py`, all headless. Session listing/metadata parsing still lives in `SessionBrowser.refresh`. | Extract a read-only session catalog if another client needs browsing. Keep selection and confirmation dialogs local. |
 | Chip input data | `ui/chipbankui.py` still passes model Player objects to chip dialogs and reads current balances/minimums. Validation is shared, but inputs are not fully projection-based. | Pass existing immutable status/player summaries to chip dialogs and prepare amount limits without live Player references. |
 | Client lifecycle/capabilities | `GameGUI` owns Game, core execution and client state; `GameGUIBuilder` uses many rule flags to construct widgets. CLI exercises a subset of actions and does not offer saves or every dialog. | Define a client-facing application facade only after services and concrete client needs are clear; do not add a snapshot per widget flag. |
 | Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
 
-Recommendation: checkpoint and named-write extraction are complete; rename/delete operations are
-the next bounded application-service task, without touching card interaction or
-drag-and-drop. Authentication, actor authorization, revision checks, transport
+Recommendation: save-operation extraction is complete; session catalog reads or
+chip dialog inputs are the next bounded tasks, without touching card interaction
+or drag-and-drop. Authentication, actor authorization, revision checks, transport
 and concurrency remain a future online milestone, separate from replacing the
 local GUI. Existing player snapshots alone do not implement those guarantees.
 
@@ -389,3 +389,19 @@ Tests cover missing directories, numbering, reserved names/directories,
 explicit overwrite, metadata, atomic replacement failures, canceled dialogs,
 declined overwrites and standalone use without importing Tkinter. This extraction
 does not add a concurrency protocol or change browser rename/delete behavior.
+
+### Session rename/delete service
+
+`app.sessionfiles` now owns filename validation, same-directory renaming,
+collision checks and explicitly confirmed single-file deletion. Both source and
+destination reject the latest-checkpoint name for rename. Archived autosaves can
+still be renamed, and latest/archived autosaves can still be deleted after
+confirmation, preserving existing library policy. Nothing recursively deletes
+directories. The browser only collects input/confirmation, invokes the service,
+shows errors and refreshes after success.
+
+Tests cover unchanged bytes on rename, invalid/reserved names, collisions,
+missing files, IO failures, refused deletion, canceled GUI input and service
+execution without Tkinter. Read-only session metadata listing remains in the
+browser; these file operations do not update an already-open game's associated
+save path, matching prior behavior.

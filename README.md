@@ -113,6 +113,14 @@ authorization. Reserved checkpoint destinations are rejected, and the game's
 associated named-save path changes only after a successful write. Clients choose
 paths and collect overwrite decisions; exceptions are left for clients to display.
 
+`portable_deck.app.sessionfiles.rename_session(path, new_name)` renames within
+the source directory, appends `.json` when needed and rejects invalid names,
+collisions and the reserved `last_session.json` name. Archived autosaves can
+still be renamed within their archive directory.
+`delete_session(path, confirmed=True)` deletes one file; without explicit
+confirmation it does nothing. Deleting an autosave after confirmation remains
+available, as in the original browser. GUI dialogs collect these decisions.
+
 Other clients can use `portable_deck.app.checkpoints.save_checkpoint(game, path,
 enabled=True, count=5, client_state=None)` without Tkinter. Retention includes
 the latest checkpoint. The service returns `None` on success or an error string

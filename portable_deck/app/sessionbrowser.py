@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from tkinter import filedialog, messagebox, simpledialog, ttk
 import tkinter as tk
+from .sessionfiles import rename_session, delete_session
 
 
 class SessionBrowser:
@@ -118,29 +119,15 @@ class SessionBrowser:
         if not old_name:
             messagebox.showinfo("Select a session", "Choose a session to rename.", parent=self.window)
             return
-        if old_name == "last_session.json":
-            messagebox.showinfo("Automatic checkpoint", "The latest autosave is used by Resume and cannot be renamed.", parent=self.window)
-            return
         new_name = simpledialog.askstring("Rename session", "New session name:", initialvalue=os.path.splitext(old_name)[0], parent=self.window)
         if new_name is None:
             return
-        new_name = new_name.strip()
-        if not new_name or new_name in {".", ".."} or os.path.basename(new_name) != new_name or any(char in new_name for char in '<>:"/\\|?*'):
-            messagebox.showerror("Invalid name", "Enter a file name without a folder path or special characters.", parent=self.window)
-            return
-        if not new_name.lower().endswith(".json"):
-            new_name += ".json"
-        old_path = self.session_path(old_name)
-        new_path = os.path.join(self.saves_dir, new_name)
-        if os.path.exists(new_path):
-            messagebox.showerror("Name already exists", f"A session named '{new_name}' already exists.", parent=self.window)
-            return
         try:
-            os.replace(old_path, new_path)
-        except OSError as error:
+            new_path = rename_session(self.session_path(old_name), new_name)
+        except (OSError, TypeError, ValueError) as error:
             messagebox.showerror("Could not rename session", str(error), parent=self.window)
             return
-        self.refresh(select_name=new_name)
+        self.refresh(select_name=new_path.name)
 
     def delete_selected(self):
         filename = self.selected_filename()
@@ -150,8 +137,8 @@ class SessionBrowser:
         if not messagebox.askyesno("Delete session?", f"Permanently delete '{filename}'?", parent=self.window):
             return
         try:
-            os.remove(self.session_path(filename))
-        except OSError as error:
+            delete_session(self.session_path(filename), confirmed=True)
+        except (OSError, TypeError, ValueError) as error:
             messagebox.showerror("Could not delete session", str(error), parent=self.window)
             return
         self.refresh()
