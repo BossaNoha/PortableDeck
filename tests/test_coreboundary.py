@@ -18,6 +18,7 @@ class CoreBoundaryTests(unittest.TestCase):
                 importlib.import_module(module.name)
 
             from portable_deck.core.game import Game
+            from portable_deck.core.playersessionview import build_player_session_view
             from portable_deck.core.actionavailability import action_availability
             from portable_deck.core.deckpreview import build_deck_preview
             from portable_deck.core.interactions import build_interaction_options
@@ -49,6 +50,7 @@ class CoreBoundaryTests(unittest.TestCase):
             SelectionState().synchronize(build_selection_snapshot(g))
             build_deck_preview(g.deck)
             build_session_status(g)
+            build_player_session_view(g, 1)
             format_rules_overview(build_rules_overview(g))
             for query in (build_player_hands_view, build_player_table_view,
                           build_player_personal_piles_view, build_player_discard_view):

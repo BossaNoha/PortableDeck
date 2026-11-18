@@ -197,3 +197,17 @@ An explicitly configured zero shared piles is preserved when personal discard
 piles are enabled. Queries and saving no longer silently add a shared pile.
 Tests cover legacy single-pile saves, incomplete old Undo state, personal-only
 configurations, draw/Undo and read/save operations preserving pile identities.
+
+### Combined player presentation snapshot
+
+`build_player_session_view` composes status, hands, table, personal piles and
+discard browsing into an immutable `PlayerSessionView`. Existing builders remain
+the source of visibility and availability rules. The Visible hands dialog is the
+first GUI consumer; other components still use individual builders.
+
+Serialization tests verify hidden hand/table identities, draw order and internal
+history are absent, while permitted and individually revealed cards remain.
+The caller establishes the viewer identity and ensures the model is stable
+during construction. This snapshot does not include logs, action results,
+notifications, selection state or command authorization and is not a complete
+network protocol or a replacement for saves.

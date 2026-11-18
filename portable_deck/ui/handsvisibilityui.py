@@ -1,11 +1,11 @@
 """Read-only hand viewer respecting current-player permissions."""
 import tkinter as tk
 from .contentscrollarea import ContentScrollArea
-from ..core.playerview import build_player_hands_view
+from ..core.playersessionview import build_player_session_view
 
 def show_visible_hands(gui):
     game = gui.game
-    view = build_player_hands_view(game, game.current_player_index)
+    view = build_player_session_view(game, game.current_player_index).hands
     dialog = tk.Toplevel(gui.root)
     dialog.title(f"Visible hands — {view.viewer_name}")
     dialog.transient(gui.root)

@@ -411,6 +411,17 @@ messages. Undo and failed transactions restore both history and messages. New
 saves use `game_log`; older saves with `gui_log` remain readable, and the old
 attribute is retained as a compatibility alias. Existing saved text is preserved.
 
+### Combined player session view
+
+`portable_deck.core.playersessionview.build_player_session_view(game, viewer,
+hand_index=None)` combines `status`, `hands`, `table`, `personal_piles` and
+`discard` into one immutable snapshot. It reuses the individual projections and
+supports `json.dumps(dataclasses.asdict(view))`. The optional hand selection is
+used for personal-pile play availability. Visible hands is the first GUI consumer.
+Build the snapshot while game state is stable; the query does not add locking or
+authenticate the viewer. Internal history, logs, private action results and draw
+order are excluded. It is a presentation snapshot, not a save or command API.
+
 ### Player-specific hands
 
 `portable_deck.core.playerview.build_player_hands_view(game, viewer)` returns an
