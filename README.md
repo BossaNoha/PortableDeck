@@ -92,6 +92,9 @@ integers excluding bool before permission checks or card transfers.
 without Tkinter: filename/path, display name, card count, symbol names and any
 read/validation error. Invalid decks remain entries; listing errors propagate.
 Missing folders return an empty catalog without creating directories.
+`app.deckfiles` handles validated import/export, JSON extension completion and
+same-file rejection. Existing destinations require `overwrite=True`; GUI dialogs
+collect consent. Transfers revalidate the source immediately before copying.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

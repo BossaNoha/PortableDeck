@@ -1,6 +1,5 @@
 """Browse, select, edit, and duplicate deck files."""
 import os
-import shutil
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -8,6 +7,8 @@ from ..core.deck import Deck
 from .deckbuilder import DeckBuilder
 from .deckpreview import show_deck_preview
 from .deckcatalog import list_decks
+from .deckfiles import (InvalidDeckError, SameDeckFileError, import_deck_target,
+                        import_deck, export_deck, validate_deck_source)
 
 
 class DeckLibrary:
@@ -130,24 +131,30 @@ class DeckLibrary:
         if not source:
             return
         try:
-            Deck(source)
-        except (OSError, ValueError, KeyError, TypeError) as error:
-            messagebox.showerror("Invalid deck", str(error), parent=self.window)
-            return
-        filename = os.path.basename(source)
-        if not filename.lower().endswith(".json"):
-            filename += ".json"
-        target = os.path.join(self.decks_dir, filename)
-        if os.path.normcase(os.path.abspath(source)) == os.path.normcase(os.path.abspath(target)):
+            target = import_deck_target(source, self.decks_dir)
+        except SameDeckFileError:
             messagebox.showinfo("Already in library", "This deck is already in the deck library.", parent=self.window)
             return
-        if os.path.exists(target) and not messagebox.askyesno(
+        except InvalidDeckError as error:
+            messagebox.showerror("Invalid deck", str(error), parent=self.window)
+            return
+        except OSError as error:
+            messagebox.showerror("Could not import deck", str(error), parent=self.window)
+            return
+        overwrite = os.path.exists(target)
+        if overwrite and not messagebox.askyesno(
             "Replace deck?", f"A deck named '{os.path.basename(target)}' already exists. Replace it?",
             parent=self.window,
         ):
             return
         try:
-            shutil.copy2(source, target)
+            target = import_deck(source, self.decks_dir, overwrite=overwrite)
+        except SameDeckFileError:
+            messagebox.showinfo("Already in library", "This deck is already in the deck library.", parent=self.window)
+            return
+        except InvalidDeckError as error:
+            messagebox.showerror("Invalid deck", str(error), parent=self.window)
+            return
         except OSError as error:
             messagebox.showerror("Could not import deck", str(error), parent=self.window)
             return
@@ -159,8 +166,8 @@ class DeckLibrary:
         if not source:
             return
         try:
-            Deck(source)
-        except (OSError, ValueError, KeyError, TypeError) as error:
+            validate_deck_source(source)
+        except InvalidDeckError as error:
             messagebox.showerror("Invalid deck", str(error), parent=self.window)
             return
         target = filedialog.asksaveasfilename(
@@ -169,13 +176,15 @@ class DeckLibrary:
         )
         if not target:
             return
-        if not target.lower().endswith(".json"):
-            target += ".json"
-        if os.path.normcase(os.path.abspath(source)) == os.path.normcase(os.path.abspath(target)):
+        try:
+            # The native save dialog obtains overwrite consent.
+            target = export_deck(source, target, overwrite=True)
+        except SameDeckFileError:
             messagebox.showinfo("Already exported", "Choose a location outside the deck library.", parent=self.window)
             return
-        try:
-            shutil.copy2(source, target)
+        except InvalidDeckError as error:
+            messagebox.showerror("Invalid deck", str(error), parent=self.window)
+            return
         except OSError as error:
             messagebox.showerror("Could not export deck", str(error), parent=self.window)
             return
