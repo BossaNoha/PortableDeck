@@ -310,9 +310,13 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
             self.discard_piles[0] = cards
 
     def ensure_discard_pile_state(self):
-        """Fill in discard-pile fields for sessions created by older versions."""
+        """Normalize legacy fields explicitly at load/restore boundaries."""
+        personal_count = getattr(self, "personal_discard_pile_count", 0)
+        if not isinstance(personal_count, int) or isinstance(personal_count, bool) or personal_count < 0:
+            personal_count = 0
+        self.personal_discard_pile_count = personal_count
         shared = getattr(self, "discard_piles", None)
-        if not isinstance(shared, list) or not shared:
+        if not isinstance(shared, list) or (not shared and not personal_count):
             legacy_pile = self.__dict__.get("discard_pile", [])
             if not isinstance(legacy_pile, list):
                 legacy_pile = []
@@ -320,10 +324,6 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
             self.discard_piles = shared
         self.shared_discard_pile_count = len(shared)
 
-        personal_count = getattr(self, "personal_discard_pile_count", 0)
-        if not isinstance(personal_count, int) or isinstance(personal_count, bool) or personal_count < 0:
-            personal_count = 0
-        self.personal_discard_pile_count = personal_count
         personal = getattr(self, "personal_discard_piles", None)
         if not isinstance(personal, list):
             personal = []
@@ -338,7 +338,7 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         self.personal_discard_piles = personal
 
     def all_discard_piles(self):
-        self.ensure_discard_pile_state()
+        """Enumerate normalized piles without changing state or list identities."""
         piles = [(f"Shared discard {index + 1}", pile) for index, pile in enumerate(self.discard_piles)]
         for player_index, player_piles in enumerate(self.personal_discard_piles):
             name = self.players[player_index].name

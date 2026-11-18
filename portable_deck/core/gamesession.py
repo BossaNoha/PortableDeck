@@ -8,7 +8,6 @@ from .player import Player
 
 def save_session(game, path, *, client_state=None):
     """Save the complete state needed to continue a game later."""
-    game.ensure_discard_pile_state()
     state = {
         "enable_team_pile_access": game.enable_team_pile_access,
         "enable_dealer_pile_access": game.enable_dealer_pile_access,
@@ -136,21 +135,11 @@ def load_session(game_class, path):
     game.shared_discard_pile_count = state.get("shared_discard_pile_count", 1)
     game.personal_discard_pile_count = state.get("personal_discard_pile_count", 0)
     game.discard_piles = state.get("discard_piles", [state.get("discard_pile", [])])
-    if not game.discard_piles:
-        game.discard_piles = [[]]
-        game.shared_discard_pile_count = 1
-    game.shared_discard_pile_count = len(game.discard_piles)
     game.personal_discard_piles = state.get(
         "personal_discard_piles",
         [[] for _ in game.players],
     )
-    game.personal_discard_piles = [
-        (list(piles) + [[] for _ in range(max(0, game.personal_discard_pile_count - len(piles)))])
-        [:game.personal_discard_pile_count]
-        for piles in game.personal_discard_piles[:len(game.players)]
-    ]
-    while len(game.personal_discard_piles) < len(game.players):
-        game.personal_discard_piles.append([[] for _ in range(game.personal_discard_pile_count)])
+    game.ensure_discard_pile_state()
     game.table_cards = state.get("table_cards", [])
     game.current_player_index = state["current_player_index"]
     if not 0 <= game.current_player_index < len(game.players):
@@ -235,6 +224,7 @@ def load_session(game_class, path):
         game.personal_piles = game.personal_discard_piles
         game.personal_discard_piles = [[] for _ in game.players]
         game.personal_discard_pile_count = 0
+        game.ensure_discard_pile_state()
         for snapshot in game.undo_stack:
             snapshot["personal_piles"] = snapshot.get("personal_discard_piles", game.personal_piles)
             snapshot["personal_discard_piles"] = [[] for _ in game.players]

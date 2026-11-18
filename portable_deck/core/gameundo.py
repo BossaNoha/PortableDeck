@@ -47,12 +47,12 @@ class GameUndoActions:
             player.revealed_indices = set(saved_player.get("revealed_indices", []))
             player.hand = copy.deepcopy(saved_player["hand"])
             self.players.append(player)
-        self.discard_pile = copy.deepcopy(state["discard_pile"])
         self.discard_piles = copy.deepcopy(state.get("discard_piles", [state["discard_pile"]]))
         self.personal_discard_piles = copy.deepcopy(state.get(
             "personal_discard_piles",
             [[] for _ in self.players],
         ))
+        self.ensure_discard_pile_state()
         self.table_cards = copy.deepcopy(state["table_cards"])
         self.normalize_table_positions()
         self.current_player_index = state["current_player_index"]

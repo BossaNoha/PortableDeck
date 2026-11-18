@@ -183,3 +183,17 @@ still require specific targets. Full tables, confirmations, departed players and
 invalid indices remain blocked. Controller validation remains mandatory.
 Native Tk mouse-event verification covered blank-table and occupied-card drops,
 both resulting in automatic placement.
+
+### Discard normalization follow-up
+
+Priority 5 is addressed: `all_discard_piles` only enumerates existing piles and
+preserves collection identities. It still returns live pile references for core
+actions; clients should use immutable projections. Session saving no longer
+normalizes model fields. Loading and Undo restoration explicitly normalize
+legacy/missing discard fields before they can be queried or used by commands.
+The existing personal-discard-to-table-pile migration remains supported.
+
+An explicitly configured zero shared piles is preserved when personal discard
+piles are enabled. Queries and saving no longer silently add a shared pile.
+Tests cover legacy single-pile saves, incomplete old Undo state, personal-only
+configurations, draw/Undo and read/save operations preserving pile identities.
