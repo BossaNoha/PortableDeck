@@ -200,20 +200,20 @@ class SettingsWindow:
         messagebox.showinfo("Settings saved", f"Saved as {os.path.splitext(os.path.basename(path))[0]}.", parent=self.root)
 
     def load_named_settings(self):
-        from .settingspresets import PRESETS_DIR, read_preset
+        from .settingspresets import PRESETS_DIR, load_preset
         os.makedirs(PRESETS_DIR, exist_ok=True)
         path = filedialog.askopenfilename(title="Load settings", initialdir=PRESETS_DIR,
                                          filetypes=(("Settings", "*.json"),), parent=self.root)
         if not path:
             return
         try:
-            selected_settings = read_preset(
-                path, {**self.settings, **self.current_app_settings()},
-                on_warning=lambda text: messagebox.showwarning("Preset compatibility", text, parent=self.root))
+            result = load_preset(path, {**self.settings, **self.current_app_settings()})
         except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
             messagebox.showerror("Could not load settings", str(error), parent=self.root)
             return
-        self.form_settings = selected_settings
+        if result.notices:
+            messagebox.showwarning("Preset compatibility", "\n\n".join(result.notices), parent=self.root)
+        self.form_settings = result.settings
         self.show_settings()
 
     def _fit_window_to_frame(self, frame):

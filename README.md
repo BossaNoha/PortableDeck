@@ -98,6 +98,9 @@ collect consent. Transfers revalidate the source immediately before copying.
 Deck editor saves use `app.deckstorage` for validated definition preparation
 and atomic UTF-8 JSON writes. The editor collects fields and overwrite consent;
 storage failures preserve the previous file and keep the editor open.
+`app.settingspresets.load_preset` returns prepared settings, compatibility data
+and notice text without displaying warnings. Settings GUI displays those notices
+and applies the result; `read_preset` retains its legacy warning/callback API.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

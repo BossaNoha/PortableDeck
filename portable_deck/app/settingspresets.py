@@ -70,7 +70,15 @@ def write_preset(path, settings):
             temporary.unlink()
 
 
-def read_preset(path, current_settings=None, on_warning=None):
+@dataclass(frozen=True)
+class PresetLoadResult:
+    settings: dict
+    notices: tuple[str, ...]
+    compatibility: PresetCompatibility
+
+
+def load_preset(path, current_settings=None):
+    """Return prepared settings and notices without displaying/emitting warnings."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     from .configurationinfo import APP_SETTINGS, preset_values, configuration_values
     raw = data.get("settings", data) if isinstance(data, dict) else data
@@ -118,10 +126,16 @@ def read_preset(path, current_settings=None, on_warning=None):
     notices.extend(corrections)
     settings["configuration_name"] = data.get("name", Path(path).stem)
     settings["configuration_baseline"] = configuration_values(settings)
-    if notices:
-        text = "\n\n".join(notices)
+    return PresetLoadResult(settings, tuple(notices), compatibility)
+
+
+def read_preset(path, current_settings=None, on_warning=None):
+    """Compatibility adapter retaining callback/Python warning behavior."""
+    result = load_preset(path, current_settings)
+    if result.notices:
+        text = "\n\n".join(result.notices)
         if on_warning is not None:
             on_warning(text)
         else:
             warnings.warn(text, UserWarning, stacklevel=2)
-    return settings
+    return result.settings
