@@ -1,6 +1,9 @@
 """Table placement and position calculations for the Game model."""
 
 class TablePlacementActions:
+    def _valid_table_card_index(self, index):
+        return isinstance(index, int) and not isinstance(index, bool) and 0 <= index < len(self.table_cards)
+
     def normalize_table_positions(self):
         """Upgrade legacy table entries before clients read or render them."""
         positions = [entry.get("position") for entry in self.table_cards]
@@ -100,7 +103,7 @@ class TablePlacementActions:
         """Move a selected table card into an available table position."""
         if (
             not self.allow_move_cards_on_table
-            or not 0 <= table_index < len(self.table_cards)
+            or not self._valid_table_card_index(table_index)
             or not isinstance(position, (tuple, list))
             or len(position) != 2
             or any(not isinstance(value, int) or isinstance(value, bool) for value in position)

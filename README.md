@@ -79,6 +79,8 @@ raise `ActionValidationError` with code `invalid_score_change` before mutation.
 `Player.play_card` accepts only in-range one-based integer indices, excluding
 booleans/floats. Invalid input returns `None` without changing hand/reveal state.
 Controller card indices remain zero-based and retain `invalid_selection` errors.
+Table-card take, flip, move, swap and discard operations also reject non-integer
+or out-of-range indices before mutation, including direct model calls.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

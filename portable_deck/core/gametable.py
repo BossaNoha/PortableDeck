@@ -6,7 +6,7 @@ from .tableplacement import TablePlacementActions
 class GameTableActions(TablePlacementActions):
 
     def flip_table_card(self, index):
-        if not self.can_flip_table_cards() or not 0 <= index < len(self.table_cards):
+        if not self.can_flip_table_cards() or not self._valid_table_card_index(index):
             return None
         entry = self.table_cards[index]
         entry["face_up"] = not entry.get("face_up", True)
@@ -32,7 +32,7 @@ class GameTableActions(TablePlacementActions):
         if (
             not self.allow_positioned_play
             or self.occupied_slot_action != "swap"
-            or not 0 <= table_index < len(self.table_cards)
+            or not self._valid_table_card_index(table_index)
         ):
             return None
         player = self.players[self.current_player_index]
@@ -48,7 +48,7 @@ class GameTableActions(TablePlacementActions):
         return replacement, returned_card
 
     def take_from_table(self, index):
-        if not self.allow_take_from_table or not 0 <= index < len(self.table_cards):
+        if not self.allow_take_from_table or not self._valid_table_card_index(index):
             return None
         entry = self.table_cards.pop(index)
         if self.allow_positioned_play or self.allow_move_cards_on_table or self.allow_play_in_front_of_players:
@@ -62,7 +62,7 @@ class GameTableActions(TablePlacementActions):
     def move_table_card_to_discard(self, index, pile_index=0, personal=False):
         if (
             not self.allow_move_table_card_to_discard
-            or not 0 <= index < len(self.table_cards)
+            or not self._valid_table_card_index(index)
         ):
             return None
         entry = self.table_cards.pop(index)

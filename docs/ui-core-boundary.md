@@ -22,8 +22,14 @@ direct model inputs return None, preserving the existing refusal contract.
 Controller play commands retain zero-based indices and `invalid_selection`.
 Regression coverage includes hand/reveal preservation, direct table placement,
 normal/positioned/face-down controller play, checkpoints and valid Undo. Other
-actions using Player.play_card inherit the same guard; table-card indices are a
-separate remaining validation area.
+actions using Player.play_card inherit the same guard.
+
+Table-card take, flip, move (including sequences), swap and discard now share
+`_valid_table_card_index`: zero-based in-range integers excluding bool. Invalid
+direct calls return None before any effect, including hand removal during swap.
+Controller commands preserve `invalid_selection`. Regression tests cover direct
+and controller failures, unchanged hand/reveal/table/log/Undo/checkpoints, and
+successful operations with Undo, including sequence movement.
 
 The three-player lifecycle regression now covers draw, face-down play, concurrent
 score/pot requests, first-voter approvals, saving pending decisions, loading into
