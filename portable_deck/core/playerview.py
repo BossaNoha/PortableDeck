@@ -130,7 +130,7 @@ def build_player_personal_piles_view(game, viewer, hand_index=None):
                 context = ActionContext(hand_index=hand_index, owner=owner, pile_index=index)
                 def available(action):
                     if viewer != game.current_player_index:
-                        return ActionAvailability(False, "It is not this player's turn.")
+                        return ActionAvailability(False, "It is not this player's turn.", "not_current_player")
                     return action_availability(game, action, context)
                 piles.append(PersonalPileView(
                     owner, game.players[owner].name, index, rule["access"], rule["ordered"],

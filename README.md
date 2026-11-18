@@ -291,6 +291,21 @@ flipping, chips, scoring, confirmations, leaving/returning and ending a turn.
 Availability is checked before execution. Results include `success`, `changed`,
 `value`, `message` and `checkpoint_error`.
 
+`ActionResult.code` is a stable machine-readable rejection code; successful
+commands use an empty string, including a successful denial of an approval
+request. `ActionAvailability.code` supplies the same identifiers for rule checks.
+Existing `message`/`reason` text remains for display; clients should branch on
+codes rather than translated wording. Examples include `empty_deck`,
+`selection_required`, `invalid_selection`, `invalid_target`, `table_full`,
+`confirmation_required` and `confirmation_not_required`. Shared rule checks also
+identify disabled actions, inactive/departed players, empty resources and chip
+balance restrictions. Model validation exceptions currently use the broader
+`invalid_parameters`, other model refusals `action_rejected`, and unavailable
+returns `return_unavailable`. Unknown action IDs still raise `ValueError`.
+`checkpoint_error` remains separate: a successful move with a failed checkpoint
+keeps an empty command error code. Newly added fields preserve previous positional
+arguments, and GUI/CLI display text is unchanged.
+
 Personal table piles use `execute("play_personal_pile", card_index=0, owner=0,
 pile_index=0)` and `execute("take_personal_pile", owner=0, pile_index=0)`.
 Player and pile indices are zero-based. Both commands enforce access permissions

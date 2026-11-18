@@ -282,3 +282,19 @@ are not printed. There is no persistence callback or save command, so loaded
 files remain untouched. Tests cover commands, invalid inputs, hidden draw
 results, approval order and process execution without Tkinter. This is a local
 development hotseat client, not network transport or an authentication layer.
+
+### Stable action rejection codes
+
+Availability branches now produce codes alongside their original display text.
+Session execution propagates them into `ActionResult.code`, including lifecycle
+codes for absent/required confirmations. Codes are assigned by validation
+branches, never inferred from English messages. Unknown actions still raise;
+model exceptions and refusals currently use broad fallback codes rather than
+pretending every model-level reason has a specialized identifier.
+
+Success (including denial of an approval request) uses an empty code. Checkpoint
+errors remain a separate field. Tests exercise empty draws, invalid play
+selection/targets, blocked turns, absent confirmations, malformed parameters,
+wording-independent propagation and unchanged rejection state/Undo/checkpoints.
+This prepares client branching and future translation without changing current
+GUI or CLI wording; it does not implement localization.

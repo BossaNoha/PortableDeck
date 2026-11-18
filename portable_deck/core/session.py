@@ -14,6 +14,7 @@ class ActionResult:
     checkpoint_error: str | None = None
     events: tuple = ()
     messages: tuple[str, ...] = ()
+    code: str = ""
 
 
 class SessionController:
@@ -102,22 +103,28 @@ class SessionController:
         lifecycle = {"end_turn", "confirm_point", "confirm_pot", "return_player"}
         if action in lifecycle:
             reason = ""
+            code = ""
             if action == "return_player":
                 reason = return_player_reason(g, parameters.get("player_index"))
+                code = "return_unavailable"
             elif not g.active_player_indices():
                 reason = "No active players remain."
+                code = "no_active_players"
             elif action == "confirm_point" and not g.current_player_must_confirm_point():
                 reason = "No score confirmation is required from this player."
+                code = "confirmation_not_required"
             elif action == "confirm_pot" and not g.current_player_must_confirm_pot_withdrawal():
                 reason = "No pot confirmation is required from this player."
+                code = "confirmation_not_required"
             elif action == "end_turn" and (g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal()):
                 reason = "Complete the pending confirmation first."
+                code = "confirmation_required"
             if reason:
-                return ActionResult(False, message=reason)
+                return ActionResult(False, message=reason, code=code)
         else:
             available = action_availability(g, action, context)
             if not available.allowed:
-                return ActionResult(False, message=available.reason)
+                return ActionResult(False, message=available.reason, code=available.code or "action_unavailable")
         handlers = {
             "draw_card": lambda: g.deal_card_to_current(),
             "draw_from_discard": lambda: self.draw_from_discard(parameters),
@@ -166,14 +173,14 @@ class SessionController:
                     message = f"{action.replace('_', ' ').capitalize()} completed." if success else "The action could not be completed."
                 if not success:
                     self.restore(before)
-                    return ActionResult(False, value=raw, message=message)
+                    return ActionResult(False, value=raw, message=message, code="action_rejected")
                 return ActionResult(True, before != g.capture_undo_state(), raw, message)
             except (ValueError, TypeError, KeyError, IndexError) as error:
                 self.restore(before)
-                return ActionResult(False, message=str(error))
+                return ActionResult(False, message=str(error), code="invalid_parameters")
         result = self.run(perform)
         return ActionResult(result.success, result.changed, result.value, result.message, self.last_checkpoint_error,
-                            tuple(copy.deepcopy(g.history[event_offset:])), tuple(g.game_log[log_offset:]))
+                            tuple(copy.deepcopy(g.history[event_offset:])), tuple(g.game_log[log_offset:]), result.code)
 
     def draw_from_discard(self, parameters):
         g = self.game
