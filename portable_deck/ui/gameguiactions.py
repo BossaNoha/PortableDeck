@@ -5,8 +5,16 @@ from .cardactions import request_point
 from .sessionactions import execute_value
 from ..core.selectionsnapshot import build_selection_snapshot
 from ..core.playerleaving import build_player_return_options
+from ..core.playersessionview import build_player_session_view
 
 class GameGUIActions:
+
+    def refresh_session_panels(self):
+        view = build_player_session_view(self.game, self.game.current_player_index,
+                                         hand_index=self.selection.hand_index)
+        self.status_panel.update_status(view.status)
+        if hasattr(self, "personal_piles_ui"):
+            self.personal_piles_ui.update(view.personal_piles)
 
     def update_chip_action_buttons(self):
         self.chip_bank_ui.update_action_buttons()
@@ -16,8 +24,7 @@ class GameGUIActions:
         self.session.run(action, *args)
         self.render_log()
         self.selection.synchronize(build_selection_snapshot(self.game))
-        if hasattr(self, "personal_piles_ui"):
-            self.personal_piles_ui.update()
+        self.refresh_session_panels()
         self.update_undo_button()
         self.update_leave_button()
         if hasattr(self, "context_actions"):
@@ -179,8 +186,7 @@ class GameGUIActions:
         if alerts:
             messagebox.showinfo(alerts[0].title, "\n\n".join(notice.message for notice in alerts), parent=self.root)
         self.session.acknowledge_score_notifications(alerts)
-        if hasattr(self, "personal_piles_ui"):
-            self.personal_piles_ui.update()
+        self.refresh_session_panels()
         self.selection.table_index = None
         self.selection.target_position = None
         self.table_frame.update_table()
@@ -197,14 +203,14 @@ class GameGUIActions:
             approved = messagebox.askyesno(notice.title, notice.message, parent=self.root)
             _, result = execute_value(self.game, "confirm_point", approved=approved)
             self.render_log()
-            self.status_panel.update_status()
+            self.refresh_session_panels()
 
         notice = self.game.pot_confirmation_notification()
         if notice is not None:
             approved = messagebox.askyesno(notice.title, notice.message, parent=self.root)
             _, result = execute_value(self.game, "confirm_pot", approved=approved)
             self.render_log()
-            self.status_panel.update_status()
+            self.refresh_session_panels()
 
         for button in self._turn_action_buttons():
             button.config(state="normal")

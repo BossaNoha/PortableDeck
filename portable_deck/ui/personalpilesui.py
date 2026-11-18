@@ -16,11 +16,12 @@ class PersonalPilesUI:
         self.contents = self.scroll_area.contents
         self.update()
 
-    def update(self):
+    def update(self, view=None):
         for child in self.contents.winfo_children():
             child.destroy()
-        game = self.gui.game
-        view = build_player_personal_piles_view(game, game.current_player_index)
+        if view is None:
+            game = self.gui.game
+            view = build_player_personal_piles_view(game, game.current_player_index)
         if not view.enabled:
             return
         for entry in view.piles:

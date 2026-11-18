@@ -40,10 +40,11 @@ class StatusPanel(tk.LabelFrame):
             self.table_label.pack(anchor="w")
 
         # Initial update
-        self.update_status()
+        self.update_status(status)
 
-    def update_status(self):
-        status = build_session_status(self.game)
+    def update_status(self, status=None):
+        if status is None:
+            status = build_session_status(self.game)
         for player in status.players:
             count = player.card_count
             display = f"{count} card{'s' if count != 1 else ''}" if count < 8 else "many"

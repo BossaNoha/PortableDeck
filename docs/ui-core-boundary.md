@@ -211,3 +211,13 @@ The caller establishes the viewer identity and ensures the model is stable
 during construction. This snapshot does not include logs, action results,
 notifications, selection state or command authorization and is not a complete
 network protocol or a replacement for saves.
+
+### Shared status/personal-pile refresh
+
+`GameGUIActions.refresh_session_panels` builds one combined view and supplies its
+status and personal-pile sections to both panels. Initial refresh, action
+completion and turn-start/approval refreshes use this path. Renderers accept
+supplied snapshots without reading the game; their no-argument refresh methods
+remain available for existing individual action helpers. Those helpers may
+still perform intermediate panel refreshes before the common final refresh.
+Hand/table rendering and drag-and-drop are unchanged in this step.

@@ -285,7 +285,7 @@ class GameGUIBuilder:
 
         # Initialize GUI
         self.hand_frame.update_hand()
-        self.status_panel.update_status()
+        self.refresh_session_panels()
         self.render_log()
         self.session.run(self.handle_turn_start)
         self.update_point_button()
