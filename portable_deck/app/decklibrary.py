@@ -7,12 +7,14 @@ from tkinter import filedialog, messagebox, ttk
 from ..core.deck import Deck
 from .deckbuilder import DeckBuilder
 from .deckpreview import show_deck_preview
+from .deckcatalog import list_decks
 
 
 class DeckLibrary:
     def __init__(self, parent, decks_dir, on_use):
         self.parent = parent
         self.decks_dir = decks_dir
+        os.makedirs(self.decks_dir, exist_ok=True)
         self.on_use = on_use
         self.window = tk.Toplevel(parent)
         self.window.title("Deck library")
@@ -58,20 +60,10 @@ class DeckLibrary:
 
     def refresh(self, select_path=None):
         self.tree.delete(*self.tree.get_children())
-        os.makedirs(self.decks_dir, exist_ok=True)
-        names = sorted(
-            (name for name in os.listdir(self.decks_dir) if name.lower().endswith(".json")),
-            key=str.casefold,
-        )
-        for filename in names:
-            path = os.path.join(self.decks_dir, filename)
-            try:
-                deck = Deck(path)
-                count = str(len(deck.flat_deck))
-                symbols = ", ".join(deck.types)
-            except (OSError, ValueError, KeyError, TypeError):
-                count, symbols = "Invalid", "Could not read this deck"
-            self.tree.insert("", "end", iid=filename, values=(os.path.splitext(filename)[0], count, symbols))
+        for entry in list_decks(self.decks_dir):
+            count = str(entry.card_count) if entry.error is None else "Invalid"
+            symbols = ", ".join(entry.symbols) if entry.error is None else "Could not read this deck"
+            self.tree.insert("", "end", iid=entry.filename, values=(entry.name, count, symbols))
         if select_path:
             filename = os.path.basename(select_path)
             if self.tree.exists(filename):

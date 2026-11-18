@@ -87,6 +87,11 @@ Invalid destinations return `invalid_pile` through the controller or `None`
 from direct model calls, preserving the source card and reveal state.
 Personal-pile access validates owner, pile and viewer indices as in-range
 integers excluding bool before permission checks or card transfers.
+
+`app.deckcatalog.list_decks(directory)` supplies immutable deck-library entries
+without Tkinter: filename/path, display name, card count, symbol names and any
+read/validation error. Invalid decks remain entries; listing errors propagate.
+Missing folders return an empty catalog without creating directories.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 
