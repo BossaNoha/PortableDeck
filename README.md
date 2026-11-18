@@ -23,7 +23,11 @@ metadata and deals the starting hands once. It returns a started Game or raises
 a validation/IO error, without saving or changing the supplied dictionary.
 GUI and CLI New game use this service. CLI-relative deck paths retain their
 working-directory meaning; application settings resolve relative paths from
-the project. Restart still retains its existing path for now.
+the project. Restart uses the same core construction/start operations with the
+current session's effective rules, rather than current application settings.
+`game.restart(keep_scores=False)` resets cards, turns, confirmations and Undo;
+scores are optionally retained, while chip balances/pot follow the existing
+`reset_chip_accounts_on_restart` rule. The original session is not modified.
 
 A small hotseat client exercises the shared core without Tkinter:
 

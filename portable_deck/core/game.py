@@ -207,79 +207,8 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
 
     def restart(self, keep_scores=False):
         """Create a fresh game with the same setup, optionally retaining scores."""
-        restarted = Game(
-            num_players=len(self.players),
-            enable_flipping=self.enable_flipping, allow_flip_hand=self.allow_flip_hand,
-            allow_flip_table=self.allow_flip_table, allow_flip_player_cards=self.allow_flip_player_cards,
-            enable_special_actions=self.enable_special_actions,
-            allow_insert_draw_deck=self.allow_insert_draw_deck,
-            allow_insert_discard_pile=self.allow_insert_discard_pile,
-            enable_player_return=self.enable_player_return,
-            enable_player_leaving=self.enable_player_leaving, leave_conditions=self.leave_conditions,
-            enable_cards_visibility=self.enable_cards_visibility,
-            cards_visibility=self.cards_visibility,
-            enable_interactions=self.enable_interactions,
-            interaction_options=self.interaction_options,
-            share_team_chips=self.share_team_chips,
-            share_team_score=self.share_team_score,
-            enable_team_score=self.enable_team_score,
-            enable_roles_teams=self.enable_roles_teams,
-            enable_dealer=self.enable_dealer,
-            enable_teams=self.enable_teams,
-            team_count=self.team_count,
-            team_names=self.team_names,
-            player_teams=self.player_teams,
-            dealer_players=self.dealer_players,
-            enable_table=self.enable_table,
-            enable_table_limits=self.enable_table_limits,
-            limit_table_rows=self.limit_table_rows, limit_table_columns=self.limit_table_columns,
-            max_table_rows=self.max_table_rows, max_table_columns=self.max_table_columns,
-            enable_personal_piles=self.enable_personal_piles,
-            personal_pile_count=self.personal_pile_count,
-            unequal_personal_piles=self.unequal_personal_piles,
-            personal_pile_counts=self.personal_pile_counts,
-            enable_team_pile_access=self.enable_team_pile_access,
-            enable_dealer_pile_access=self.enable_dealer_pile_access,
-            personal_pile_settings=self.personal_pile_settings,
-            enable_discard_pile=self.enable_discard_pile,
-            deck_path=self.deck.path,
-            player_names=[player.name for player in self.players],
-            score_enabled=self.score_enabled,
-            allow_reduce_score=self.allow_reduce_score,
-            enable_target_score=self.enable_target_score, target_score=self.target_score,
-            enable_score_warning=self.enable_score_warning, score_warning=self.score_warning,
-            require_point_confirmation=self.require_point_confirmation,
-            allow_take_from_table=self.allow_take_from_table,
-            allow_move_table_card_to_discard=self.allow_move_table_card_to_discard,
-            allow_manual_table_cleanup=self.allow_manual_table_cleanup,
-            clear_table_on_round_end=self.clear_table_on_round_end,
-            allow_positioned_play=self.allow_positioned_play,
-            occupied_slot_action=self.occupied_slot_action,
-            enable_undo=self.enable_undo,
-            allow_move_cards_on_table=self.allow_move_cards_on_table,
-            allow_play_in_front_of_players=self.allow_play_in_front_of_players,
-            allow_draw_from_discard=self.allow_draw_from_discard,
-            draw_from_discard_mode=self.draw_from_discard_mode,
-            allow_face_down_table_cards=self.allow_face_down_table_cards,
-            allow_move_table_sequences=self.allow_move_table_sequences,
-            allow_recycle_discard_to_deck=self.allow_recycle_discard_to_deck,
-            shared_discard_pile_count=self.shared_discard_pile_count,
-            personal_discard_pile_count=self.personal_discard_pile_count,
-            enable_chip_accounts=self.enable_chip_accounts,
-            reset_chip_accounts_on_restart=self.reset_chip_accounts_on_restart,
-            minimum_bet=self.minimum_bet,
-            starting_balance=self.starting_balance,
-            require_pot_withdrawal_confirmation=self.require_pot_withdrawal_confirmation,
-        )
-        if not self.reset_chip_accounts_on_restart:
-            restarted.chip_balances = self.chip_balances.copy()
-            restarted.chip_pot = self.chip_pot
-        restarted.configuration_info = self.configuration_info.copy()
-        restarted.start(self.cards_per_player)
-        if keep_scores:
-            restarted.scores = self.scores.copy()
-            restarted.team_scores = self.team_scores.copy()
-        return restarted
+        from .gamecreation import restart_game
+        return restart_game(self, keep_scores=keep_scores)
 
     def log_draws_for_turn(self):
         if self.cards_drawn_this_turn > 0:

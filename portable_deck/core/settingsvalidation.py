@@ -4,6 +4,7 @@ import inspect
 from pathlib import Path
 from .settingsschema import DEFAULT_SETTINGS
 from .game import Game
+from .gamecreation import create_configured_game
 
 
 def resolve_deck_path(path):
@@ -136,7 +137,7 @@ def validate_settings_and_game(values):
     args["player_teams"] = settings["player_teams"] or None
     args["dealer_players"] = settings["dealer_players"] or None
     try:
-        game = Game(**args)
+        game = create_configured_game(args)
     except (OSError, ValueError) as error:
         # All non-deck constructor constraints are checked above.
         raise SettingsValidationError(str(error), "deck_path") from error

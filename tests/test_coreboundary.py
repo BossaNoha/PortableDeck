@@ -63,6 +63,9 @@ class CoreBoundaryTests(unittest.TestCase):
             build_player_return_options(g)
             discard_destinations(g, 1)
             insertion_options(g, 'draw')
+            restarted = g.restart(keep_scores=True)
+            assert restarted.pending_point_request is None
+            assert restarted.pending_pot_withdrawal is None
             assert not any(name == 'tkinter' or name.startswith('tkinter.') for name in sys.modules)
         ''')
         result = subprocess.run([sys.executable, '-B', '-c', script],
