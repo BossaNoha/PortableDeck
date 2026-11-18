@@ -5,6 +5,7 @@ from .actionavailability import ActionContext, action_availability
 from .interactions import INTERACTIONS
 from .playerleaving import return_player_reason
 from .actionerrors import ActionValidationError
+from .discardvalidation import discard_destination
 from .chipvalidation import chip_action_error
 
 @dataclass(frozen=True)
@@ -167,6 +168,9 @@ class SessionController:
         event_offset, log_offset = len(g.history), len(g.game_log)
         def perform():
             try:
+                if action in {"discard_card", "discard_table_card"} and discard_destination(
+                        g, parameters.get("pile_index", 0), parameters.get("personal", False)) is None:
+                    raise ActionValidationError("invalid_pile", "Choose a valid discard destination.")
                 if action in {"buy_chips", "play_chips", "take_pot"}:
                     error = chip_action_error(g, action, parameters.get("player_index"), parameters.get("amount"))
                     if error:

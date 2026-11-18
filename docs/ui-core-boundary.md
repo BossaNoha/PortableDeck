@@ -31,6 +31,15 @@ Controller commands preserve `invalid_selection`. Regression tests cover direct
 and controller failures, unchanged hand/reveal/table/log/Undo/checkpoints, and
 successful operations with Undo, including sequence movement.
 
+Hand/table discards resolve the destination with `core.discardvalidation`
+before removing a source card. It validates enabled discard, an integer
+non-boolean pile index, boolean personal/shared selection and existing range.
+Empty destinations remain valid; missing destinations return None. Direct
+model calls retain None on refusal, while available controller actions return
+`invalid_pile`. Regression tests verify source/reveal/log/Undo/checkpoint
+preservation for malformed targets and successful shared/personal transfers
+with Undo. Table discard now also respects disabled discard on direct calls.
+
 The three-player lifecycle regression now covers draw, face-down play, concurrent
 score/pot requests, first-voter approvals, saving pending decisions, loading into
 the CLI, blocking premature actions, final approvals, persisted Undo, reloading

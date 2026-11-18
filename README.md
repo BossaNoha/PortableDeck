@@ -81,6 +81,10 @@ booleans/floats. Invalid input returns `None` without changing hand/reveal state
 Controller card indices remain zero-based and retain `invalid_selection` errors.
 Table-card take, flip, move, swap and discard operations also reject non-integer
 or out-of-range indices before mutation, including direct model calls.
+Discarding from hand/table validates the destination before removing a card:
+`pile_index` must be an in-range integer excluding bool, and `personal` a bool.
+Invalid destinations return `invalid_pile` through the controller or `None`
+from direct model calls, preserving the source card and reveal state.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

@@ -2,6 +2,7 @@
 
 import random
 from .tableplacement import TablePlacementActions
+from .discardvalidation import discard_destination
 
 class GameTableActions(TablePlacementActions):
 
@@ -65,14 +66,13 @@ class GameTableActions(TablePlacementActions):
             or not self._valid_table_card_index(index)
         ):
             return None
+        destination = discard_destination(self, pile_index, personal)
+        if destination is None:
+            return None
         entry = self.table_cards.pop(index)
         if self.allow_positioned_play or self.allow_move_cards_on_table or self.allow_play_in_front_of_players:
             self._compact_main_line()
         card = entry["card"]
-        destination = (
-            self.personal_discard_piles[self.current_player_index][pile_index]
-            if personal else self.discard_piles[pile_index]
-        )
         destination.append(card)
         name = f"{self.players[self.current_player_index].name}'s discard {pile_index + 1}" if personal else f"Shared discard {pile_index + 1}"
         self.log_action(self.players[self.current_player_index].name, "table_to_discard", card, destination=name)

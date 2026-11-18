@@ -290,16 +290,14 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         return card
 
     def discard_from_current(self, index, pile_index=0, personal=False):
-        if not self.enable_discard_pile:
+        from .discardvalidation import discard_destination
+        destination = discard_destination(self, pile_index, personal)
+        if destination is None:
             return None
         player = self.players[self.current_player_index]
         card = player.play_card(index)
 
         if card:
-            destination = (
-                self.personal_discard_piles[self.current_player_index][pile_index]
-                if personal else self.discard_piles[pile_index]
-            )
             destination.append(card)
             name = f"{player.name}'s discard {pile_index + 1}" if personal else f"Shared discard {pile_index + 1}"
             self.log_action(player.name, "discard", card, destination=name)
