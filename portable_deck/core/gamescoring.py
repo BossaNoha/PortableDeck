@@ -1,5 +1,6 @@
 """Point requests, scoring, and player confirmations for the Game model."""
 from .confirmationvalidation import validate_confirmation
+from .actionerrors import ActionValidationError
 
 class GameScoringActions:
 
@@ -9,10 +10,10 @@ class GameScoringActions:
         return self.request_point(delta=-1)
 
     def request_point(self, delta=1):
+        if not isinstance(delta, int) or isinstance(delta, bool) or delta not in (-1, 1):
+            raise ActionValidationError("invalid_score_change", "Score changes must be the integer -1 or 1.")
         if delta == -1 and not self.allow_reduce_score:
             return False, "Reducing score is disabled."
-        if delta not in (-1, 1):
-            raise ValueError("Score changes must be one point.")
         if not self.score_enabled:
             return False, "Point scoring is disabled."
         if self.pending_point_request is not None:

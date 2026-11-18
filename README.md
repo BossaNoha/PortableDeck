@@ -74,6 +74,8 @@ errors use `invalid_command`; absent approvals use `confirmation_not_required`.
 Score and pot confirmation actions accept only boolean `approved` values;
 missing/non-boolean decisions return `invalid_confirmation` without changing
 game state, Undo or checkpoints. Direct model calls reject these values too.
+`Game.request_point(delta)` accepts only integer `-1` or `1`; invalid values
+raise `ActionValidationError` with code `invalid_score_change` before mutation.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

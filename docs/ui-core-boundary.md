@@ -9,6 +9,13 @@ return `invalid_confirmation`; direct model calls raise the corresponding
 required. Invalid decisions leave state, Undo, events and checkpoints unchanged.
 True/False approvals retain existing effects and can be undone.
 
+`Game.request_point(delta)` also validates the score change before any effects
+or option checks: only integer -1/1 are accepted, excluding booleans and floats.
+Invalid values raise `ActionValidationError` (`invalid_score_change`) and leave
+direct/transactional calls, Undo and checkpoints untouched. Named controller
+actions still supply fixed +1/-1 values; no new command parameter was added.
+Tests cover valid changes with/without confirmation, Undo and disabled reduction.
+
 The three-player lifecycle regression now covers draw, face-down play, concurrent
 score/pot requests, first-voter approvals, saving pending decisions, loading into
 the CLI, blocking premature actions, final approvals, persisted Undo, reloading
