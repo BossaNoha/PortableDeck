@@ -576,6 +576,14 @@ render this shared data without preparing their own card ordering.
 
 ### Shared session status
 
+`portable_deck.core.chipoptions.build_chip_options(game)` prepares immutable
+chip input data: player IDs/names and account references, unique accounts,
+current player, bet bounds, default purchase amount, pot and shared action
+availability. Shared team balances are represented once per account; player
+rows reference that account. Chip dialogs consume this snapshot rather than
+live Player objects. Submitted amounts and recipients are still revalidated
+by session commands against the current state.
+
 Pile dialogs use `portable_deck.core.pileoptions.discard_destinations(game, viewer)`
 for shared and the viewer's personal discard destinations, and
 `insertion_options(game, "draw")` or `"discard"` for insertion counts and ranges.

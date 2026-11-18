@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 
 from .chipdialogs import ask_chip_purchase, ask_pot_recipient
-from ..core.actionavailability import action_availability
+from ..core.chipoptions import build_chip_options
 
 
 def session_action(method):
@@ -21,7 +21,7 @@ class ChipBankUI:
     def __init__(self, game_gui, parent):
         self.gui = game_gui
         self.buttons = []
-        if not self.gui.game.enable_chip_accounts:
+        if not build_chip_options(self.gui.game).enabled:
             return
         self.buy_button = tk.Button(parent, text="Buy Chips", command=self.buy_chips)
         self.play_button = tk.Button(parent, text="Play Chips", command=self.play_chips)
@@ -34,13 +34,12 @@ class ChipBankUI:
     @session_action
     def buy_chips(self):
         game = self.gui.game
-        if not self._check_available("buy_chips"):
+        options = build_chip_options(game)
+        if not self._check_available("buy_chips", options):
             return
         purchase = ask_chip_purchase(
             self.gui.root,
-            game.players,
-            game.current_player_index,
-            max(1, game.minimum_bet),
+            options,
         )
         if purchase is None:
             return
@@ -51,19 +50,18 @@ class ChipBankUI:
                 "Purchase failed", "Could not add chips to this account.", parent=self.gui.root
             )
             return
-        player_name = game.players[player_index].name
 
     @session_action
     def play_chips(self):
         game = self.gui.game
-        if not self._check_available("play_chips"):
+        options = build_chip_options(game)
+        if not self._check_available("play_chips", options):
             return
-        balance = game.chip_balance(game.current_player_index)
         amount = simpledialog.askinteger(
             "Play Chips",
-            f"How many chips do you want to put in the pot?\nMinimum bet: {game.minimum_bet}",
-            minvalue=game.minimum_bet,
-            maxvalue=balance,
+            f"How many chips do you want to put in the pot?\nMinimum bet: {options.minimum_bet}",
+            minvalue=options.minimum_bet,
+            maxvalue=options.maximum_bet,
             parent=self.gui.root,
         )
         if amount is None:
@@ -76,10 +74,11 @@ class ChipBankUI:
     @session_action
     def take_pot(self):
         game = self.gui.game
-        if not self._check_available("take_pot"):
+        options = build_chip_options(game)
+        if not self._check_available("take_pot", options):
             return
         recipient_index = ask_pot_recipient(
-            self.gui.root, game.players, game.current_player_index, game.chip_pot
+            self.gui.root, options
         )
         if recipient_index is None:
             return
@@ -88,8 +87,8 @@ class ChipBankUI:
             messagebox.showwarning("Could not take pot", message, parent=self.gui.root)
             return
 
-    def _check_available(self, action):
-        available = action_availability(self.gui.game, action)
+    def _check_available(self, action, options):
+        available = getattr(options, action)
         if not available.allowed:
             messagebox.showwarning("Action unavailable", available.reason, parent=self.gui.root)
         return available.allowed
@@ -97,7 +96,7 @@ class ChipBankUI:
     def update_action_buttons(self):
         if not self.buttons:
             return
-        game = self.gui.game
+        options = build_chip_options(self.gui.game)
         for button, action in ((self.buy_button, "buy_chips"), (self.play_button, "play_chips"),
                                (self.take_button, "take_pot")):
-            button.config(state="normal" if action_availability(game, action).allowed else "disabled")
+            button.config(state="normal" if getattr(options, action).allowed else "disabled")

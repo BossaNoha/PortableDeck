@@ -19,13 +19,13 @@ flow. All 223 tests passed; no application-code fix was required in this audit.
 | Area | Current evidence | Next bounded step |
 | --- | --- | --- |
 | Save application services | Checkpoints, named writes, rename/delete and metadata catalog reads now use headless application services. `SessionBrowser` renders entries and collects user decisions. | Basic save management is separated; add services only for concrete new client needs. |
-| Chip input data | `ui/chipbankui.py` still passes model Player objects to chip dialogs and reads current balances/minimums. Validation is shared, but inputs are not fully projection-based. | Pass existing immutable status/player summaries to chip dialogs and prepare amount limits without live Player references. |
+| Chip input data | `core/chipoptions.py` now supplies immutable players/accounts, amount bounds, pot and availability to chip controls/dialogs. | Input separation is complete; retain execution revalidation as clients evolve. |
 | Client lifecycle/capabilities | `GameGUI` owns Game, core execution and client state; `GameGUIBuilder` uses many rule flags to construct widgets. CLI exercises a subset of actions and does not offer saves or every dialog. | Define a client-facing application facade only after services and concrete client needs are clear; do not add a snapshot per widget flag. |
 | Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
 
-Recommendation: save-service extraction is complete; chip dialog inputs are
-the next bounded task, without touching card interaction
-or drag-and-drop. Authentication, actor authorization, revision checks, transport
+Save services and chip dialog inputs are now separated. Remaining local-client
+work concerns lifecycle/capabilities and result completeness, rather than card
+interaction or drag-and-drop. Authentication, actor authorization, revision checks, transport
 and concurrency remain a future online milestone, separate from replacing the
 local GUI. Existing player snapshots alone do not implement those guarantees.
 
@@ -419,3 +419,17 @@ files remain error entries and do not prevent healthy rows from being listed.
 This is metadata inspection, not full Game validation or card data projection.
 Tests cover ordering, missing archives, malformed JSON/metadata/UTF-8, missing
 files, access errors, immutable rows, browser rendering and headless execution.
+
+### Immutable chip dialog inputs
+
+`build_chip_options` composes existing status and availability APIs into player
+IDs/names, account references and unique account balances, current bet bounds,
+purchase default and pot. Controls and modal purchase/pot dialogs no longer
+read live players or model balance/minimum fields. Menu positions map back to
+explicit player IDs, so filtered or reordered option lists do not change targets.
+
+Session execution continues to validate current recipients, amounts and rules
+after input. Tests cover team accounts, disabled resources, insufficient chips,
+confirmation blocking, immutable snapshots and reduced balances during input.
+Both purchase and pot dialogs were also exercised with actual Tk widgets and
+automated confirmation, without saving or changing any user game.
