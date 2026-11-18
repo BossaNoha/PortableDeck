@@ -142,6 +142,16 @@ flows preserve callbacks/closing only after success. Tests cover independent
 prepared data, file format, invalid definitions, overwrite, failed replacement,
 temporary-file cleanup, GUI cancellation/failure/success and headless use.
 
+The deck lifecycle integration regression now chains definition creation,
+editing, duplication, export/import, catalog reads and application new-game
+creation. Editing/removing the external source leaves an existing game's
+definition/state unchanged; session load, Undo and restart retain that original
+definition. A temporary native Tk probe also passed real editor/library widgets,
+scripted save/edit confirmations, canceled dialogs, callback/selection updates,
+transfers and starting a game from the selected import. Probe files/windows
+were removed. This is automated GUI verification, not an exhaustive manual
+review. No application-code fix was needed.
+
 Game-changing card, chip, score, turn and player interaction actions in
 `portable_deck/ui` now execute through `SessionController`. Model methods remain
 available to core code. Selection and widget updates are local client state.
