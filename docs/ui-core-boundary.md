@@ -369,8 +369,8 @@ It returns None or an error string compatible with the session checkpoint
 callback. The main menu now only adapts its settings and view metadata.
 
 Retention includes the latest file; unchanged content does not add an archived
-version. Decreasing retention also prunes older versions. Existing atomic core
-serialization is reused. A failed latest-file replacement preserves the previous
+version. Decreasing retention also prunes older versions. Atomic session storage
+is reused. A failed latest-file replacement preserves the previous
 checkpoint; errors archiving or pruning are reported after the latest save may
 already have succeeded, matching existing behavior. Tests cover disabled saves,
 invalid limits, unchanged content, rotation, metadata, write/cleanup failures
@@ -483,3 +483,19 @@ Remaining draw order and Undo remain separate session state. Only legacy saves
 with both definition fields absent fall back to the external file; incomplete
 or invalid embedded definitions are rejected. Tests cover changed, deleted and
 invalid source files, legacy fallback, Undo and independent restart definitions.
+
+### Save data and file storage
+
+`core.gamesession.export_session` returns a deep copy of resumable game data;
+`restore_session` copies its input and performs restoration/legacy state
+normalization without opening files. Neither operation includes named-save
+association or client state. Embedded deck definitions are required at this
+boundary. This full private save state is not a player-facing view.
+
+`app.sessionstorage` owns JSON encoding/decoding, atomic replacement/cleanup,
+optional client state, named-save association and external-deck resolution for
+legacy saves. Existing `Game.save_session` and `Game.load_session` remain lazy
+compatibility delegates to this application service. The on-disk shape and
+existing GUI/CLI behavior are unchanged. Tests verify a JSON round trip with
+file access blocked, pending confirmations, draw order, Undo, independent
+mutable state, and the existing storage failure and legacy-save cases.

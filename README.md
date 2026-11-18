@@ -34,6 +34,12 @@ Loading and restarting use this embedded definition without opening the original
 deck file. Editing a deck file affects new games only. Older saves without an
 embedded definition still require their external deck file.
 
+`core.gamesession.export_session(game)` and `restore_session(Game, data)` convert
+between a game and independent save data without file access. JSON files,
+atomic writes, legacy external-deck lookup and named-save association belong to
+`app.sessionstorage`. Existing `Game.save_session` / `Game.load_session` methods
+delegate to this service for compatibility; the save format is unchanged.
+
 A small hotseat client exercises the shared core without Tkinter:
 
 ```bash

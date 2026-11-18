@@ -1,13 +1,12 @@
 """Serialization helpers for saving and restoring game sessions."""
-import json
-import os
+import copy
 
 from .deck import Deck
 from .player import Player
 
 
-def save_session(game, path, *, client_state=None):
-    """Save the complete state needed to continue a game later."""
+def export_session(game):
+    """Return independent data containing the complete resumable game state."""
     state = {
         "enable_team_pile_access": game.enable_team_pile_access,
         "enable_dealer_pile_access": game.enable_dealer_pile_access,
@@ -94,34 +93,17 @@ def save_session(game, path, *, client_state=None):
         "pending_pot_withdrawal": game.pending_pot_withdrawal,
         "undo_stack": game.undo_stack,
     }
-    if client_state is not None:
-        state["client_state"] = client_state
-    directory = os.path.dirname(os.path.abspath(path))
-    os.makedirs(directory, exist_ok=True)
-    temporary_path = path + ".tmp"
-    try:
-        with open(temporary_path, "w", encoding="utf-8") as session_file:
-            json.dump(state, session_file, indent=2)
-        os.replace(temporary_path, path)
-    except Exception:
-        if os.path.exists(temporary_path):
-            os.remove(temporary_path)
-        raise
+    return copy.deepcopy(state)
 
 
-def load_session(game_class, path):
-    """Load a saved game and return an initialized instance of game_class."""
-    with open(path, "r", encoding="utf-8") as session_file:
-        state = json.load(session_file)
-
+def restore_session(game_class, state):
+    """Restore independent game state without accessing session or deck files."""
+    state = copy.deepcopy(state)
     game = game_class.__new__(game_class)
     game.enable_table = state.get("enable_table", True)
     game.enable_discard_pile = state.get("enable_discard_pile", True)
-    if "deck_types" in state or "deck_cards" in state:
-        original_deck = {"types": state.get("deck_types"), "cards": state.get("deck_cards")}
-        game.deck = Deck.from_definition(original_deck, path=state.get("deck_path"))
-    else:
-        game.deck = Deck(state["deck_path"])
+    original_deck = {"types": state.get("deck_types"), "cards": state.get("deck_cards")}
+    game.deck = Deck.from_definition(original_deck, path=state.get("deck_path"))
     game.deck.flat_deck = state["remaining_deck"]
     game.players = []
     for saved_player in state["players"]:
@@ -253,6 +235,4 @@ def load_session(game_class, path):
     game.configuration_info = state.get("configuration_info", {"name": "Unknown", "modified": None})
     game.apply_feature_settings()
     game.ensure_initial_log()
-    if os.path.basename(path).lower() != "last_session.json" and os.path.basename(os.path.dirname(os.path.abspath(path))).lower() != "autosaves":
-        game.named_save_path = os.path.abspath(path)
     return game

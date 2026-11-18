@@ -61,7 +61,7 @@ class CheckpointTests(unittest.TestCase):
             save_checkpoint(g, latest)
             before = latest.read_bytes()
             g.session.execute("draw_card")
-            with patch("portable_deck.core.gamesession.os.replace", side_effect=OSError("Disk full")):
+            with patch("portable_deck.app.sessionstorage.os.replace", side_effect=OSError("Disk full")):
                 error = save_checkpoint(g, latest)
             self.assertEqual(error, "Disk full")
             self.assertEqual(latest.read_bytes(), before)

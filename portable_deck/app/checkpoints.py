@@ -7,7 +7,7 @@ def save_checkpoint(game, latest_path, *, enabled=True, count=5, client_state=No
     """Save latest state and retain count versions including the latest file.
 
     Return None on success/disabled autosave, otherwise an error string suitable
-    for SessionController.checkpoint_callback. The core serializer performs the
+    for SessionController.checkpoint_callback. The session storage service performs the
     atomic latest-file write; an archive/cleanup error does not undo that write.
     """
     if not enabled:

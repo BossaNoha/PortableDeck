@@ -58,7 +58,7 @@ class NamedSaveTests(unittest.TestCase):
             save_named_session(g, path)
             before = path.read_bytes()
             g.named_save_path = "previous.json"
-            with patch("portable_deck.core.gamesession.os.replace", side_effect=OSError("Disk full")):
+            with patch("portable_deck.app.sessionstorage.os.replace", side_effect=OSError("Disk full")):
                 with self.assertRaises(OSError):
                     save_named_session(g, path, overwrite=True)
             self.assertEqual(path.read_bytes(), before)

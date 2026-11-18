@@ -333,10 +333,10 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
             json.dump(self.discard_pile, f, indent=2)
 
     def save_session(self, path, *, client_state=None):
-        from .gamesession import save_session
+        from ..app.sessionstorage import save_session
         return save_session(self, path, client_state=client_state)
 
     @classmethod
     def load_session(cls, path):
-        from .gamesession import load_session
+        from ..app.sessionstorage import load_session
         return load_session(cls, path)
