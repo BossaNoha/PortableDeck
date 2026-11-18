@@ -43,6 +43,8 @@ GUI load/resume, CLI load, named saves, table-view saves and checkpoints call
 the application service directly.
 GUI load/resume uses `load_session_with_view(Game, path)` to restore the game
 and its separate table view from one file read. CLI still loads game state only.
+Discard export on desktop exit uses `app.discardstorage.save_discard_pile`,
+preserving the existing JSON list format and save-on-exit setting.
 
 A small hotseat client exercises the shared core without Tkinter:
 

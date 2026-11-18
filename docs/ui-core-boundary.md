@@ -511,3 +511,15 @@ Named-save, checkpoint and table-view services likewise use
 entry points only. Cancellation/reserved-path tests assert that the storage
 service is not called; the existing round-trip, client-state, retention and
 write-failure tests cover the application routes.
+
+### Discard export on exit
+
+`app.discardstorage.save_discard_pile` owns directory creation and UTF-8 JSON
+writing of the existing shared-discard list. Desktop exit calls this service
+directly when discard is enabled and `save_discard_on_exit` is selected.
+`Game.save_discard_pile` remains a compatibility delegate; Game no longer
+performs direct file writes. A canceled/failed requested session save still
+prevents export and exit. Discard write errors still show a dialog before the
+application closes. Tests cover format/state preservation, both option flags,
+cancellation and write failure. This remains a separate export, not a session
+save or an atomic replacement.

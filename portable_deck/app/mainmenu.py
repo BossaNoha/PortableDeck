@@ -13,6 +13,7 @@ from .sessionview import TableViewState
 from .checkpoints import save_checkpoint
 from .newgame import create_game
 from .sessionstorage import load_session_with_view
+from .discardstorage import save_discard_pile
 
 SAVES_DIR = os.path.join(BASE_DIR, "saves")
 AUTOSAVE_PATH = os.path.join(SAVES_DIR, "last_session.json")
@@ -147,9 +148,9 @@ class MainMenu:
     def exit_to_desktop(self, game, should_save):
         if should_save and not self.save_manager.save_session(game):
             return
-        if game.enable_discard_pile and self.settings["save_discard_on_exit"] and hasattr(game, "save_discard_pile"):
+        if game.enable_discard_pile and self.settings["save_discard_on_exit"]:
             try:
-                game.save_discard_pile(DISCARD_PATH)
+                save_discard_pile(game, DISCARD_PATH)
             except OSError as error:
                 messagebox.showerror("Could not save", str(error), parent=self.root)
         self.root.destroy()

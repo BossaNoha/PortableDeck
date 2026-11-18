@@ -2,7 +2,6 @@
 from .gamelog import GameLog
 from .deck import Deck
 from .player import Player
-import json
 from .gamechipactions import ChipBankActions
 from .gametable import GameTableActions
 from .gamescoring import GameScoringActions
@@ -327,10 +326,8 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         return round_ended, cleared_count
 
     def save_discard_pile(self, path):
-        import os
-        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-        with open(path, "w") as f:
-            json.dump(self.discard_pile, f, indent=2)
+        from ..app.discardstorage import save_discard_pile
+        return save_discard_pile(self, path)
 
     def save_session(self, path, *, client_state=None):
         from ..app.sessionstorage import save_session
