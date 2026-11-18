@@ -20,7 +20,7 @@ flow. All 223 tests passed; no application-code fix was required in this audit.
 | --- | --- | --- |
 | Save application services | Checkpoints, named writes, rename/delete and metadata catalog reads now use headless application services. `SessionBrowser` renders entries and collects user decisions. | Basic save management is separated; add services only for concrete new client needs. |
 | Chip input data | `core/chipoptions.py` now supplies immutable players/accounts, amount bounds, pot and availability to chip controls/dialogs. | Input separation is complete; retain execution revalidation as clients evolve. |
-| Client lifecycle/capabilities | GUI New game delegates to headless `app/newgame.py`. CLI startup and restart retain separate paths. `GameGUI` still owns Game and client state; widget construction reads rule flags. | Align remaining startup paths before defining a broader client facade; do not add a snapshot per widget flag. |
+| Client lifecycle/capabilities | GUI and CLI New game delegate to `app/newgame.py`; restart retains its existing path. `GameGUI` still owns Game and client state; widget construction reads rule flags. | Review restart before defining a broader client facade; do not add a snapshot per widget flag. |
 | Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
 
 Save services and chip dialog inputs are now separated. Remaining local-client
@@ -447,3 +447,11 @@ load/start, card conservation, custom/default names, teams/resources, metadata,
 invalid/insufficient decks, menu failure handling and use outside the project
 working directory without Tkinter. CLI startup and restart are intentionally
 separate follow-ups.
+
+CLI startup now also uses the shared new-game service, mapping command options
+to settings without constructing/dealing Game independently. Explicit CLI deck
+paths are made absolute at the client boundary to preserve their existing
+working-directory interpretation. Loading saved sessions is unchanged. Tests
+cover CLI parameter mapping, confirmation defaults, invalid setup and headless
+startup with a deck relative to a different working directory. Restart remains
+the next separate lifecycle task.

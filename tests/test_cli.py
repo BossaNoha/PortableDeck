@@ -5,12 +5,57 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from portable_deck.cli import CLIClient, run_cli
+from portable_deck.cli import CLIClient, run_cli, main
+from portable_deck.app.newgame import create_game
 from portable_deck.core.game import Game
 
 
 class CLITests(unittest.TestCase):
+    def test_new_cli_games_use_shared_creation_with_correct_rules_and_deal(self):
+        for confirmations in (False, True):
+            with self.subTest(confirmations=confirmations), patch(
+                    "portable_deck.cli.create_game", wraps=create_game) as create, patch(
+                    "portable_deck.cli.run_cli", return_value=0) as run:
+                args = ["--players", "3", "--hand", "2"] + (["--confirmations"] if confirmations else [])
+                self.assertEqual(main(args), 0)
+                create.assert_called_once()
+                game = run.call_args.args[0]
+                self.assertEqual([len(p.hand) for p in game.players], [2, 2, 2])
+                self.assertEqual(len(game.deck.flat_deck), 46)
+                self.assertEqual(game.score_enabled, confirmations)
+                self.assertEqual(game.enable_chip_accounts, confirmations)
+                self.assertEqual(game.require_point_confirmation, confirmations)
+                self.assertEqual(game.require_pot_withdrawal_confirmation, confirmations)
+                self.assertTrue(game.enable_undo)
+                self.assertEqual(game.game_log, ["Player1's turn starts."])
+
+    def test_invalid_cli_setup_stops_before_command_loop(self):
+        with patch("portable_deck.cli.run_cli") as run, patch("sys.stderr", new=io.StringIO()):
+            with self.assertRaises(SystemExit) as error:
+                main(["--players", "0"])
+            self.assertEqual(error.exception.code, 2)
+            run.assert_not_called()
+
+    def test_cli_relative_deck_path_keeps_working_directory_semantics(self):
+        with tempfile.TemporaryDirectory() as folder:
+            deck = Path(folder) / "local.json"
+            deck.write_text(json.dumps({"types": ["Local"], "cards": [["A", "B", "C"]]}))
+            repo = str(Path(__file__).resolve().parents[1])
+            script = ("import sys; sys.path.insert(0,sys.argv[1]); "
+                      "from portable_deck.cli import main; "
+                      "main(['--deck','local.json','--players','2','--hand','1','--json']); "
+                      "assert 'tkinter' not in sys.modules")
+            result = subprocess.run([sys.executable, "-B", "-c", script, repo], cwd=folder,
+                                    input="show\nquit\n", capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            records = [json.loads(line) for line in result.stdout.splitlines()]
+            view = next(record["view"] for record in records if record["type"] == "view")
+            self.assertEqual(view["status"]["draw_count"], 1)
+            self.assertTrue(view["hands"]["hands"][0]["cards"][0]["card"].endswith(" of Local"))
+            self.assertEqual(list(Path(folder).iterdir()), [deck])
+
     def test_json_lines_expose_codes_and_public_results_only(self):
         g = self.game()
         output = io.StringIO()

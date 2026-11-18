@@ -21,8 +21,9 @@ New games from application settings can be created without Tkinter using
 settings copy, resolves the deck path from the project, prepares configuration
 metadata and deals the starting hands once. It returns a started Game or raises
 a validation/IO error, without saving or changing the supplied dictionary.
-The GUI New game action uses this service; CLI startup and restart still retain
-their existing paths for now.
+GUI and CLI New game use this service. CLI-relative deck paths retain their
+working-directory meaning; application settings resolve relative paths from
+the project. Restart still retains its existing path for now.
 
 A small hotseat client exercises the shared core without Tkinter:
 

@@ -7,6 +7,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .core.game import Game
+from .app.newgame import create_game
 from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
@@ -166,11 +167,17 @@ def main(argv=None):
         if args.load:
             game = Game.load_session(args.load)
         else:
-            game = Game(args.players, args.deck, enable_undo=True,
-                        score_enabled=args.confirmations, enable_chip_accounts=args.confirmations,
-                        require_point_confirmation=args.confirmations,
-                        require_pot_withdrawal_confirmation=args.confirmations)
-            game.start(args.hand)
+            game = create_game({
+                "num_players": args.players,
+                "cards_per_player": args.hand,
+                # CLI-relative paths keep their existing working-directory meaning.
+                "deck_path": str(Path(args.deck).absolute()),
+                "enable_undo": True,
+                "enable_score_counter": args.confirmations,
+                "enable_chip_accounts": args.confirmations,
+                "require_point_confirmation": args.confirmations,
+                "require_pot_withdrawal_confirmation": args.confirmations,
+            })
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     try:
