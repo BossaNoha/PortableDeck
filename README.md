@@ -95,6 +95,9 @@ Missing folders return an empty catalog without creating directories.
 `app.deckfiles` handles validated import/export, JSON extension completion and
 same-file rejection. Existing destinations require `overwrite=True`; GUI dialogs
 collect consent. Transfers revalidate the source immediately before copying.
+Deck editor saves use `app.deckstorage` for validated definition preparation
+and atomic UTF-8 JSON writes. The editor collects fields and overwrite consent;
+storage failures preserve the previous file and keep the editor open.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

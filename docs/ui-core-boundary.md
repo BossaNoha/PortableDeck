@@ -97,7 +97,7 @@ removed. All 272 tests passed; no application-code change was necessary.
 | Area | Current evidence | Next bounded step |
 | --- | --- | --- |
 | Save application services | Checkpoints, named writes, rename/delete and metadata catalog reads now use headless application services. `SessionBrowser` renders entries and collects user decisions. | Basic save management is separated; add services only for concrete new client needs. |
-| Deck library | `app.deckcatalog` supplies immutable metadata/error entries; `app.deckfiles` owns validated import/export without Tkinter. | Separate editor data preparation and persistence in a later bounded change. |
+| Deck library | Catalog, import/export and editor validation/atomic writes use services without Tkinter. | Editor text parsing/loading still lives in GUI; separate it for concrete client reuse. |
 | Chip input data | `core/chipoptions.py` now supplies immutable players/accounts, amount bounds, pot and availability to chip controls/dialogs. | Input separation is complete; retain execution revalidation as clients evolve. |
 | Client lifecycle/capabilities | GUI/CLI new games and model restart share core construction/start operations. `GameGUI` still owns Game and client state; widget construction reads rule flags. | Define a broader client facade only for concrete replacement-client needs; do not add a snapshot per widget flag. |
 | Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
@@ -131,6 +131,16 @@ or filesystem errors; no widgets are imported. Copies retain source bytes and
 metadata via copy2, with the existing non-atomic write behavior. Tests cover
 extensions, exact copies, invalid/changed source, explicit overwrite, same file,
 IO failures, canceled/declined GUI paths, success callbacks and headless use.
+
+`app.deckstorage.prepare_deck_definition` copies and validates editor data;
+`save_deck_definition` revalidates, enforces explicit overwrite and atomically
+writes UTF-8 JSON with existing indentation, Unicode and trailing newline.
+Failed filesystem operations clean up the temporary file where possible and
+propagate errors. DeckBuilder retains widget parsing, field-specific prompts,
+path dialogs and overwrite consent, then calls storage. New, edit and duplicate
+flows preserve callbacks/closing only after success. Tests cover independent
+prepared data, file format, invalid definitions, overwrite, failed replacement,
+temporary-file cleanup, GUI cancellation/failure/success and headless use.
 
 Game-changing card, chip, score, turn and player interaction actions in
 `portable_deck/ui` now execute through `SessionController`. Model methods remain

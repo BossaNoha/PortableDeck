@@ -1,10 +1,10 @@
 """GUI for creating reusable JSON card decks."""
-import json
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
 from ..core.deck import Deck
+from .deckstorage import prepare_deck_definition, save_deck_definition
 
 
 class DeckBuilder:
@@ -166,9 +166,8 @@ class DeckBuilder:
                 return
             types.append(symbol)
             cards.append(values)
-        data = {"types": types, "cards": cards}
         try:
-            Deck.validate_data(data)
+            data = prepare_deck_definition(types, cards)
         except ValueError as error:
             messagebox.showerror("Invalid deck", str(error), parent=self.window)
             return
@@ -190,19 +189,10 @@ class DeckBuilder:
                 return
             if not path.lower().endswith(".json"):
                 path += ".json"
-        temporary_path = path + ".tmp"
         try:
-            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-            with open(temporary_path, "w", encoding="utf-8") as deck_file:
-                json.dump(data, deck_file, indent=2, ensure_ascii=False)
-                deck_file.write("\n")
-            os.replace(temporary_path, path)
+            # Edit confirmation or the native save dialog obtains consent.
+            path = save_deck_definition(path, data, overwrite=True)
         except OSError as error:
-            if os.path.exists(temporary_path):
-                try:
-                    os.remove(temporary_path)
-                except OSError:
-                    pass
             messagebox.showerror("Could not save deck", str(error), parent=self.window)
             return
         self.on_created(path)
