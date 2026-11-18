@@ -105,6 +105,13 @@ fresh game with the same setup and can keep or reset scores when scoring is on.
 
 ## Saves and checkpoints
 
+Other clients can use `portable_deck.app.checkpoints.save_checkpoint(game, path,
+enabled=True, count=5, client_state=None)` without Tkinter. Retention includes
+the latest checkpoint. The service returns `None` on success or an error string
+and can be attached to `game.session.checkpoint_callback` via a function that
+supplies the destination path. Optional client metadata remains separate from
+the game model.
+
 **Save** creates a named JSON save in `saves/`. The suggested name is
 `sessionX.json`, where `X` is one greater than the largest numbered session save.
 The app asks before replacing an existing save.

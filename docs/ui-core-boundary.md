@@ -18,13 +18,13 @@ flow. All 223 tests passed; no application-code fix was required in this audit.
 
 | Area | Current evidence | Next bounded step |
 | --- | --- | --- |
-| Save/checkpoint application services | `app/savemanager.py` mixes named-file rules, persistence and Tk dialogs. `app/mainmenu.py:checkpoint_game` owns archive rotation; `app/sessionbrowser.py` mixes rename/delete rules with widgets. Core serialization itself is headless. | Extract checkpoint saving/rotation into a GUI-independent application service first. Keep choosing paths, overwrite/delete decisions and error display in clients. |
+| Save application services | Checkpoint saving/rotation now uses headless `app/checkpoints.py`. `app/savemanager.py` still mixes named-file rules, persistence and Tk dialogs; `app/sessionbrowser.py` mixes rename/delete rules with widgets. | Extract named-save operations next. Keep choosing paths, overwrite/delete decisions and error display in clients. |
 | Chip input data | `ui/chipbankui.py` still passes model Player objects to chip dialogs and reads current balances/minimums. Validation is shared, but inputs are not fully projection-based. | Pass existing immutable status/player summaries to chip dialogs and prepare amount limits without live Player references. |
 | Client lifecycle/capabilities | `GameGUI` owns Game, core execution and client state; `GameGUIBuilder` uses many rule flags to construct widgets. CLI exercises a subset of actions and does not offer saves or every dialog. | Define a client-facing application facade only after services and concrete client needs are clear; do not add a snapshot per widget flag. |
 | Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
 
-Recommendation: start with the checkpoint service extraction. It makes another
-part of the desktop lifecycle reusable without touching card interaction or
+Recommendation: checkpoint extraction is complete; named-save operations are
+the next bounded application-service task, without touching card interaction or
 drag-and-drop. Authentication, actor authorization, revision checks, transport
 and concurrency remain a future online milestone, separate from replacing the
 local GUI. Existing player snapshots alone do not implement those guarantees.
@@ -360,3 +360,18 @@ not leave stale targets/limits behind. The next attempt queries current options
 and still executes through the controller. Tests simulate a reduced balance
 during modal input and verify the subsequent amount range, plus JSON-line
 parsing, process entry, private-result exclusion and unchanged text-mode tests.
+
+### Checkpoint application service
+
+`app.checkpoints.save_checkpoint` is independent of Tkinter and takes the game,
+latest path, autosave enabled flag, retention count and optional client metadata.
+It returns None or an error string compatible with the session checkpoint
+callback. The main menu now only adapts its settings and view metadata.
+
+Retention includes the latest file; unchanged content does not add an archived
+version. Decreasing retention also prunes older versions. Existing atomic core
+serialization is reused. A failed latest-file replacement preserves the previous
+checkpoint; errors archiving or pruning are reported after the latest save may
+already have succeeded, matching existing behavior. Tests cover disabled saves,
+invalid limits, unchanged content, rotation, metadata, write/cleanup failures
+and use from a process that never imports Tkinter.
