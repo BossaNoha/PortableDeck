@@ -1,9 +1,41 @@
 import unittest
 import tempfile
 from pathlib import Path
+from unittest.mock import Mock
 from portable_deck.core.game import Game
 
 class FlippingTests(unittest.TestCase):
+    def test_invalid_hand_indices_preserve_reveals_undo_and_checkpoint(self):
+        g = self.game()
+        g.players[0].hand = ["A", "B"]
+        g.players[0].revealed_indices = {0}
+        g.session.checkpoint_callback = saved = Mock(return_value=None)
+        before = g.capture_undo_state()
+        for index in (True, False, 0.0, 1.0, -1, 2, "0", None, [], {}):
+            with self.subTest(index=index):
+                self.assertIsNone(g.flip_hand_card(index))
+                result = g.session.execute("flip_hand_card", card_index=index)
+                self.assertFalse(result.success)
+                self.assertEqual(result.code, "selection_required" if index is None else "invalid_selection")
+                self.assertEqual(g.capture_undo_state(), before)
+                self.assertEqual(g.undo_stack, [])
+                saved.assert_not_called()
+
+    def test_hand_reveal_and_hide_commands_remain_undoable(self):
+        g = self.game()
+        g.players[0].hand = ["A"]
+        g.session.checkpoint_callback = saved = Mock(return_value=None)
+        before = g.capture_undo_state()
+        self.assertTrue(g.session.execute("flip_hand_card", card_index=0).success)
+        self.assertEqual(g.players[0].revealed_indices, {0})
+        self.assertTrue(g.session.execute("flip_hand_card", card_index=0).success)
+        self.assertEqual(g.players[0].revealed_indices, set())
+        self.assertEqual(saved.call_count, 2)
+        self.assertTrue(g.session.undo())
+        self.assertEqual(g.players[0].revealed_indices, {0})
+        self.assertTrue(g.session.undo())
+        self.assertEqual(g.capture_undo_state(), before)
+
     def game(self, **kwargs):
         return Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
                     enable_flipping=True, allow_flip_hand=True, enable_undo=True, **kwargs)

@@ -10,6 +10,50 @@ from portable_deck.ui.cardactions import draw_from_discard
 
 
 class DiscardViewTests(unittest.TestCase):
+    def test_invalid_draw_indices_preserve_all_sources_undo_and_checkpoint(self):
+        for mode in ("top", "any"):
+            g = self.game(mode)
+            g.players[0].hand = ["HAND"]
+            g.players[0].revealed_indices = {0}
+            g.session.checkpoint_callback = saved = Mock(return_value=None)
+            before = g.capture_undo_state()
+            cases = []
+            for key, limit in (("source_index", 4), ("pile_index", 2)):
+                cases += [{key: value} for value in (True, False, 0.0, -1, limit, "1", None, [], {})]
+                cases += [{key: 1, "card_index": value} for value in
+                          (True, False, 0.0, -1, 2, "0", None, [], {})]
+                cases.append({key: 0})  # Empty shared source.
+                if mode == "top":
+                    cases.append({key: 1, "card_index": 0})
+            for parameters in cases:
+                with self.subTest(mode=mode, parameters=parameters):
+                    with self.assertRaises(ValueError):
+                        g.session.draw_from_discard(parameters)
+                    self.assertEqual(g.capture_undo_state(), before)
+                    result = g.session.execute("draw_from_discard", **parameters)
+                    self.assertFalse(result.success)
+                    self.assertEqual(result.code, "invalid_parameters")
+                    self.assertEqual(result.events, ())
+                    self.assertEqual(g.capture_undo_state(), before)
+                    self.assertEqual(g.undo_stack, [])
+                    saved.assert_not_called()
+
+    def test_top_draw_from_shared_or_personal_source_remains_undoable(self):
+        for parameters, expected in (({"pile_index": 1}, "TOP"),
+                                     ({"source_index": 1}, "TOP"),
+                                     ({"source_index": 3}, "PERSONAL")):
+            with self.subTest(parameters=parameters):
+                g = self.game()
+                g.session.checkpoint_callback = saved = Mock(return_value=None)
+                before = g.capture_undo_state()
+                result = g.session.execute("draw_from_discard", **parameters)
+                self.assertTrue(result.success)
+                self.assertEqual(result.value, expected)
+                self.assertEqual(g.players[0].hand, [expected])
+                saved.assert_called_once_with(g)
+                self.assertTrue(g.session.undo())
+                self.assertEqual(g.capture_undo_state(), before)
+
     def game(self, mode="top"):
         g = Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
                  shared_discard_pile_count=2, personal_discard_pile_count=1,

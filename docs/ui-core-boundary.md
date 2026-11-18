@@ -57,6 +57,16 @@ departure and feature checks remain. Tests cover malformed direct targets and
 viewers, controller refusal without Undo/checkpoints, plus existing permission,
 ordering, valid-transfer and Undo regressions.
 
+The final card-index audit found existing pre-mutation type/range validation
+in hand flipping and discard draws. No application-code fix was required.
+Regression tests now cover malformed inputs through direct core helpers and
+controller commands, preserving hand/reveal/pile/log state with no Undo or
+checkpoint. Draw tests include shared/all-source indices, empty sources,
+top-only restrictions and top/any modes. Valid hand reveal/hide and shared or
+personal-source draws retain their existing effects and Undo. This closes the
+scoped card-input audit; broader rule authorization and remote-client security
+remain separate work.
+
 The three-player lifecycle regression now covers draw, face-down play, concurrent
 score/pot requests, first-voter approvals, saving pending decisions, loading into
 the CLI, blocking premature actions, final approvals, persisted Undo, reloading
