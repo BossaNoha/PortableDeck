@@ -61,7 +61,11 @@ def validate_structure(values):
     return settings
 
 
-def validate_settings(values):
+def validate_settings_and_game(values):
+    """Validate settings and return their independent copy and prepared Game.
+
+    The game is constructed but has not shuffled/dealt or started its log yet.
+    """
     if not isinstance(values, dict):
         raise ValueError("The settings file must contain a settings object.")
     settings = validate_structure(values)
@@ -138,6 +142,11 @@ def validate_settings(values):
         raise SettingsValidationError(str(error), "deck_path") from error
     if len(game.deck.flat_deck) < settings["num_players"] * settings["cards_per_player"]:
         invalid("The deck is too small for these settings.", "cards_per_player")
+    return settings, game
+
+
+def validate_settings(values):
+    settings, _game = validate_settings_and_game(values)
     return settings
 
 

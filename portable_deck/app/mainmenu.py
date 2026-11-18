@@ -5,12 +5,13 @@ from tkinter import messagebox
 
 from ..core.game import Game
 from ..ui.guibase import GameGUI
-from .settings import BASE_DIR, DISCARD_PATH, load_settings, resolve_deck_path
+from .settings import BASE_DIR, DISCARD_PATH, load_settings
 from .settingswindow import SettingsWindow
 from .savemanager import SaveManager
 from .sessionbrowser import SessionBrowser
 from .sessionview import TableViewState, load_table_view
 from .checkpoints import save_checkpoint
+from .newgame import create_game
 
 SAVES_DIR = os.path.join(BASE_DIR, "saves")
 AUTOSAVE_PATH = os.path.join(SAVES_DIR, "last_session.json")
@@ -75,88 +76,8 @@ class MainMenu:
         SettingsWindow(self).show_settings()
 
     def play(self):
-        deck_path = resolve_deck_path(self.settings["deck_path"])
         try:
-            names = self.settings.get("player_names", []) if self.settings.get("use_custom_player_names") else None
-            game = Game(
-                self.settings["num_players"],
-                deck_path,
-                enable_cards_visibility=self.settings.get("enable_cards_visibility", False),
-                cards_visibility=self.settings.get("cards_visibility", []),
-                enable_interactions=self.settings.get("enable_interactions", False),
-                interaction_options=self.settings.get("interaction_options", {}),
-                share_team_chips=self.settings.get("share_team_chips", False),
-                share_team_score=self.settings.get("share_team_score", False),
-                enable_team_score=self.settings.get("enable_team_score", False),
-                enable_roles_teams=self.settings.get("enable_roles_teams", False),
-                enable_dealer=self.settings.get("enable_dealer", False),
-                enable_teams=self.settings.get("enable_teams", False),
-                team_count=self.settings.get("team_count", 1),
-                team_names=self.settings.get("team_names", []),
-                player_teams=self.settings.get("player_teams") or None,
-                dealer_players=self.settings.get("dealer_players") or None,
-                limit_table_rows=self.settings.get("limit_table_rows", True),
-                limit_table_columns=self.settings.get("limit_table_columns", True),
-                enable_table_limits=self.settings.get("enable_table_limits", False),
-                max_table_rows=self.settings.get("max_table_rows", 3),
-                max_table_columns=self.settings.get("max_table_columns", 5),
-                enable_table=self.settings.get("enable_table", True),
-                enable_discard_pile=self.settings.get("enable_discard_pile", True),
-                player_names=names,
-                enable_flipping=self.settings.get("enable_flipping", False),
-                allow_flip_hand=self.settings.get("allow_flip_hand", False),
-                allow_flip_table=self.settings.get("allow_flip_table", False),
-                allow_flip_player_cards=self.settings.get("allow_flip_player_cards", False),
-                enable_special_actions=self.settings.get("enable_special_actions", False),
-                allow_insert_draw_deck=self.settings.get("allow_insert_draw_deck", False),
-                allow_insert_discard_pile=self.settings.get("allow_insert_discard_pile", False),
-                enable_player_return=self.settings.get("enable_player_return", False),
-                enable_player_leaving=self.settings.get("enable_player_leaving", False),
-                leave_conditions=self.settings.get("leave_conditions", {}),
-                enable_target_score=self.settings.get("enable_target_score", False),
-                target_score=self.settings.get("target_score", 100),
-                enable_score_warning=self.settings.get("enable_score_warning", False),
-                score_warning=self.settings.get("score_warning", 80),
-                allow_reduce_score=self.settings.get("allow_reduce_score", False),
-                score_enabled=self.settings.get("enable_score_counter", False),
-                require_point_confirmation=self.settings.get("require_point_confirmation", False),
-                allow_take_from_table=self.settings.get("allow_take_from_table", False),
-                allow_move_table_card_to_discard=self.settings.get(
-                    "allow_move_table_card_to_discard", False
-                ),
-                allow_manual_table_cleanup=self.settings.get("allow_manual_table_cleanup", False),
-                clear_table_on_round_end=self.settings.get("clear_table_on_round_end", False),
-                allow_positioned_play=self.settings.get("allow_positioned_play", False),
-                occupied_slot_action=self.settings.get("occupied_slot_action", "invalid"),
-                enable_undo=self.settings.get("enable_undo", False),
-                allow_move_cards_on_table=self.settings.get("allow_move_cards_on_table", False),
-                allow_play_in_front_of_players=self.settings.get(
-                    "allow_play_in_front_of_players", False
-                ),
-                allow_draw_from_discard=self.settings.get("allow_draw_from_discard", False),
-                draw_from_discard_mode=self.settings.get("draw_from_discard_mode", "top"),
-                allow_face_down_table_cards=self.settings.get("allow_face_down_table_cards", False),
-                allow_move_table_sequences=self.settings.get("allow_move_table_sequences", False),
-                allow_recycle_discard_to_deck=self.settings.get("allow_recycle_discard_to_deck", False),
-                shared_discard_pile_count=self.settings.get("shared_discard_pile_count", 1),
-                enable_personal_piles=self.settings.get("enable_personal_piles", False),
-                personal_pile_count=self.settings.get("personal_pile_count", 1),
-                unequal_personal_piles=self.settings.get("unequal_personal_piles", False),
-                enable_team_pile_access=self.settings.get("enable_team_pile_access", False),
-                enable_dealer_pile_access=self.settings.get("enable_dealer_pile_access", False),
-                personal_pile_counts=self.settings.get("personal_pile_counts", []),
-                personal_pile_settings=self.settings.get("personal_pile_settings", []),
-                reset_chip_accounts_on_restart=self.settings.get("reset_chip_accounts_on_restart", True),
-                enable_chip_accounts=self.settings.get("enable_chip_accounts", False),
-                minimum_bet=self.settings.get("minimum_bet", 1),
-                starting_balance=self.settings.get("starting_balance", 100),
-                require_pot_withdrawal_confirmation=self.settings.get(
-                    "require_pot_withdrawal_confirmation", False
-                ),
-            )
-            from .configurationinfo import configuration_info
-            game.configuration_info = configuration_info(self.settings)
-            game.start(self.settings["cards_per_player"])
+            game = create_game(self.settings)
         except (OSError, ValueError, KeyError, TypeError) as error:
             messagebox.showerror("Could not start game", str(error), parent=self.root)
             return

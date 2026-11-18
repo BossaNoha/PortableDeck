@@ -16,6 +16,14 @@ On Windows, `py main.py` can be used if the Python launcher is installed.
 
 ## Development CLI
 
+New games from application settings can be created without Tkinter using
+`portable_deck.app.newgame.create_game(values)`. It validates an independent
+settings copy, resolves the deck path from the project, prepares configuration
+metadata and deals the starting hands once. It returns a started Game or raises
+a validation/IO error, without saving or changing the supplied dictionary.
+The GUI New game action uses this service; CLI startup and restart still retain
+their existing paths for now.
+
 A small hotseat client exercises the shared core without Tkinter:
 
 ```bash
