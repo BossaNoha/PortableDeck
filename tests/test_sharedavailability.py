@@ -51,7 +51,7 @@ class SharedAvailabilityTests(unittest.TestCase):
         g = self.game()
         ui = object.__new__(ChipBankUI)
         ui.gui = Mock(game=g, session=g.session)
-        ui._finish_action = Mock()
+        ui.gui.run_action.side_effect = lambda operation: g.session.run(operation)
         saved = Mock(return_value=None)
         g.session.checkpoint_callback = saved
         def choose_amount(*args, **kwargs):

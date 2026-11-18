@@ -235,3 +235,19 @@ Tests cover turn changes, Undo and snapshot-only rendering. Native Tk mouse
 events verified successive automatic hand drops, a positioned table move and
 Undo. Intermediate standalone refreshes in action helpers remain to be removed
 in a separate change.
+
+### Action refresh coalescing
+
+Gameplay action helpers now change selection and submit commands without
+refreshing panels. The outer `GameGUIActions.run_action` performs the common
+panel/log refresh after the session transaction and checkpoint. Nested GUI
+actions share that final refresh; chip actions use the same wrapper. Direct
+helper callers must use this wrapper to update the interface.
+
+Turn changes without dialogs defer to the final refresh. Score notices and
+approval prompts retain a pre-dialog shared refresh so the current player's
+state is visible when deciding; a second prompt can require another refresh
+after a decision. Standalone initialization and Undo refresh through turn-start
+handling. Selection clicks and view interactions keep their independent refresh
+paths. Tests cover refresh counts, grouped Undo/checkpoints and error recovery;
+native Tk events verified hand/table dragging, Undo, chip status and next turn.

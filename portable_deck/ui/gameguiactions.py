@@ -24,33 +24,32 @@ class GameGUIActions:
 
     def run_action(self, action, *args):
         self.selection.synchronize(build_selection_snapshot(self.game))
-        self.session.run(action, *args)
+        depth = getattr(self, "_action_depth", 0)
+        self._action_depth = depth + 1
+        try:
+            result = self.session.run(action, *args)
+        finally:
+            self._action_depth = depth
+        if depth:
+            return result
         self.render_log()
-        self.selection.synchronize(build_selection_snapshot(self.game))
         self.refresh_session_panels()
         self.update_undo_button()
         self.update_leave_button()
         if hasattr(self, "context_actions"):
             self.context_actions.refresh()
         self.refresh_action_availability()
+        return result
 
     def undo(self):
         if not self.session.undo():
             return
         self.selection.clear()
-        self.hand_frame.update_hand()
-        self.table_frame.update_table()
-        self.status_panel.update_status()
-        self.log_text.config(state="normal")
-        self.log_text.delete("1.0", "end")
-        if self.game.game_log:
-            self.log_text.insert("end", "\n".join(self.game.game_log) + "\n")
-        self.log_text.see("end")
-        self.log_text.config(state="disabled")
         if self.game.active_player_indices():
             for button in self._turn_action_buttons():
                 button.configure(state="normal")
         self.handle_turn_start()
+        self.render_log()
         self.update_point_button()
         self.update_undo_button()
         self.refresh_action_availability()
@@ -100,18 +99,12 @@ class GameGUIActions:
             messagebox.showwarning("No selection", "Select a card in your hand first.", parent=self.root)
             return
         def action():
-            card = execute_value(self.game, "flip_hand_card", card_index=selected)
-            if card is not None:
-                revealed = selected in self.current_player().revealed_indices
-                self.render_log()
-                self.hand_frame.update_hand()
+            execute_value(self.game, "flip_hand_card", card_index=selected)
         self.run_action(action)
 
     def reduce_current_score(self):
         def action():
             _, message = execute_value(self.game, "reduce_score")
-            self.render_log()
-            self.status_panel.update_status()
         self.run_action(action)
         self.update_point_button()
 
@@ -151,14 +144,11 @@ class GameGUIActions:
             player = players[selected[0]].index
             def action():
                 ok, message = execute_value(self.game, "return_player", player_index=player)
-                self.render_log()
                 if ok:
                     dialog.destroy()
                     for button in self._turn_action_buttons():
                         button.configure(state="normal")
                     self.selection.hand_index = None
-                    self.hand_frame.update_hand()
-                    self.status_panel.update_status()
                     self.handle_turn_start()
                     self.update_point_button()
                 else:
@@ -170,31 +160,29 @@ class GameGUIActions:
     def leave_current_player(self):
         def action():
             ok, message = execute_value(self.game, "leave_session")
-            self.render_log()
             if not ok:
                 return
             self.selection.hand_index = None
-            self.hand_frame.update_hand()
-            self.status_panel.update_status()
             if self.game.active_player_indices():
                 self.handle_turn_start()
-                self.render_log()
         self.run_action(action)
 
     def handle_turn_start(self):
         self.update_leave_button()
+        self.selection.table_index = None
+        self.selection.target_position = None
         if not self.game.active_player_indices():
+            if not getattr(self, "_action_depth", 0):
+                self.refresh_session_panels()
             return
         alerts = self.game.score_notifications()
+        needs_point_confirmation = self.game.current_player_must_confirm_point()
+        needs_pot_confirmation = self.game.current_player_must_confirm_pot_withdrawal()
+        if alerts or needs_point_confirmation or needs_pot_confirmation or not getattr(self, "_action_depth", 0):
+            self.refresh_session_panels()
         if alerts:
             messagebox.showinfo(alerts[0].title, "\n\n".join(notice.message for notice in alerts), parent=self.root)
         self.session.acknowledge_score_notifications(alerts)
-        self.refresh_session_panels()
-        self.selection.table_index = None
-        self.selection.target_position = None
-        self.table_frame.update_table()
-        needs_point_confirmation = self.game.current_player_must_confirm_point()
-        needs_pot_confirmation = self.game.current_player_must_confirm_pot_withdrawal()
         if not needs_point_confirmation and not needs_pot_confirmation:
             self.update_chip_action_buttons()
             return
@@ -205,15 +193,17 @@ class GameGUIActions:
             notice = self.game.score_confirmation_notification()
             approved = messagebox.askyesno(notice.title, notice.message, parent=self.root)
             _, result = execute_value(self.game, "confirm_point", approved=approved)
-            self.render_log()
-            self.refresh_session_panels()
+            if not getattr(self, "_action_depth", 0) or self.game.pot_confirmation_notification() is not None:
+                self.render_log()
+                self.refresh_session_panels()
 
         notice = self.game.pot_confirmation_notification()
         if notice is not None:
             approved = messagebox.askyesno(notice.title, notice.message, parent=self.root)
             _, result = execute_value(self.game, "confirm_pot", approved=approved)
-            self.render_log()
-            self.refresh_session_panels()
+            if not getattr(self, "_action_depth", 0):
+                self.render_log()
+                self.refresh_session_panels()
 
         for button in self._turn_action_buttons():
             button.config(state="normal")

@@ -67,4 +67,5 @@ class DiscardViewTests(unittest.TestCase):
         draw_from_discard(g, hand, log, status, None)
         self.assertEqual(g.players[0].hand, ["PERSONAL"])
         self.assertEqual(g.personal_discard_piles[1][0], [])
-        hand.update_hand.assert_called_once()
+        hand.update_hand.assert_not_called()
+        status.update_status.assert_not_called()

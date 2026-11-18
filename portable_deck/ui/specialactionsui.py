@@ -46,8 +46,5 @@ class SpecialActionsUI:
             if not result.success:
                 messagebox.showwarning("Cannot place card", result.message, parent=gui.root)
                 return
-            gui.render_log()
             gui.selection.hand_index = None
-            gui.hand_frame.update_hand()
-            gui.status_panel.update_status()
         gui.run_action(action)

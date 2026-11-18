@@ -69,14 +69,8 @@ class InteractionsUI:
                 result = outcome.value
                 name = next(item.name for item in options.targets if item.index == result["target"])
                 if action.startswith("peek_"):
-                    gui.render_log()
                     messagebox.showinfo(f"{name}'s cards — private view", "\n".join(result["cards"]), parent=dialog)
-                else:
-                    gui.render_log()
                 gui.selection.hand_index = None
-                gui.hand_frame.update_hand()
-                gui.status_panel.update_status()
-                gui.update_chip_action_buttons()
                 dialog.destroy()
             gui.run_action(execute)
         tk.Button(dialog, text="Perform", command=perform).pack(side="right", padx=10, pady=8)

@@ -11,9 +11,7 @@ from ..core.actionavailability import action_availability
 def session_action(method):
     @wraps(method)
     def wrapped(self, *args, **kwargs):
-        result = self.gui.session.run(method, self, *args, **kwargs)
-        self.gui.render_log()
-        return result
+        return self.gui.run_action(lambda: method(self, *args, **kwargs))
     return wrapped
 
 
@@ -54,7 +52,6 @@ class ChipBankUI:
             )
             return
         player_name = game.players[player_index].name
-        self._finish_action()
 
     @session_action
     def play_chips(self):
@@ -75,7 +72,6 @@ class ChipBankUI:
         if not succeeded:
             messagebox.showwarning("Could not play chips", message, parent=self.gui.root)
             return
-        self._finish_action()
 
     @session_action
     def take_pot(self):
@@ -91,21 +87,12 @@ class ChipBankUI:
         if not succeeded:
             messagebox.showwarning("Could not take pot", message, parent=self.gui.root)
             return
-        self._finish_action()
 
     def _check_available(self, action):
         available = action_availability(self.gui.game, action)
         if not available.allowed:
             messagebox.showwarning("Action unavailable", available.reason, parent=self.gui.root)
         return available.allowed
-
-    def _finish_action(self):
-        self.gui.render_log()
-        self.gui.status_panel.update_status()
-        self.gui.update_undo_button()
-        self.update_action_buttons()
-        self.gui.update_leave_button()
-        self.gui.refresh_action_availability()
 
     def update_action_buttons(self):
         if not self.buttons:

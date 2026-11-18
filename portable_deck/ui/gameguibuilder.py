@@ -284,9 +284,6 @@ class GameGUIBuilder:
         self.table_frame.on_drag_bind = lambda widget, index: self.card_drag.bind(widget, "table", index)
 
         # Initialize GUI
-        self.hand_frame.update_hand()
-        self.refresh_session_panels()
-        self.render_log()
         self.session.run(self.handle_turn_start)
         self.update_point_button()
         self.update_undo_button()

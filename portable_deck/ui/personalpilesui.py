@@ -42,16 +42,13 @@ class PersonalPilesUI:
                       command=lambda o=owner, p=pile: self.gui.run_action(self.take, o, p)).pack(side="right")
         self.scroll_area.schedule_resize()
 
-    def refresh_hand(self):
+    def clear_hand_selection(self):
         self.gui.selection.hand_index = None
-        self.gui.hand_frame.update_hand()
-        self.gui.status_panel.update_status()
-        self.gui.render_log()
 
     def take(self, owner, pile):
         result = self.gui.game.session.execute("take_personal_pile", owner=owner, pile_index=pile)
         if result.success:
-            self.refresh_hand()
+            self.clear_hand_selection()
         else:
             messagebox.showwarning("Cannot take card", result.message, parent=self.gui.root)
 
@@ -87,7 +84,7 @@ class PersonalPilesUI:
             def action():
                 result = game.session.execute("play_personal_pile", card_index=index, owner=owner, pile_index=pile)
                 if result.success:
-                    self.refresh_hand()
+                    self.clear_hand_selection()
                     dialog.destroy()
                 else:
                     messagebox.showwarning("Cannot play card", result.message, parent=dialog)
