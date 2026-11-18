@@ -267,3 +267,18 @@ remote caller. New threshold notices created by approval remain pending for the
 next turn-entry notification pass, matching the prior behavior. Tests cover
 concurrent pending requests, GUI dialog order, approval/denial, explicit notice
 acknowledgment, inactive players and Undo restoration.
+
+### Development CLI client
+
+`python -m portable_deck.cli` exercises the core through a second client. It
+constructs or loads Game at startup, uses the combined player presentation view
+for `show`, the turn-entry query for ordered prompts and the session controller
+for gameplay, acknowledgments and Undo. It does not read player/card collections
+or pending-request dictionaries. Card/player command input is one-based and is
+translated at the client boundary.
+
+Command output uses public ActionResult messages; internal event/value payloads
+are not printed. There is no persistence callback or save command, so loaded
+files remain untouched. Tests cover commands, invalid inputs, hidden draw
+results, approval order and process execution without Tkinter. This is a local
+development hotseat client, not network transport or an authentication layer.

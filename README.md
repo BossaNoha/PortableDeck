@@ -14,6 +14,26 @@ python main.py
 
 On Windows, `py main.py` can be used if the Python launcher is installed.
 
+## Development CLI
+
+A small hotseat client exercises the shared core without Tkinter:
+
+```bash
+python -m portable_deck.cli --players 2 --hand 3
+python -m portable_deck.cli --confirmations
+python -m portable_deck.cli --load saves/session1.json
+```
+
+Commands are `show`, `draw`, `play CARD`, `end`, `undo`, `pending`, `approve`,
+`reject`, `point`, `bet AMOUNT`, `pot PLAYER`, `help` and `quit`. Card and player
+numbers start at 1. `show` prints the current player's combined view as JSON;
+action output prints public messages without internal events or private draw
+results. `pending` displays the next core-ordered approval request. Score notices
+are acknowledged after display. `--confirmations` enables score/chip approvals
+for a new game; loaded sessions retain their saved rules. EOF also exits.
+This development client has no save command or autosave and does not overwrite
+a loaded session file. The regular `python main.py` GUI entry point is unchanged.
+
 ## Main menu
 
 - **New game** starts a new game using the current settings.
