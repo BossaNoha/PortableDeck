@@ -1,6 +1,7 @@
 """Optional player-to-player actions with model-level permission checks."""
 import random
 from dataclasses import dataclass
+from .actionerrors import ActionValidationError
 
 INTERACTIONS = {
     "take_random_card": "Take a random card from a chosen player",
@@ -13,21 +14,26 @@ INTERACTIONS = {
 
 
 def interaction_target_reason(game, action, target):
+    error = interaction_target_error(game, action, target)
+    return str(error) if error else ""
+
+
+def interaction_target_error(game, action, target):
     if (not isinstance(target, int) or isinstance(target, bool)
             or not 0 <= target < len(game.players) or target == game.current_player_index):
-        return "Choose another player."
+        return ActionValidationError("invalid_target", "Choose another player.")
     if target in game.left_players:
-        return "This player has left the session."
+        return ActionValidationError("target_left", "This player has left the session.")
     if action in {"take_random_card", "discard_random_card", "peek_random_card", "peek_all_cards"} and not game.players[target].hand:
-        return "The chosen player has no cards."
+        return ActionValidationError("target_hand_empty", "The chosen player has no cards.")
     if action == "steal_chips":
         if game.chip_account_index(target) == game.chip_account_index(game.current_player_index):
-            return "Both players share the same chip account."
+            return ActionValidationError("shared_chip_account", "Both players share the same chip account.")
         if game.pending_pot_withdrawal is not None:
-            return "Wait for the pending pot withdrawal to finish."
+            return ActionValidationError("pot_approval_pending", "Wait for the pending pot withdrawal to finish.")
         if game.chip_balance(target) < 1:
-            return "This player has no chips to steal."
-    return ""
+            return ActionValidationError("insufficient_chips", "This player has no chips to steal.")
+    return None
 
 
 @dataclass(frozen=True)
@@ -37,6 +43,7 @@ class InteractionTarget:
     allowed: bool
     reason: str
     max_amount: int | None
+    code: str = ""
 
 
 @dataclass(frozen=True)
@@ -47,6 +54,7 @@ class InteractionOptions:
     reason: str
     random_target: bool
     targets: tuple[InteractionTarget, ...]
+    code: str = ""
 
 
 def build_interaction_options(game, action, hand_index=None):
@@ -59,13 +67,16 @@ def build_interaction_options(game, action, hand_index=None):
     for index, player in enumerate(game.players):
         if index == game.current_player_index:
             continue
-        reason = available.reason or interaction_target_reason(game, action, index)
+        error = interaction_target_error(game, action, index) if available.allowed else None
+        reason = available.reason or (str(error) if error else "")
+        code = available.code if not available.allowed else error.code if error else ""
         maximum = game.chip_balance(index) if action == "steal_chips" and game.enable_chip_accounts else None
-        targets.append(InteractionTarget(index, player.name, not reason, reason, maximum))
+        targets.append(InteractionTarget(index, player.name, not reason, reason, maximum, code))
     allowed = available.allowed and any(target.allowed for target in targets)
     reason = available.reason if not available.allowed else "" if allowed else "No eligible players for this interaction."
     return InteractionOptions(action, INTERACTIONS[action], allowed, reason,
-                              action == "discard_random_card", tuple(targets))
+                              action == "discard_random_card", tuple(targets),
+                              available.code if not available.allowed else "" if allowed else "no_eligible_targets")
 
 
 class PlayerInteractions:
@@ -80,30 +91,32 @@ class PlayerInteractions:
 
     def interact(self, action, target=None, hand_index=None, amount=None):
         if not self.interaction_allowed(action):
-            raise ValueError("This interaction is disabled.")
+            raise ActionValidationError("action_disabled", "This interaction is disabled.")
         if self.current_player_must_confirm_point() or self.current_player_must_confirm_pot_withdrawal():
-            raise ValueError("Complete the pending confirmation first.")
+            raise ActionValidationError("confirmation_required", "Complete the pending confirmation first.")
         actor = self.current_player_index
         if action == "discard_random_card":
             candidates = [i for i, player in enumerate(self.players) if i != actor and i not in self.left_players and player.hand]
             if not candidates:
-                raise ValueError("No other player has cards to discard.")
+                raise ActionValidationError("no_eligible_targets", "No other player has cards to discard.")
             target = random.choice(candidates)
-        reason = interaction_target_reason(self, action, target)
-        if reason:
-            raise ValueError(reason)
+        error = interaction_target_error(self, action, target)
+        if error:
+            raise error
         other = self.players[target]
         result = {"target": target}
         if action == "give_card":
             if not isinstance(hand_index, int) or isinstance(hand_index, bool) or not 1 <= hand_index <= len(self.players[actor].hand):
-                raise ValueError("Select a card in your hand first.")
+                raise ActionValidationError("invalid_selection", "Select a card in your hand first.")
             card = self.players[actor].play_card(hand_index)
             other.draw_card(card)
             result["card"] = card
         elif action == "steal_chips":
             source, destination = self.chip_account_index(target), self.chip_account_index(actor)
-            if not isinstance(amount, int) or isinstance(amount, bool) or not 1 <= amount <= self.chip_balance(target):
-                raise ValueError("Choose an amount available in the target's account.")
+            if not isinstance(amount, int) or isinstance(amount, bool) or amount < 1:
+                raise ActionValidationError("invalid_amount", "Choose an amount available in the target's account.")
+            if amount > self.chip_balance(target):
+                raise ActionValidationError("insufficient_chips", "Choose an amount available in the target's account.")
             self.chip_balances[source] -= amount
             self.chip_balances[destination] += amount
             result["amount"] = amount

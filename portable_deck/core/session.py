@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from .actionavailability import ActionContext, action_availability
 from .interactions import INTERACTIONS
 from .playerleaving import return_player_reason
+from .actionerrors import ActionValidationError
+from .chipvalidation import chip_action_error
 
 @dataclass(frozen=True)
 class ActionResult:
@@ -165,6 +167,10 @@ class SessionController:
         event_offset, log_offset = len(g.history), len(g.game_log)
         def perform():
             try:
+                if action in {"buy_chips", "play_chips", "take_pot"}:
+                    error = chip_action_error(g, action, parameters.get("player_index"), parameters.get("amount"))
+                    if error:
+                        raise error
                 raw = handlers[action]()
                 if action in {"play_chips", "take_pot", "request_point", "reduce_score", "leave_session", "return_player", "confirm_point", "confirm_pot"}:
                     success, message = raw
@@ -175,6 +181,9 @@ class SessionController:
                     self.restore(before)
                     return ActionResult(False, value=raw, message=message, code="action_rejected")
                 return ActionResult(True, before != g.capture_undo_state(), raw, message)
+            except ActionValidationError as error:
+                self.restore(before)
+                return ActionResult(False, message=str(error), code=error.code)
             except (ValueError, TypeError, KeyError, IndexError) as error:
                 self.restore(before)
                 return ActionResult(False, message=str(error), code="invalid_parameters")

@@ -298,3 +298,19 @@ selection/targets, blocked turns, absent confirmations, malformed parameters,
 wording-independent propagation and unchanged rejection state/Undo/checkpoints.
 This prepares client branching and future translation without changing current
 GUI or CLI wording; it does not implement localization.
+
+### Interaction and chip validation codes
+
+Interaction target validation now returns typed failures reused by target
+options and model execution. Options include codes for departed/empty targets,
+shared chip accounts and unavailable balances. Interaction execution propagates
+these through `ActionValidationError`, a ValueError-compatible exception, into
+ActionResult without parsing message text. Random discard identifies the lack
+of eligible targets separately; stealing distinguishes invalid amount from
+insufficient funds.
+
+Chip model methods and session parameter validation use `chip_action_error` for
+recipient, amount, minimum-bet and balance checks. Direct model return types
+remain compatible. The controller still applies global availability first and
+restores failed transactions. Tests cover stale targets, changed balances,
+matching target/result codes and rejection without state/Undo/checkpoint changes.

@@ -306,6 +306,15 @@ returns `return_unavailable`. Unknown action IDs still raise `ValueError`.
 keeps an empty command error code. Newly added fields preserve previous positional
 arguments, and GUI/CLI display text is unchanged.
 
+Interactions also identify `target_left`, `target_hand_empty`,
+`shared_chip_account`, `no_eligible_targets`, `invalid_target`, `invalid_amount`
+and `insufficient_chips`. Target options expose `code` alongside their reasons;
+the same target validation runs at execution time. Chip parameter validation
+adds `minimum_bet_not_met` and distinguishes invalid amounts from overdrafts.
+Global rule/turn restrictions are checked before command parameters.
+Typed model validation exceptions remain subclasses of `ValueError`; existing
+direct chip methods keep their tuple/optional-value return contracts.
+
 Personal table piles use `execute("play_personal_pile", card_index=0, owner=0,
 pile_index=0)` and `execute("take_personal_pile", owner=0, pile_index=0)`.
 Player and pile indices are zero-based. Both commands enforce access permissions

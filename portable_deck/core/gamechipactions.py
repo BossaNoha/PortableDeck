@@ -1,4 +1,5 @@
 """Chip-account and shared-pot operations for the Game model."""
+from .chipvalidation import chip_action_error
 
 class ChipBankActions:
     def pot_confirmation_notification(self):
@@ -7,13 +8,7 @@ class ChipBankActions:
 
     def buy_chips(self, player_index, amount):
         """Add chips to one player's account."""
-        if (
-            not self.enable_chip_accounts
-            or not 0 <= player_index < len(self.players)
-            or not isinstance(amount, int)
-            or isinstance(amount, bool)
-            or amount < 1
-        ):
+        if chip_action_error(self, "buy_chips", player_index=player_index, amount=amount):
             return None
         self.chip_balances[self.chip_account_index(player_index)] += amount
         self.record_event({
@@ -26,15 +21,10 @@ class ChipBankActions:
 
     def play_chips(self, amount):
         """Put chips from the current player's account into the shared pot."""
-        if not self.enable_chip_accounts:
-            return False, "Chip accounts are disabled."
-        if self.pending_pot_withdrawal is not None:
-            return False, "Chip play is paused while the pot withdrawal is awaiting approval."
-        if not isinstance(amount, int) or isinstance(amount, bool) or amount < self.minimum_bet:
-            return False, f"The minimum bet is {self.minimum_bet} chips."
+        error = chip_action_error(self, "play_chips", amount=amount)
+        if error:
+            return False, str(error)
         player = self.players[self.current_player_index]
-        if amount > self.chip_balances[self.chip_account_index(self.current_player_index)]:
-            return False, f"{player.name} does not have enough chips."
         self.chip_balances[self.chip_account_index(self.current_player_index)] -= amount
         self.chip_pot += amount
         self.record_event({"player": player.name, "action": "play_chips", "amount": amount, "pot": self.chip_pot})
@@ -42,14 +32,9 @@ class ChipBankActions:
 
     def request_pot_withdrawal(self, recipient_index):
         """Request transferring the full pot to a chosen player's account."""
-        if not self.enable_chip_accounts:
-            return False, "Chip accounts are disabled."
-        if not isinstance(recipient_index, int) or isinstance(recipient_index, bool) or not 0 <= recipient_index < len(self.players):
-            return False, "Choose a valid player to receive the pot."
-        if self.chip_pot < 1:
-            return False, "There are no chips in the pot."
-        if self.pending_pot_withdrawal is not None:
-            return False, "A pot withdrawal request is already waiting for approval."
+        error = chip_action_error(self, "take_pot", player_index=recipient_index)
+        if error:
+            return False, str(error)
 
         requester = self.current_player_index
         recipient = self.players[recipient_index].name
