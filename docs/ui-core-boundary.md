@@ -12,7 +12,20 @@ A separate probe using actual Tk widgets and scripted dialog answers passed
 actions, first-voter approvals, checkpoint/load, final approval/denial, Undo and
 alternate decisions. Probe files and checkpoint files were temporary. This was
 automated Tk execution, not exhaustive manual testing of every settings/editor
-flow. All 223 tests passed; no application-code fix was required in this audit.
+flow. This original audit passed all 223 tests; no application-code fix was required.
+
+The subsequent persistence integration audit uses application new-game,
+named-save, checkpoint and load services. It removes the original deck file,
+restores game/view and checkpoint state, runs persisted Undo through a separate
+headless CLI process without overwriting its input save, and restarts using the
+embedded definition. The pending-confirmation lifecycle regression also now
+uses application storage rather than Game compatibility wrappers.
+
+A temporary native Tk probe passed actions, checkpointing, named save/load,
+table zoom restoration, GUI Undo and restart without the source deck. Opening
+the restored GUI acknowledges turn notifications as designed; gameplay state is
+preserved. The probe used a hidden window and temporary files, which were
+removed. All 272 tests passed; no application-code change was necessary.
 
 ### Remaining work before replacing the complete desktop interface
 
