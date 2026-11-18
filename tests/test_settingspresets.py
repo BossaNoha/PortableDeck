@@ -8,10 +8,71 @@ import sys
 import warnings
 from unittest.mock import Mock, patch
 from portable_deck.app.settings import DEFAULT_SETTINGS
-from portable_deck.app.settingspresets import load_preset, read_preset, write_preset
+from portable_deck.app.settingspresets import load_preset, read_preset, save_preset, write_preset
 from portable_deck.app.settingswindow import SettingsWindow
 
 class SettingsPresetTests(unittest.TestCase):
+    def test_save_returns_independent_metadata_and_keeps_application_preferences(self):
+        from portable_deck.app.configurationinfo import APP_SETTINGS, configuration_info
+        settings = copy.deepcopy(DEFAULT_SETTINGS)
+        settings.update(num_players=4, autosave_count=12)
+        before = copy.deepcopy(settings)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "Friday.json"
+            saved = save_preset(path, settings)
+            self.assertEqual(configuration_info(saved), {"name": "Friday", "modified": False})
+            self.assertEqual(saved["num_players"], 4)
+            self.assertEqual(saved["autosave_count"], 12)
+            stored = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(stored["name"], "Friday")
+            self.assertFalse(APP_SETTINGS.intersection(stored["settings"]))
+            self.assertNotIn("configuration_baseline", stored["settings"])
+            saved["cards_per_player"] += 1
+            self.assertTrue(configuration_info(saved)["modified"])
+            saved["interaction_options"]["give_card"] = True
+            self.assertEqual(settings, before)
+
+    def test_save_failure_preserves_file_input_and_cleans_temporary_file(self):
+        settings = copy.deepcopy(DEFAULT_SETTINGS)
+        before = copy.deepcopy(settings)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "Friday.json"
+            path.write_bytes(b"previous")
+            with patch("portable_deck.app.settingspresets.os.replace", side_effect=OSError("Disk full")):
+                with self.assertRaises(OSError):
+                    save_preset(path, settings)
+            self.assertEqual(path.read_bytes(), b"previous")
+            self.assertFalse(Path(str(path) + ".tmp").exists())
+            self.assertEqual(settings, before)
+
+    def test_gui_save_uses_returned_metadata_after_success(self):
+        from portable_deck.app.configurationinfo import configuration_info
+        with tempfile.TemporaryDirectory() as folder:
+            path = str(Path(folder) / "Friday.json")
+            window = Mock(root=None, form_settings={"previous": True})
+            settings = copy.deepcopy(DEFAULT_SETTINGS)
+            with patch("portable_deck.app.settingspresets.PRESETS_DIR", folder), patch(
+                    "portable_deck.app.settingswindow.filedialog.asksaveasfilename", return_value=path), patch(
+                    "portable_deck.app.settingswindow.messagebox.showinfo") as info:
+                SettingsWindow.save_named_settings(window, settings)
+            self.assertEqual(configuration_info(window.form_settings), {"name": "Friday", "modified": False})
+            info.assert_called_once_with("Settings saved", "Saved as Friday.", parent=None)
+
+    def test_canceled_or_failed_gui_save_preserves_form(self):
+        with tempfile.TemporaryDirectory() as folder:
+            for chosen in ("", str(Path(folder) / "Friday.json")):
+                with self.subTest(chosen=chosen):
+                    window = Mock(root=None, form_settings={"previous": True})
+                    with patch("portable_deck.app.settingspresets.PRESETS_DIR", folder), patch(
+                            "portable_deck.app.settingswindow.filedialog.asksaveasfilename", return_value=chosen), patch(
+                            "portable_deck.app.settingspresets.os.replace", side_effect=OSError("Disk full")), patch(
+                            "portable_deck.app.settingswindow.messagebox.showerror") as error, patch(
+                            "portable_deck.app.settingswindow.messagebox.showinfo") as info:
+                        SettingsWindow.save_named_settings(window, copy.deepcopy(DEFAULT_SETTINGS))
+                    self.assertEqual(window.form_settings, {"previous": True})
+                    self.assertEqual(error.call_count, int(bool(chosen)))
+                    info.assert_not_called()
+
     def test_loading_returns_notices_as_data_and_preserves_adapter_behavior(self):
         current = copy.deepcopy(DEFAULT_SETTINGS)
         current.update(num_players=4, autosave_count=12)

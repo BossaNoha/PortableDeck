@@ -181,7 +181,7 @@ class SettingsWindow:
         self.root.after_idle(lambda: self._fit_window_to_frame(frame))
 
     def save_named_settings(self, selected_settings):
-        from .settingspresets import PRESETS_DIR, write_preset
+        from .settingspresets import PRESETS_DIR, save_preset
         os.makedirs(PRESETS_DIR, exist_ok=True)
         path = filedialog.asksaveasfilename(title="Save settings", initialdir=PRESETS_DIR,
                                           initialfile="My settings.json", defaultextension=".json",
@@ -189,15 +189,12 @@ class SettingsWindow:
         if not path:
             return
         try:
-            write_preset(path, selected_settings)
+            saved_settings = save_preset(path, selected_settings)
         except (OSError, ValueError, TypeError) as error:
             messagebox.showerror("Could not save settings", str(error), parent=self.root)
             return
-        from .configurationinfo import configuration_values
-        self.form_settings = dict(selected_settings)
-        self.form_settings["configuration_name"] = os.path.splitext(os.path.basename(path))[0]
-        self.form_settings["configuration_baseline"] = configuration_values(selected_settings)
-        messagebox.showinfo("Settings saved", f"Saved as {os.path.splitext(os.path.basename(path))[0]}.", parent=self.root)
+        self.form_settings = saved_settings
+        messagebox.showinfo("Settings saved", f"Saved as {saved_settings['configuration_name']}.", parent=self.root)
 
     def load_named_settings(self):
         from .settingspresets import PRESETS_DIR, load_preset

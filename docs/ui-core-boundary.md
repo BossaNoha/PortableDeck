@@ -98,7 +98,7 @@ removed. All 272 tests passed; no application-code change was necessary.
 | --- | --- | --- |
 | Save application services | Checkpoints, named writes, rename/delete and metadata catalog reads now use headless application services. `SessionBrowser` renders entries and collects user decisions. | Basic save management is separated; add services only for concrete new client needs. |
 | Deck library | Catalog, import/export and editor validation/atomic writes use services without Tkinter. | Editor text parsing/loading still lives in GUI; separate it for concrete client reuse. |
-| Preset loading | `load_preset` returns settings, compatibility and notices; GUI displays/applies the result. `read_preset` remains a compatibility adapter. | Keep existing recovery/player-count policies; separate further operations only where GUI still owns reusable logic. |
+| Presets | `load_preset` returns settings/compatibility/notices; `save_preset` returns validated settings with saved configuration metadata after atomic writing. Legacy read/write entry points remain. | Keep existing recovery/player-count policies; separate further operations only where GUI still owns reusable logic. |
 | Chip input data | `core/chipoptions.py` now supplies immutable players/accounts, amount bounds, pot and availability to chip controls/dialogs. | Input separation is complete; retain execution revalidation as clients evolve. |
 | Client lifecycle/capabilities | GUI/CLI new games and model restart share core construction/start operations. `GameGUI` still owns Game and client state; widget construction reads rule flags. | Define a broader client facade only for concrete replacement-client needs; do not add a snapshot per widget flag. |
 | Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
@@ -163,6 +163,15 @@ callback/warnings behavior. Recovery, nested-option filtering, current app
 preferences/player count, team adjustment, configuration baseline and legacy
 file shapes are unchanged. Tests cover returned notices, adapter equivalence,
 input independence, GUI application/cancellation/failure and headless loading.
+
+Preset saving now returns independent validated settings with configuration
+name/baseline from `save_preset` after successful atomic replacement. GUI only
+collects the destination, applies returned settings and displays success; it no
+longer prepares configuration metadata itself. `write_preset` delegates while
+preserving its no-result API. Stored preset shape and exclusion of application
+preferences/metadata are unchanged. Tests cover initial unmodified status,
+later rule-change detection, preserved app preferences, input independence,
+failed replacement/cleanup and GUI success/cancellation/failure.
 
 Game-changing card, chip, score, turn and player interaction actions in
 `portable_deck/ui` now execute through `SessionController`. Model methods remain

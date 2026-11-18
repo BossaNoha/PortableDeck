@@ -101,6 +101,8 @@ storage failures preserve the previous file and keep the editor open.
 `app.settingspresets.load_preset` returns prepared settings, compatibility data
 and notice text without displaying warnings. Settings GUI displays those notices
 and applies the result; `read_preset` retains its legacy warning/callback API.
+`save_preset` returns independent validated settings with the saved configuration
+name/baseline after successful atomic writing; `write_preset` remains available.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

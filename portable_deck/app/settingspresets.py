@@ -56,18 +56,27 @@ def preset_compatibility(values):
                      if type(values[key]) is not type(DEFAULT_SETTINGS[key]))))
 
 
-def write_preset(path, settings):
+def save_preset(path, settings):
+    """Write a preset and return independent settings with saved-source metadata."""
     settings = validate_settings(settings)
-    from .configurationinfo import preset_values
-    settings = preset_values(settings)
+    from .configurationinfo import preset_values, configuration_values
+    stored = preset_values(settings)
     target = Path(path)
+    settings["configuration_name"] = target.stem
+    settings["configuration_baseline"] = configuration_values(settings)
     temporary = target.with_name(target.name + ".tmp")
     try:
-        temporary.write_text(json.dumps({"name": target.stem, "settings": settings}, indent=2), encoding="utf-8")
+        temporary.write_text(json.dumps({"name": target.stem, "settings": stored}, indent=2), encoding="utf-8")
         os.replace(temporary, target)
     finally:
         if temporary.exists():
             temporary.unlink()
+    return settings
+
+
+def write_preset(path, settings):
+    """Compatibility entry point for callers that only need the file write."""
+    save_preset(path, settings)
 
 
 @dataclass(frozen=True)
