@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 353 tests; native Tk probes for session, deck and preset
+latest full suite passed 355 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -52,8 +52,17 @@ turn-start callback only on success; an unsuccessful result is no longer
 unpacked as a successful tuple. Tests cover pending-confirmation rejection,
 empty deck, disabled scoring, valid effects, preserved valid selection/state,
 no failed-action checkpoint/Undo, callback ordering and one successful outer
-refresh/checkpoint/Undo. Discard-draw and other GUI action families may still
-use the compatibility adapter; this change is scoped to these three handlers.
+refresh/checkpoint/Undo.
+
+Discard drawing now preserves ActionResult through the direct, pile-choice and
+card-choice paths. Failure displays the core message and leaves valid hand
+selection unchanged; success clears it. Dialog cancellation still returns None,
+and existing close-after-submission behavior remains. Regression tests cover
+top/any modes, shared/personal sources, one checkpoint/Undo/refresh and an offered
+card removed before submission. A temporary native Tk probe verified both modal
+paths return success/failure results; it was removed afterward. This reuses the
+existing index/top-card revalidation, not a new revision/concurrency mechanism.
+`ui/cardactions.py` no longer uses execute_value; other GUI modules still may.
 
 ### Reads and responsibilities that can stay in the client
 

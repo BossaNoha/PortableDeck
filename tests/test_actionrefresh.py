@@ -13,6 +13,8 @@ from portable_deck.ui.carddrag import CardDrag
 from portable_deck.ui.cardactions import take_selected_from_table, move_selected_table_card
 from portable_deck.ui.cardactions import flip_selected_table_card, recycle_discard_into_deck, clear_table
 from portable_deck.ui.cardactions import request_point
+from portable_deck.ui.cardactions import _take_discard_card
+from portable_deck.core.playerview import build_player_discard_view
 
 
 class HeadlessGUI(GameGUIActions):
@@ -35,6 +37,61 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def test_discard_draw_returns_result_for_top_any_shared_and_personal_piles(self):
+        for mode in ("top", "any"):
+            for personal in (False, True):
+                with self.subTest(mode=mode, personal=personal):
+                    game = self.game(allow_draw_from_discard=True, draw_from_discard_mode=mode,
+                                     personal_discard_pile_count=1)
+                    game.players[0].hand = ["HAND"]
+                    pile = game.personal_discard_piles[1][0] if personal else game.discard_pile
+                    pile.extend(["DEEP", "TOP"])
+                    source = 2 if personal else 0
+                    index = 1 if mode == "top" else 0
+                    gui = HeadlessGUI(game)
+                    gui.selection.synchronize(build_selection_snapshot(game))
+                    gui.selection.hand_index = 0
+                    before = game.capture_undo_state()
+                    saved = game.session.checkpoint_callback = Mock(return_value=None)
+                    with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                        result = gui.run_action(_take_discard_card, game, source, index,
+                                                gui.hand_frame, gui.render_log, gui.status_panel)
+                    self.assertTrue(result.success)
+                    self.assertEqual(result.value, "TOP" if mode == "top" else "DEEP")
+                    self.assertEqual(game.players[0].hand, ["HAND", result.value])
+                    self.assertIsNone(gui.selection.hand_index)
+                    warning.assert_not_called()
+                    saved.assert_called_once_with(game)
+                    self.assertEqual(len(game.undo_stack), 1)
+                    self.assert_single_refresh(gui)
+                    self.assertTrue(game.session.undo())
+                    self.assertEqual(game.capture_undo_state(), before)
+
+    def test_changed_discard_snapshot_is_rejected_without_clearing_hand_selection(self):
+        for mode in ("top", "any"):
+            with self.subTest(mode=mode):
+                game = self.game(allow_draw_from_discard=True, draw_from_discard_mode=mode)
+                game.players[0].hand = ["HAND"]
+                game.discard_pile.extend(["DEEP", "TOP"])
+                offered = build_player_discard_view(game, 0).piles[0].cards[0]
+                game.discard_pile.pop()
+                gui = HeadlessGUI(game)
+                gui.selection.synchronize(build_selection_snapshot(game))
+                gui.selection.hand_index = 0
+                before = game.capture_undo_state()
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                    result = gui.run_action(_take_discard_card, game, 0, offered.index,
+                                            gui.hand_frame, gui.render_log, gui.status_panel)
+                self.assertFalse(result.success)
+                self.assertEqual(result.code, "invalid_parameters")
+                warning.assert_called_once_with("Cannot draw from discard", result.message)
+                self.assertEqual(gui.selection.hand_index, 0)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+                self.assert_single_refresh(gui)
+
     def turn_action(self, game, gui, action, callback):
         helper = {"draw_card": draw_card, "end_turn": end_turn, "request_point": request_point}[action]
         args = (game, gui.hand_frame, gui.render_log, gui.status_panel)

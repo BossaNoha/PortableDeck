@@ -1,5 +1,4 @@
 # cardactions.py
-from .sessionactions import execute_value
 from ..core.playerview import build_player_discard_view
 from ..core.pileoptions import discard_destinations
 import tkinter as tk
@@ -23,14 +22,15 @@ def draw_from_discard(game, hand_frame, render_log, status_panel, root):
         messagebox.showinfo("Discard pile is empty", "There are no cards to take.", parent=root)
         return
     if view.mode == "any":
-        _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root)
+        return _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root)
     elif len(piles) == 1:
-        _take_discard_card(game, piles[0].source_index, piles[0].cards[0].index, hand_frame, render_log, status_panel)
+        return _take_discard_card(game, piles[0].source_index, piles[0].cards[0].index, hand_frame, render_log, status_panel)
     else:
-        _choose_discard_pile(game, piles, hand_frame, render_log, status_panel, root)
+        return _choose_discard_pile(game, piles, hand_frame, render_log, status_panel, root)
 
 
 def _choose_discard_pile(game, piles, hand_frame, render_log, status_panel, root):
+    outcome = None
     dialog = tk.Toplevel(root)
     dialog.title("Choose a discard pile")
     dialog.transient(root)
@@ -43,11 +43,12 @@ def _choose_discard_pile(game, piles, hand_frame, render_log, status_panel, root
     choices.selection_set(0)
 
     def take_selected():
+        nonlocal outcome
         selected = choices.curselection()
         if not selected:
             return
         pile = piles[selected[0]]
-        _take_discard_card(game, pile.source_index, pile.cards[0].index, hand_frame, render_log, status_panel)
+        outcome = _take_discard_card(game, pile.source_index, pile.cards[0].index, hand_frame, render_log, status_panel)
         dialog.destroy()
 
     buttons = tk.Frame(dialog)
@@ -56,9 +57,11 @@ def _choose_discard_pile(game, piles, hand_frame, render_log, status_panel, root
     tk.Button(buttons, text="Cancel", command=dialog.destroy).pack(side="right", padx=5)
     choices.bind("<Double-1>", lambda _event: take_selected())
     dialog.wait_window()
+    return outcome
 
 
 def _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root):
+    outcome = None
     dialog = tk.Toplevel(root)
     dialog.title("Choose a discard card")
     dialog.transient(root)
@@ -85,26 +88,29 @@ def _choose_discard_card(game, piles, hand_frame, render_log, status_panel, root
     buttons.pack(fill="x", padx=10, pady=10)
 
     def take_selected():
+        nonlocal outcome
         selection = card_list.curselection()
         if not selection:
             messagebox.showwarning("Select a card", "Choose a card from the list.", parent=dialog)
             return
         source, index = card_sources[selection[0]]
-        _take_discard_card(game, source, index, hand_frame, render_log, status_panel)
+        outcome = _take_discard_card(game, source, index, hand_frame, render_log, status_panel)
         dialog.destroy()
 
     tk.Button(buttons, text="Take selected", command=take_selected).pack(side="right")
     tk.Button(buttons, text="Cancel", command=dialog.destroy).pack(side="right", padx=5)
     card_list.bind("<Double-1>", lambda _event: take_selected())
     dialog.wait_window()
+    return outcome
 
 
 def _take_discard_card(game, source, index, hand_frame, render_log, status_panel):
-    card = execute_value(game, "draw_from_discard", source_index=source, card_index=index)
-    if card is None:
-        return
-    player = game.players[game.current_player_index]
-    hand_frame.game_gui.selection.hand_index = None
+    result = game.session.execute("draw_from_discard", source_index=source, card_index=index)
+    if result.success:
+        hand_frame.game_gui.selection.hand_index = None
+    else:
+        messagebox.showwarning("Cannot draw from discard", result.message)
+    return result
 
 
 def discard_selected(game, hand_frame, render_log, status_panel):
