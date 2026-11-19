@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 375 tests; native Tk probes for session, deck and preset
+latest full suite passed 378 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -136,6 +136,15 @@ independence/order, Undo restoration, checkpoint failure messages, empty/full
 rendering without model access and headless use. Log formatting, save/Undo
 contents and existing public/private message rules are unchanged; this is not
 a new remote-log authorization or filtering protocol.
+
+`tests/test_uistateboundary.py` scans every Python module under portable_deck/ui
+and rejects attribute access to game_log, legacy gui_log and undo_stack, including
+writes/deletes and literal getattr/setattr/delattr/hasattr calls. Diagnostics
+name the replacement session APIs. Guard fixtures verify deferred accesses and
+allow show_game_log, comments, text and public queries. This static guard does
+not infer arbitrary computed attribute names or general data flow. Application
+storage/core implementations remain outside its intentionally narrow UI scope.
+No application-code change was needed.
 
 ### Reads and responsibilities that can stay in the client
 

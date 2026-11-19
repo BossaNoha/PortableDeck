@@ -409,6 +409,8 @@ with `checkpoint_failed`/`checkpoint_error` on failure and no gameplay Undo step
 The original `checkpoint()` error-string/`None` API remains supported.
 `game.session.log_snapshot()` returns an immutable ordered tuple of public log
 messages; GUI rendering uses it instead of the mutable model list.
+`tests/test_uistateboundary.py` prevents GUI access to `game_log`, `gui_log` and
+`undo_stack`, directing clients to session log/Undo APIs instead.
 
 Card indices are zero-based. For example, `execute("play_card", card_index=0)`
 plays the first card; `execute("move_table_card", card_index=0,
