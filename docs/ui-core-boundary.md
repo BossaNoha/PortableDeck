@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 364 tests; native Tk probes for session, deck and preset
+latest full suite passed 367 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -99,6 +99,14 @@ restored score/leave control states. Checkpoint counts were observed via a
 callback rather than real autosave writes. Probe files/windows were removed.
 No application-code fix was needed. This is targeted automated native GUI
 verification, not exhaustive manual testing of all settings/modes.
+
+`SessionController.undo_availability()` now exposes immutable ActionAvailability
+without revealing the Undo stack: disabled rules return action_disabled, empty
+history returns empty_undo, otherwise Undo is allowed. The GUI Undo button uses
+this query rather than game.undo_stack. Session undo rechecks availability and
+retains its bool result and model-side guard. Tests cover read-only snapshots,
+availability changes before execution, no checkpoint/history mutation on refusal,
+successful restoration/checkpoint, GUI state transitions and headless import/use.
 
 ### Reads and responsibilities that can stay in the client
 

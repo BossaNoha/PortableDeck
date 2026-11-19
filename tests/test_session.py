@@ -6,6 +6,46 @@ from portable_deck.core.game import Game
 
 
 class SessionTests(unittest.TestCase):
+    def test_undo_availability_is_read_only_and_tracks_history(self):
+        from dataclasses import FrozenInstanceError
+        before = self.game.capture_undo_state()
+        empty = self.game.session.undo_availability()
+        self.assertFalse(empty.allowed)
+        self.assertEqual(empty.code, "empty_undo")
+        self.assertTrue(empty.reason)
+        self.assertEqual(self.game.capture_undo_state(), before)
+        self.saved.assert_not_called()
+        with self.assertRaises(FrozenInstanceError):
+            empty.allowed = True
+        self.assertTrue(self.game.session.execute("draw_card").success)
+        available = self.game.session.undo_availability()
+        self.assertTrue(available.allowed)
+        self.assertEqual((available.reason, available.code), ("", ""))
+        self.assertFalse(empty.allowed)
+        self.assertTrue(self.game.session.undo())
+        self.assertEqual(self.game.session.undo_availability(), empty)
+        self.assertEqual(self.game.capture_undo_state(), before)
+
+    def test_undo_revalidates_after_availability_changes_without_checkpoint(self):
+        self.assertFalse(self.game.session.undo())
+        self.saved.assert_not_called()
+        self.assertTrue(self.game.session.execute("draw_card").success)
+        self.assertTrue(self.game.session.undo_availability().allowed)
+        self.game.enable_undo = False
+        before = self.game.capture_undo_state()
+        history = list(self.game.undo_stack)
+        self.saved.reset_mock()
+        disabled = self.game.session.undo_availability()
+        self.assertFalse(disabled.allowed)
+        self.assertEqual(disabled.code, "action_disabled")
+        self.assertFalse(self.game.session.undo())
+        self.assertEqual(self.game.capture_undo_state(), before)
+        self.assertEqual(self.game.undo_stack, history)
+        self.saved.assert_not_called()
+        self.game.enable_undo = True
+        self.assertTrue(self.game.session.undo())
+        self.saved.assert_called_once_with(self.game)
+
     def setUp(self):
         self.game = Game(2, str(Path(__file__).resolve().parents[1] / 'decks/demodeck.json'),
                          enable_undo=True, score_enabled=True, enable_chip_accounts=True)

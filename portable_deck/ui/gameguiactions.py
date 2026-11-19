@@ -56,7 +56,7 @@ class GameGUIActions:
 
     def update_undo_button(self):
         if hasattr(self, "undo_button"):
-            state = "normal" if self.game.undo_stack else "disabled"
+            state = "normal" if self.session.undo_availability().allowed else "disabled"
             self.undo_button.config(state=state)
 
     def checkpoint(self):

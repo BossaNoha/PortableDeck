@@ -215,7 +215,18 @@ class SessionController:
         g.log_action(player.name, "draw_from_discard", card, destination=name)
         return card
 
+    def undo_availability(self):
+        """Describe Undo without exposing mutable history to clients."""
+        from .actionavailability import ActionAvailability
+        if not self.game.enable_undo:
+            return ActionAvailability(False, "Undo is disabled by the game rules.", "action_disabled")
+        if not self.game.undo_stack:
+            return ActionAvailability(False, "There is no action to undo.", "empty_undo")
+        return ActionAvailability(True)
+
     def undo(self):
+        if not self.undo_availability().allowed:
+            return False
         if not self.game.undo_last_action():
             return False
         self.checkpoint()

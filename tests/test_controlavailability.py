@@ -35,6 +35,22 @@ class ControlsGUI(GameGUIActions):
 
 
 class ControlAvailabilityTests(unittest.TestCase):
+    def test_undo_button_uses_session_query_for_empty_available_and_disabled_states(self):
+        game = self.game()
+        gui = SimpleNamespace(session=game.session, undo_button=Button())
+        GameGUIActions.update_undo_button(gui)
+        self.assertEqual(gui.undo_button.state, "disabled")
+        self.assertTrue(game.session.execute("draw_card").success)
+        GameGUIActions.update_undo_button(gui)
+        self.assertEqual(gui.undo_button.state, "normal")
+        game.enable_undo = False
+        GameGUIActions.update_undo_button(gui)
+        self.assertEqual(gui.undo_button.state, "disabled")
+        game.enable_undo = True
+        self.assertTrue(game.session.undo())
+        GameGUIActions.update_undo_button(gui)
+        self.assertEqual(gui.undo_button.state, "disabled")
+
     def game(self):
         return Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
                     enable_undo=True, score_enabled=True, allow_reduce_score=True,

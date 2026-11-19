@@ -64,6 +64,7 @@ class CoreBoundaryTests(unittest.TestCase):
             discard_destinations(g, 1)
             insertion_options(g, 'draw')
             restarted = g.restart(keep_scores=True)
+            assert not restarted.session.undo_availability().allowed
             assert restarted.pending_point_request is None
             assert restarted.pending_pot_withdrawal is None
             assert not any(name == 'tkinter' or name.startswith('tkinter.') for name in sys.modules)
