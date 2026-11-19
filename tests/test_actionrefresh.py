@@ -37,6 +37,80 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def chip_action(self, action, answer, confirmations=False):
+        game = self.game(enable_chip_accounts=True, require_pot_withdrawal_confirmation=confirmations)
+        game.chip_pot = 5
+        game.players[0].hand = ["HAND"]
+        gui = HeadlessGUI(game)
+        gui.selection.synchronize(build_selection_snapshot(game))
+        gui.selection.hand_index = 0
+        chip = object.__new__(ChipBankUI)
+        chip.gui = gui
+        path = {"buy_chips": "ask_chip_purchase", "play_chips": "simpledialog.askinteger",
+                "take_pot": "ask_pot_recipient"}[action]
+        before = game.capture_undo_state()
+        saved = game.session.checkpoint_callback = Mock(return_value=None)
+        with patch("portable_deck.ui.chipbankui." + path, return_value=answer), patch(
+                "portable_deck.ui.chipbankui.messagebox.showwarning") as warning, patch(
+                "portable_deck.ui.chipbankui.messagebox.showerror") as error:
+            result = getattr(chip, action)()
+        return game, gui, before, saved, result, warning, error
+
+    def test_chip_handlers_return_results_and_single_checkpoint_undo(self):
+        for action, answer, confirmations in (("buy_chips", (0, 5), False), ("play_chips", 5, False),
+                                              ("take_pot", 0, False), ("take_pot", 0, True)):
+            with self.subTest(action=action, confirmations=confirmations):
+                game, gui, before, saved, result, warning, error = self.chip_action(action, answer, confirmations)
+                self.assertTrue(result.success, result.message)
+                if action == "buy_chips":
+                    self.assertEqual(result.value, 105)
+                    self.assertEqual(game.chip_balance(0), 105)
+                elif action == "play_chips":
+                    self.assertEqual(game.chip_pot, 10)
+                    self.assertEqual(game.chip_balance(0), 95)
+                elif confirmations:
+                    self.assertEqual(game.pending_pot_withdrawal["recipient"], 0)
+                    self.assertEqual(game.chip_pot, 5)
+                else:
+                    self.assertEqual(game.chip_pot, 0)
+                    self.assertEqual(game.chip_balance(0), 105)
+                self.assertEqual(gui.selection.hand_index, 0)
+                warning.assert_not_called()
+                error.assert_not_called()
+                saved.assert_called_once_with(game)
+                self.assertEqual(len(game.undo_stack), 1)
+                self.assert_single_refresh(gui)
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+
+    def test_chip_failures_keep_exact_message_code_and_state(self):
+        for action, answer, code in (("buy_chips", (0, -1), "invalid_amount"),
+                                     ("play_chips", 101, "insufficient_chips"),
+                                     ("take_pot", 2, "invalid_target")):
+            with self.subTest(action=action):
+                game, gui, before, saved, result, warning, error = self.chip_action(action, answer)
+                self.assertFalse(result.success)
+                self.assertEqual(result.code, code)
+                shown = error if action == "buy_chips" else warning
+                self.assertEqual(shown.call_args.args[1], result.message)
+                self.assertEqual(gui.selection.hand_index, 0)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+                self.assert_single_refresh(gui)
+
+    def test_canceled_chip_dialogs_do_not_execute_or_persist(self):
+        for action in ("buy_chips", "play_chips", "take_pot"):
+            with self.subTest(action=action):
+                game, gui, before, saved, result, warning, error = self.chip_action(action, None)
+                self.assertIsNone(result)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(gui.selection.hand_index, 0)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+                warning.assert_not_called()
+                error.assert_not_called()
+
     def test_hand_flip_and_score_reduction_failures_preserve_result_selection_and_state(self):
         for flip in (False, True):
             with self.subTest(flip=flip):

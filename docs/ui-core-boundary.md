@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 360 tests; native Tk probes for session, deck and preset
+latest full suite passed 363 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -20,7 +20,7 @@ wrap every model field or introduce a network protocol in advance.
 
 | Priority | Evidence and impact | Small next commit and acceptance criteria |
 | --- | --- | --- |
-| 1. Discard/play failure results — completed | Hand/table discard and normal/positioned/face-down play handlers return ActionResult directly and display its message. The return-to-draw and swap branches also propagate results. Valid selection is retained on failure; stale sources still clear through selection synchronization. Other legacy card helpers still use execute_value. | Regression tests cover failure messages/selection, valid transfers, one refresh/checkpoint/Undo and restored state. Hand-drop tests use the actual CardDrag.drop → GUI transaction → play-handler path on an occupied table in automatic and positioned modes. Convert other handlers only in separately scoped changes. |
+| 1. Action-result migration — completed | Card, turn, score, player lifecycle and chip handlers preserve ActionResult. The final chip callers migrated and ui/sessionactions.py was removed. Valid selection is retained on failure; stale sources still clear through synchronization. | Regression tests cover failure messages/codes, valid effects, cancellation, one refresh/checkpoint/Undo and restored state. Hand/table drop tests route through CardDrag.drop, the GUI transaction and actual handlers. |
 | 2. Score/leave control availability — completed | `update_point_button` and `update_leave_button` now refresh their actions through the same mapping/core availability used by full refresh. Reduce-score rules and pending confirmations are no longer approximated in these helpers. | Tests cover rule changes, pending approvals, all-left/return/Undo and temporary dialog blocking. Broader turn-button resets and Undo/return-specific queries remain separate scope. Execution continues revalidating every command. |
 | 3. Prepare only the capabilities a replacement client needs | `ui/gameguibuilder.py`, context menus and SpecialActionsUI construct controls from rule flags; `GameGUI` installs the checkpoint callback and renders game_log directly. These local reads work today but tie this client to the Game shape. | Once the replacement UI's first screen is chosen, define its minimal capability/log/lifecycle input and reuse the existing projections. Convert one screen or menu group per commit. Do not add a copy of every flag or a broad facade before a concrete consumer exists. |
 
@@ -62,7 +62,7 @@ top/any modes, shared/personal sources, one checkpoint/Undo/refresh and an offer
 card removed before submission. A temporary native Tk probe verified both modal
 paths return success/failure results; it was removed afterward. This reuses the
 existing index/top-card revalidation, not a new revision/concurrency mechanism.
-`ui/cardactions.py` no longer uses execute_value; other GUI modules still may.
+`ui/cardactions.py` no longer uses execute_value.
 
 Player leave/return handlers now execute through SessionController and preserve
 ActionResult. Leave returns its result from the GUI transaction; the return
@@ -77,8 +77,16 @@ Hand flip and score reduction now also return ActionResult and display the core
 failure message. Tests verify valid hand selection/state on refusal, flip reveal,
 immediate reduction and confirmation-request reduction, plus one successful
 refresh/checkpoint/Undo and full Undo restoration. GameGUIActions no longer
-imports execute_value. Other callers must be migrated before removing the
-compatibility module.
+imports execute_value.
+
+The final adapter callers in ChipBankUI now execute via SessionController and
+return ActionResult through the existing transaction decorator. Purchase errors
+retain the core message, as do bets and pot requests. Canceled dialogs and
+preflight-blocked actions still return None without executing a command. Tests
+cover purchase/bet/pot success, confirmation-required withdrawal, typed failures,
+selection/state preservation, one checkpoint/Undo/refresh and cancellation.
+No execute_value/sessionactions references remain in application code or tests,
+so the unused compatibility module was removed.
 
 ### Reads and responsibilities that can stay in the client
 

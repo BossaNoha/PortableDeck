@@ -1,6 +1,5 @@
 """Actions for chip accounts and the shared pot."""
 from functools import wraps
-from .sessionactions import execute_value
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 
@@ -44,12 +43,12 @@ class ChipBankUI:
         if purchase is None:
             return
         player_index, amount = purchase
-        balance = execute_value(game, "buy_chips", player_index=player_index, amount=amount)
-        if balance is None:
+        result = game.session.execute("buy_chips", player_index=player_index, amount=amount)
+        if not result.success:
             messagebox.showerror(
-                "Purchase failed", "Could not add chips to this account.", parent=self.gui.root
+                "Purchase failed", result.message, parent=self.gui.root
             )
-            return
+        return result
 
     @session_action
     def play_chips(self):
@@ -66,10 +65,10 @@ class ChipBankUI:
         )
         if amount is None:
             return
-        succeeded, message = execute_value(game, "play_chips", amount=amount)
-        if not succeeded:
-            messagebox.showwarning("Could not play chips", message, parent=self.gui.root)
-            return
+        result = game.session.execute("play_chips", amount=amount)
+        if not result.success:
+            messagebox.showwarning("Could not play chips", result.message, parent=self.gui.root)
+        return result
 
     @session_action
     def take_pot(self):
@@ -82,10 +81,10 @@ class ChipBankUI:
         )
         if recipient_index is None:
             return
-        succeeded, message = execute_value(game, "take_pot", player_index=recipient_index)
-        if not succeeded:
-            messagebox.showwarning("Could not take pot", message, parent=self.gui.root)
-            return
+        result = game.session.execute("take_pot", player_index=recipient_index)
+        if not result.success:
+            messagebox.showwarning("Could not take pot", result.message, parent=self.gui.root)
+        return result
 
     def _check_available(self, action, options):
         available = getattr(options, action)
