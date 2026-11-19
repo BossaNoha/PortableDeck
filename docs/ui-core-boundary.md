@@ -195,6 +195,17 @@ numeric field parsing and existing success/warning/error dialogs. Tests compare
 capacity with actual new-game acceptance at exact/insufficient/zero-hand limits,
 reject malformed inputs/files, verify dialogs and run headlessly.
 
+`app.settingsapplication.prepare_settings` validates form values and independently
+copies the current configuration name/baseline. `apply_settings` also writes
+current application settings before returning. SettingsWriteError distinguishes
+file-write failure from validation/deck-read failure, preserving GUI error
+titles. SettingsWindow only collects fields, chooses apply versus named-preset
+preparation, and updates form/menu after success. Named preparation does not
+write current settings. No game is started. Existing settings-file format/write
+behavior is unchanged; restore-defaults remains a separate GUI flow. Tests cover
+real temporary settings persistence, independent inputs/metadata, validation and
+IO errors, unchanged form/menu on failure, named/use separation and headless use.
+
 Game-changing card, chip, score, turn and player interaction actions in
 `portable_deck/ui` now execute through `SessionController`. Model methods remain
 available to core code. Selection and widget updates are local client state.

@@ -107,6 +107,9 @@ name/baseline after successful atomic writing; `write_preset` remains available.
 available/required card counts without dealing or saving. It shares starting-hand
 limits and capacity calculation with new-game validation (1–20 players,
 non-negative integer hand size).
+`app.settingsapplication` prepares validated form settings with independent
+configuration metadata. Applying settings writes them before returning success;
+preparing a named preset leaves current application settings untouched.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

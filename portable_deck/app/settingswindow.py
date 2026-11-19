@@ -13,6 +13,7 @@ from ..ui.tooltip import add_tooltip
 from ..ui.collapsiblesection import CollapsibleSection
 from ..ui.contentscrollarea import ContentScrollArea
 from .deckcheck import check_deck
+from .settingsapplication import SettingsWriteError, apply_settings, prepare_settings
 
 
 class SettingsWindow:
@@ -350,21 +351,19 @@ class SettingsWindow:
             **game_settings_values,
             **basic_settings_values,
         }
-        from ..core.settingsvalidation import validate_settings
         try:
-            selected_settings = validate_settings(selected_settings)
+            if mode == "named":
+                selected_settings = prepare_settings(selected_settings, self.settings)
+            else:
+                selected_settings = apply_settings(selected_settings, self.settings)
+        except SettingsWriteError as error:
+            messagebox.showerror("Could not save", str(error), parent=self.root)
+            return
         except (OSError, ValueError, TypeError) as error:
             messagebox.showerror("Invalid settings", str(error), parent=self.root)
             return
-        selected_settings["configuration_name"] = self.settings.get("configuration_name", "Default")
-        selected_settings["configuration_baseline"] = self.settings.get("configuration_baseline", {})
         if mode == "named":
             self.save_named_settings(selected_settings)
-            return
-        try:
-            save_settings(selected_settings)
-        except OSError as error:
-            messagebox.showerror("Could not save", str(error), parent=self.root)
             return
         self.settings = selected_settings
         self.menu.show_main_menu()
