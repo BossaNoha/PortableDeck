@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 348 tests; native Tk probes for session, deck and preset
+latest full suite passed 350 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -36,6 +36,15 @@ cover disabled actions, occupied destinations, valid take/move/sequence moves,
 single checkpoint/Undo/refresh, and CardDrag.drop routing for both single cards
 and sequences. This extends result preservation without changing drag targeting
 or the core movement rules.
+
+Table flip, discard recycling and manual table cleanup handlers now also return
+ActionResult directly. Refusal displays the core message, preserves still-valid
+selection and does not create Undo/checkpoints. Cleanup now reports a refusal
+instead of silently clearing selection. Success retains existing selection
+behavior and a single outer refresh/checkpoint/Undo step. Regression tests
+verify disabled actions, non-empty draw deck, flip visibility, recycling content,
+cleanup destination and Undo restoration. Core rule/execution behavior is
+unchanged; draw/end-turn/score helpers still have legacy adapter calls.
 
 ### Reads and responsibilities that can stay in the client
 

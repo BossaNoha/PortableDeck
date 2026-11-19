@@ -11,6 +11,7 @@ from portable_deck.ui.chipbankui import ChipBankUI
 from portable_deck.ui.cardactions import play_selected, play_selected_face_down, play_at_selected_spot
 from portable_deck.ui.carddrag import CardDrag
 from portable_deck.ui.cardactions import take_selected_from_table, move_selected_table_card
+from portable_deck.ui.cardactions import flip_selected_table_card, recycle_discard_into_deck, clear_table
 
 
 class HeadlessGUI(GameGUIActions):
@@ -33,6 +34,80 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def remaining_table_action(self, game, gui, action):
+        if action == "recycle_discard":
+            return gui.run_action(recycle_discard_into_deck, game, gui.render_log, gui.status_panel, gui.root)
+        helper = flip_selected_table_card if action == "flip_table_card" else clear_table
+        return gui.run_action(helper, game, gui.table_frame, gui.render_log, gui.status_panel)
+
+    def test_remaining_table_failures_report_result_without_clearing_valid_selection(self):
+        for action in ("flip_table_card", "recycle_discard", "clear_table"):
+            with self.subTest(action=action):
+                game, gui = self.table_gui()
+                if action == "flip_table_card":
+                    game.allow_flip_table = False
+                elif action == "recycle_discard":
+                    game.allow_recycle_discard_to_deck = True
+                    game.discard_pile.append("DISCARD")
+                # Clear-table permission is disabled in this fixture.
+                before = game.capture_undo_state()
+                selection = (gui.selection.hand_index, gui.selection.table_index, gui.selection.target_position)
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning, patch(
+                        "portable_deck.ui.cardactions.messagebox.showinfo") as info:
+                    result = self.remaining_table_action(game, gui, action)
+                self.assertFalse(result.success)
+                self.assertEqual(result.code, "deck_not_empty" if action == "recycle_discard" else "action_disabled")
+                if action == "recycle_discard":
+                    info.assert_called_once_with("Cannot recycle", result.message, parent=gui.root)
+                    warning.assert_not_called()
+                else:
+                    warning.assert_called_once_with("Invalid flip" if action == "flip_table_card" else "Cannot clear table", result.message)
+                    info.assert_not_called()
+                self.assertEqual((gui.selection.hand_index, gui.selection.table_index, gui.selection.target_position), selection)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+                self.assert_single_refresh(gui)
+
+    def test_remaining_table_success_returns_result_and_one_checkpoint_undo_refresh(self):
+        for action in ("flip_table_card", "recycle_discard", "clear_table"):
+            with self.subTest(action=action):
+                game, gui = self.table_gui()
+                if action == "recycle_discard":
+                    game.allow_recycle_discard_to_deck = True
+                    game.deck.flat_deck.clear()
+                    game.discard_pile.extend(["D1", "D2"])
+                elif action == "clear_table":
+                    game.allow_manual_table_cleanup = True
+                before = game.capture_undo_state()
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning, patch(
+                        "portable_deck.ui.cardactions.messagebox.showinfo") as info:
+                    result = self.remaining_table_action(game, gui, action)
+                self.assertTrue(result.success, result.message)
+                if action == "flip_table_card":
+                    self.assertEqual(result.value, "BASE")
+                    self.assertFalse(game.table_cards[0]["face_up"])
+                elif action == "clear_table":
+                    self.assertEqual(result.value, 1)
+                    self.assertEqual(game.table_cards, [])
+                    self.assertEqual(game.discard_pile, ["BASE"])
+                else:
+                    self.assertEqual(result.value, 2)
+                    self.assertCountEqual(game.deck.flat_deck, ["D1", "D2"])
+                    self.assertEqual(game.discard_pile, [])
+                    self.assertEqual(gui.selection.table_index, 0)
+                if action != "recycle_discard":
+                    self.assertIsNone(gui.selection.table_index)
+                warning.assert_not_called()
+                info.assert_not_called()
+                saved.assert_called_once_with(game)
+                self.assertEqual(len(game.undo_stack), 1)
+                self.assert_single_refresh(gui)
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+
     def table_gui(self, sequences=False):
         game, gui = self.play_gui("positioned")
         game.allow_take_from_table = True

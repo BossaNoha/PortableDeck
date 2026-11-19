@@ -198,18 +198,19 @@ def flip_selected_table_card(game, table_frame, render_log, status_panel):
     if table_frame.selection.table_index is None:
         messagebox.showwarning("No selection", "Select a table card first!")
         return
-    card = execute_value(game, "flip_table_card", card_index=table_frame.selection.table_index)
-    if card is None:
-        messagebox.showwarning("Invalid flip", "That card cannot be revealed yet.")
-        return
+    result = game.session.execute("flip_table_card", card_index=table_frame.selection.table_index)
+    if not result.success:
+        messagebox.showwarning("Invalid flip", result.message)
+        return result
     _clear_table_selection(table_frame)
+    return result
 
 
 def recycle_discard_into_deck(game, render_log, status_panel, root):
-    count = execute_value(game, "recycle_discard")
-    if not count:
-        messagebox.showinfo("Cannot recycle", "The draw deck must be empty and the discard pile must contain cards.", parent=root)
-        return
+    result = game.session.execute("recycle_discard")
+    if not result.success:
+        messagebox.showinfo("Cannot recycle", result.message, parent=root)
+    return result
 
 
 def _play_from_hand_at(game, hand_frame, table_frame, position, render_log, status_panel):
@@ -326,8 +327,12 @@ def move_selected_table_card(game, table_frame, render_log, status_panel):
 
 
 def clear_table(game, table_frame, render_log, status_panel):
-    count = execute_value(game, "clear_table")
-    table_frame.selection.table_index = None
+    result = game.session.execute("clear_table")
+    if result.success:
+        table_frame.selection.table_index = None
+    else:
+        messagebox.showwarning("Cannot clear table", result.message)
+    return result
 
 
 def end_turn(game, hand_frame, render_log, status_panel, on_turn_start=None):
