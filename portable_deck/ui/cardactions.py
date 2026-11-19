@@ -7,8 +7,10 @@ from tkinter import messagebox
 
 def draw_card(game, hand_frame, render_log, status_panel):
     """Current player draws a card."""
-    player_name = game.players[game.current_player_index].name
-    card = execute_value(game, "draw_card")
+    result = game.session.execute("draw_card")
+    if not result.success:
+        messagebox.showwarning("Cannot draw", result.message)
+    return result
 
 
 def draw_from_discard(game, hand_frame, render_log, status_panel, root):
@@ -337,14 +339,21 @@ def clear_table(game, table_frame, render_log, status_panel):
 
 def end_turn(game, hand_frame, render_log, status_panel, on_turn_start=None):
     """End current player's turn and move to next."""
-    round_ended, cleared_count = execute_value(game, "end_turn")
+    result = game.session.execute("end_turn")
+    if not result.success:
+        messagebox.showwarning("Cannot end turn", result.message)
+        return result
     hand_frame.game_gui.selection.hand_index = None
     if on_turn_start:
         on_turn_start()
+    return result
 
 
 def request_point(game, hand_frame, render_log, status_panel):
-    succeeded, message = execute_value(game, "request_point")
+    result = game.session.execute("request_point")
+    if not result.success:
+        messagebox.showwarning("Cannot change score", result.message)
+    return result
 
 
 def _clear_table_selection(table_frame):

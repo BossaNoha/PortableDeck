@@ -12,6 +12,7 @@ from portable_deck.ui.cardactions import play_selected, play_selected_face_down,
 from portable_deck.ui.carddrag import CardDrag
 from portable_deck.ui.cardactions import take_selected_from_table, move_selected_table_card
 from portable_deck.ui.cardactions import flip_selected_table_card, recycle_discard_into_deck, clear_table
+from portable_deck.ui.cardactions import request_point
 
 
 class HeadlessGUI(GameGUIActions):
@@ -34,6 +35,85 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def turn_action(self, game, gui, action, callback):
+        helper = {"draw_card": draw_card, "end_turn": end_turn, "request_point": request_point}[action]
+        args = (game, gui.hand_frame, gui.render_log, gui.status_panel)
+        return gui.run_action(helper, *args, *((callback,) if action == "end_turn" else ()))
+
+    def test_turn_handlers_reject_pending_confirmation_without_selection_or_turn_side_effects(self):
+        for action in ("draw_card", "end_turn", "request_point"):
+            with self.subTest(action=action):
+                game = self.game(score_enabled=True, require_point_confirmation=True)
+                game.session.execute("request_point")
+                game.session.execute("end_turn")
+                game.players[1].hand = ["HAND"]
+                gui = HeadlessGUI(game)
+                gui.selection.synchronize(build_selection_snapshot(game))
+                gui.selection.hand_index = 0
+                before = game.capture_undo_state()
+                undo_count = len(game.undo_stack)
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                callback = Mock()
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                    result = self.turn_action(game, gui, action, callback)
+                self.assertFalse(result.success)
+                self.assertEqual(result.code, "confirmation_required")
+                self.assertEqual(warning.call_args.args[1], result.message)
+                self.assertEqual(gui.selection.hand_index, 0)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(len(game.undo_stack), undo_count)
+                saved.assert_not_called()
+                callback.assert_not_called()
+                self.assert_single_refresh(gui)
+
+    def test_draw_empty_and_score_disabled_report_original_failure(self):
+        for action in ("draw_card", "request_point"):
+            with self.subTest(action=action):
+                game = self.game()
+                game.deck.flat_deck.clear()
+                gui = HeadlessGUI(game)
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                before = game.capture_undo_state()
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                    result = self.turn_action(game, gui, action, Mock())
+                self.assertEqual(result.code, "empty_deck" if action == "draw_card" else "action_disabled")
+                self.assertEqual(warning.call_args.args[1], result.message)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+
+    def test_turn_handler_success_returns_result_and_single_checkpoint_undo(self):
+        for action in ("draw_card", "end_turn", "request_point"):
+            with self.subTest(action=action):
+                game = self.game(score_enabled=True)
+                game.players[0].hand = ["HAND"]
+                gui = HeadlessGUI(game)
+                gui.selection.synchronize(build_selection_snapshot(game))
+                gui.selection.hand_index = 0
+                before = game.capture_undo_state()
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                callback = Mock()
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                    result = self.turn_action(game, gui, action, callback)
+                self.assertTrue(result.success)
+                if action == "end_turn":
+                    self.assertEqual(game.current_player_index, 1)
+                    self.assertIsNone(gui.selection.hand_index)
+                    callback.assert_called_once()
+                elif action == "draw_card":
+                    self.assertEqual(len(game.players[0].hand), 2)
+                    self.assertEqual(result.value, game.players[0].hand[-1])
+                    callback.assert_not_called()
+                else:
+                    self.assertEqual(game.scores[0], 1)
+                    callback.assert_not_called()
+                warning.assert_not_called()
+                saved.assert_called_once_with(game)
+                self.assertEqual(len(game.undo_stack), 1)
+                self.assert_single_refresh(gui)
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+
     def remaining_table_action(self, game, gui, action):
         if action == "recycle_discard":
             return gui.run_action(recycle_discard_into_deck, game, gui.render_log, gui.status_panel, gui.root)

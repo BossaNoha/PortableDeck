@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 350 tests; native Tk probes for session, deck and preset
+latest full suite passed 353 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -44,7 +44,16 @@ instead of silently clearing selection. Success retains existing selection
 behavior and a single outer refresh/checkpoint/Undo step. Regression tests
 verify disabled actions, non-empty draw deck, flip visibility, recycling content,
 cleanup destination and Undo restoration. Core rule/execution behavior is
-unchanged; draw/end-turn/score helpers still have legacy adapter calls.
+unchanged.
+
+Draw, end-turn and point-request helpers now also preserve ActionResult and
+display its failure message. End-turn clears hand selection and invokes its
+turn-start callback only on success; an unsuccessful result is no longer
+unpacked as a successful tuple. Tests cover pending-confirmation rejection,
+empty deck, disabled scoring, valid effects, preserved valid selection/state,
+no failed-action checkpoint/Undo, callback ordering and one successful outer
+refresh/checkpoint/Undo. Discard-draw and other GUI action families may still
+use the compatibility adapter; this change is scoped to these three handlers.
 
 ### Reads and responsibilities that can stay in the client
 
