@@ -87,8 +87,9 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         """Display the core-owned public log without creating or changing entries."""
         self.log_text.config(state="normal")
         self.log_text.delete("1.0", "end")
-        if self.game.game_log:
-            self.log_text.insert("end", "\n".join(self.game.game_log) + "\n")
+        lines = self.session.log_snapshot()
+        if lines:
+            self.log_text.insert("end", "\n".join(lines) + "\n")
         self.log_text.see("end")
         self.log_text.config(state="disabled")
 

@@ -27,6 +27,10 @@ class SessionController:
         self.depth = 0
         self.last_checkpoint_error = None
 
+    def log_snapshot(self):
+        """Return ordered public log text without exposing the mutable list."""
+        return tuple(self.game.game_log)
+
     def checkpoint(self):
         self.last_checkpoint_error = None
         if self.checkpoint_callback:

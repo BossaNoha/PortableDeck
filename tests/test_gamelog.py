@@ -2,10 +2,54 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 from portable_deck.core.game import Game
 
 
 class GameLogTests(unittest.TestCase):
+    def test_session_log_snapshot_is_independent_ordered_and_tracks_undo_and_checkpoint(self):
+        g = self.game(enable_undo=True)
+        before = g.capture_undo_state()
+        empty = g.session.log_snapshot()
+        self.assertEqual(empty, ())
+        self.assertEqual(g.capture_undo_state(), before)
+        g.session.execute("draw_card")
+        drawn = g.session.log_snapshot()
+        self.assertEqual(drawn, ("Player1 drew a card.",))
+        with self.assertRaises(TypeError):
+            drawn[0] = "changed"
+        g.session.execute("end_turn")
+        self.assertEqual(g.session.log_snapshot()[:1], drawn)
+        self.assertEqual(g.session.log_snapshot()[-1], "Player2's turn starts.")
+        self.assertEqual(drawn, ("Player1 drew a card.",))
+        self.assertTrue(g.session.undo_result().success)
+        self.assertEqual(g.session.log_snapshot(), drawn)
+        g.session.checkpoint_callback = lambda game: "Disk full"
+        self.assertFalse(g.session.checkpoint_result().success)
+        failed = g.session.log_snapshot()
+        self.assertEqual(failed[:-1], drawn)
+        self.assertIn("Disk full", failed[-1])
+        self.assertEqual(drawn, ("Player1 drew a card.",))
+        self.assertEqual(empty, ())
+
+    def test_gui_renders_one_session_snapshot_without_model_access(self):
+        from portable_deck.ui.guibase import GameGUI
+        for lines in ((), ("First", "Second")):
+            with self.subTest(lines=lines):
+                session = Mock()
+                session.log_snapshot.return_value = lines
+                gui = SimpleNamespace(session=session, log_text=Mock())
+                GameGUI.render_log(gui)
+                session.log_snapshot.assert_called_once_with()
+                gui.log_text.delete.assert_called_once_with("1.0", "end")
+                if lines:
+                    gui.log_text.insert.assert_called_once_with("end", "First\nSecond\n")
+                else:
+                    gui.log_text.insert.assert_not_called()
+                gui.log_text.see.assert_called_once_with("end")
+                self.assertEqual(gui.log_text.config.call_args_list[-1].kwargs, {"state": "disabled"})
+
     def test_start_and_restart_initialize_log_without_gui(self):
         g = self.game(enable_undo=True)
         g.start(cards_per_player=0)

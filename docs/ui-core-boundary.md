@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 373 tests; native Tk probes for session, deck and preset
+latest full suite passed 375 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -128,6 +128,14 @@ Undo paths. The GUI checkpoint wrapper returns the new result after capturing
 view state and rendering the existing log, without adding modal dialogs (the
 wrapper is also used at initialization/exit). Tests cover callback success,
 returned errors/exceptions, stale-error reset, no new Undo and GUI propagation.
+
+`SessionController.log_snapshot()` now returns an ordered tuple of existing
+public log text, independent of the mutable game_log list. GameGUI.render_log
+reads one snapshot and no longer accesses that list. Tests verify snapshot
+independence/order, Undo restoration, checkpoint failure messages, empty/full
+rendering without model access and headless use. Log formatting, save/Undo
+contents and existing public/private message rules are unchanged; this is not
+a new remote-log authorization or filtering protocol.
 
 ### Reads and responsibilities that can stay in the client
 
