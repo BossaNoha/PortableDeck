@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 358 tests; native Tk probes for session, deck and preset
+latest full suite passed 360 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -71,8 +71,14 @@ does not wait for a result). Failure displays the core message without clearing
 valid hand selection or starting turn handling. A failed return leaves its
 dialog open; success retains existing close/turn behavior. Tests cover disabled
 leave, stale return choices, the last active player, successful Undo/checkpoint/
-refresh counts and failure state preservation. Hand flip and score reduction
-still use the legacy adapter and remain outside this change.
+refresh counts and failure state preservation.
+
+Hand flip and score reduction now also return ActionResult and display the core
+failure message. Tests verify valid hand selection/state on refusal, flip reveal,
+immediate reduction and confirmation-request reduction, plus one successful
+refresh/checkpoint/Undo and full Undo restoration. GameGUIActions no longer
+imports execute_value. Other callers must be migrated before removing the
+compatibility module.
 
 ### Reads and responsibilities that can stay in the client
 

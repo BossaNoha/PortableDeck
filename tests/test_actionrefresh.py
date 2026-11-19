@@ -37,6 +37,60 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def test_hand_flip_and_score_reduction_failures_preserve_result_selection_and_state(self):
+        for flip in (False, True):
+            with self.subTest(flip=flip):
+                game = self.game(score_enabled=True)
+                game.players[0].hand = ["HAND"]
+                gui = HeadlessGUI(game)
+                gui.selection.synchronize(build_selection_snapshot(game))
+                gui.selection.hand_index = 0
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                before = game.capture_undo_state()
+                with patch("portable_deck.ui.gameguiactions.messagebox.showwarning") as warning:
+                    result = gui.flip_current_hand_card() if flip else gui.reduce_current_score()
+                self.assertFalse(result.success)
+                self.assertEqual(result.code, "action_disabled")
+                warning.assert_called_once_with("Cannot flip card" if flip else "Cannot change score",
+                                                result.message, parent=None)
+                self.assertEqual(gui.selection.hand_index, 0)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+                self.assert_single_refresh(gui)
+
+    def test_hand_flip_and_score_reduction_success_keep_single_transaction(self):
+        for flip in (False, True):
+            for confirmations in ((False,) if flip else (False, True)):
+                with self.subTest(flip=flip, confirmations=confirmations):
+                    game = self.game(score_enabled=True, allow_reduce_score=True,
+                                     require_point_confirmation=confirmations,
+                                     enable_flipping=True, allow_flip_hand=True)
+                    game.players[0].hand = ["HAND"]
+                    gui = HeadlessGUI(game)
+                    gui.selection.synchronize(build_selection_snapshot(game))
+                    gui.selection.hand_index = 0
+                    saved = game.session.checkpoint_callback = Mock(return_value=None)
+                    before = game.capture_undo_state()
+                    with patch("portable_deck.ui.gameguiactions.messagebox.showwarning") as warning:
+                        result = gui.flip_current_hand_card() if flip else gui.reduce_current_score()
+                    self.assertTrue(result.success, result.message)
+                    if flip:
+                        self.assertEqual(result.value, "HAND")
+                        self.assertEqual(game.players[0].revealed_indices, {0})
+                    elif confirmations:
+                        self.assertEqual(game.pending_point_request["delta"], -1)
+                        self.assertEqual(game.scores, [0, 0])
+                    else:
+                        self.assertEqual(game.scores, [-1, 0])
+                    self.assertEqual(gui.selection.hand_index, 0)
+                    warning.assert_not_called()
+                    saved.assert_called_once_with(game)
+                    self.assertEqual(len(game.undo_stack), 1)
+                    self.assert_single_refresh(gui)
+                    self.assertTrue(game.session.undo())
+                    self.assertEqual(game.capture_undo_state(), before)
+
     def test_player_leave_preserves_result_and_only_starts_turn_after_success(self):
         for allowed in (False, True):
             with self.subTest(allowed=allowed):

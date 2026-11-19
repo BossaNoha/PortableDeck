@@ -2,7 +2,6 @@
 import tkinter as tk
 from tkinter import messagebox
 from .cardactions import request_point
-from .sessionactions import execute_value
 from ..core.selectionsnapshot import build_selection_snapshot
 from ..core.playerleaving import build_player_return_options
 from ..core.playersessionview import build_player_session_view
@@ -100,14 +99,21 @@ class GameGUIActions:
             messagebox.showwarning("No selection", "Select a card in your hand first.", parent=self.root)
             return
         def action():
-            execute_value(self.game, "flip_hand_card", card_index=selected)
-        self.run_action(action)
+            result = self.session.execute("flip_hand_card", card_index=selected)
+            if not result.success:
+                messagebox.showwarning("Cannot flip card", result.message, parent=self.root)
+            return result
+        return self.run_action(action)
 
     def reduce_current_score(self):
         def action():
-            _, message = execute_value(self.game, "reduce_score")
-        self.run_action(action)
+            result = self.session.execute("reduce_score")
+            if not result.success:
+                messagebox.showwarning("Cannot change score", result.message, parent=self.root)
+            return result
+        result = self.run_action(action)
         self.update_point_button()
+        return result
 
     def update_point_button(self):
         from .actionavailability import refresh_action_availability
