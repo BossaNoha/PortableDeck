@@ -67,6 +67,7 @@ class CoreBoundaryTests(unittest.TestCase):
             assert not restarted.session.undo_availability().allowed
             assert isinstance(restarted.session.log_snapshot(), tuple)
             assert restarted.session.end_turn_availability().allowed
+            assert not restarted.session.return_player_options().allowed
             assert restarted.pending_point_request is None
             assert restarted.pending_pot_withdrawal is None
             assert not any(name == 'tkinter' or name.startswith('tkinter.') for name in sys.modules)

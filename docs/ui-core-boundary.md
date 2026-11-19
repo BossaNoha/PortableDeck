@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 380 tests; native Tk probes for session, deck and preset
+latest full suite passed 381 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -154,6 +154,15 @@ complete pending score/pot decisions, and no active players blocks advancement.
 Temporary dialog blocking remains. Tests verify query/command agreement without
 mutation/checkpoints on refusal, pending votes, all-left/return/Undo transitions,
 GUI state/reasons and headless use.
+
+`SessionController.return_player_options()` now exposes the existing immutable
+return choices/availability to clients. The GUI dialog and Return player button
+mapping/tooltip use the same query, refreshed with lifecycle controls. No departed
+players, disabled return or pending score/pot requests disable the button;
+all-players-left does not, so return remains possible. Execution still rechecks
+the shared model reason. Tests cover these transitions, immutable prior options,
+return/Undo, state/reason agreement and headless use. Dialog submission tests
+continue covering stale choices without premature selection/turn changes.
 
 ### Reads and responsibilities that can stay in the client
 

@@ -413,6 +413,8 @@ messages; GUI rendering uses it instead of the mutable model list.
 `undo_stack`, directing clients to session log/Undo APIs instead.
 `game.session.end_turn_availability()` supplies the same availability/reason used
 by end-turn execution and the GUI Next turn button.
+`game.session.return_player_options()` supplies immutable return choices and
+availability shared by the GUI Return player button and dialog.
 
 Card indices are zero-based. For example, `execute("play_card", card_index=0)`
 plays the first card; `execute("move_table_card", card_index=0,

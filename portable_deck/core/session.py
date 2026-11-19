@@ -236,6 +236,11 @@ class SessionController:
             return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
         return ActionAvailability(True)
 
+    def return_player_options(self):
+        """Prepare immutable return choices and availability for clients."""
+        from .playerleaving import build_player_return_options
+        return build_player_return_options(self.game)
+
     def undo_availability(self):
         """Describe Undo without exposing mutable history to clients."""
         from .actionavailability import ActionAvailability

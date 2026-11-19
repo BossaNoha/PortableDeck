@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import messagebox
 from .cardactions import request_point
 from ..core.selectionsnapshot import build_selection_snapshot
-from ..core.playerleaving import build_player_return_options
 from ..core.playersessionview import build_player_session_view
 from ..core.turnstart import build_turn_start_view
 
@@ -125,13 +124,13 @@ class GameGUIActions:
 
     def update_leave_button(self):
         from .actionavailability import refresh_action_availability
-        refresh_action_availability(self, {"leave_session", "end_turn"})
+        refresh_action_availability(self, {"leave_session", "end_turn", "return_player"})
         if not self.game.active_player_indices():
             for button in self._turn_action_buttons():
                 button.configure(state="disabled")
 
     def choose_returning_player(self):
-        options = build_player_return_options(self.game)
+        options = self.session.return_player_options()
         if not options.allowed:
             messagebox.showinfo("Return player", options.reason, parent=self.root)
             return

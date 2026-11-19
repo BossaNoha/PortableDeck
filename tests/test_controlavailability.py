@@ -36,6 +36,42 @@ class ControlsGUI(GameGUIActions):
 
 
 class ControlAvailabilityTests(unittest.TestCase):
+    def test_return_button_and_reason_track_options_pending_requests_and_undo(self):
+        game = self.game()
+        gui = ControlsGUI(game)
+        gui.return_player_button = Button()
+        def check(allowed):
+            gui.update_leave_button()
+            options = game.session.return_player_options()
+            self.assertEqual(options.allowed, allowed)
+            self.assertEqual(gui.return_player_button.state, "normal" if allowed else "disabled")
+            self.assertEqual(action_reason(gui, gui.return_player_button), options.reason)
+            self.assertEqual(selected_action_available(gui, "return_player"), allowed)
+        check(False)
+        game.session.execute("leave_session")
+        check(True)
+        snapshot = game.session.return_player_options()
+        game.session.execute("request_point")
+        # One remaining player scores immediately, so explicitly prepare a
+        # pending request to check the same return restriction for both types.
+        for field in ("pending_point_request", "pending_pot_withdrawal"):
+            setattr(game, field, {"requester": 1, "confirmed_by": []})
+            check(False)
+            setattr(game, field, None)
+        check(True)
+        game.enable_player_return = False
+        check(False)
+        game.enable_player_return = True
+        self.assertTrue(game.session.execute("leave_session").success)
+        check(True)  # Return remains usable when all turn actions are blocked.
+        self.assertTrue(game.session.execute("return_player", player_index=0).success)
+        self.assertTrue(game.session.execute("return_player", player_index=1).success)
+        check(False)
+        self.assertTrue(game.session.undo())
+        check(True)
+        self.assertEqual([player.index for player in snapshot.players], [0])
+        self.assertTrue(snapshot.allowed)
+
     def test_next_turn_tracks_pending_votes_all_left_return_and_undo(self):
         game = self.game()
         gui = ControlsGUI(game)
