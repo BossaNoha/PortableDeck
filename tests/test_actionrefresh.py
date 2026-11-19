@@ -37,6 +37,51 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def test_cross_feature_results_pending_refusal_and_grouped_decisions(self):
+        game = self.game(score_enabled=True, require_point_confirmation=True,
+                         enable_chip_accounts=True, require_pot_withdrawal_confirmation=True,
+                         enable_player_leaving=True, enable_player_return=True)
+        game.players[0].hand = ["HAND"]
+        game.players[1].hand = ["OTHER"]
+        gui = HeadlessGUI(game)
+        chip = object.__new__(ChipBankUI)
+        chip.gui = gui
+        saved = game.session.checkpoint_callback = Mock(return_value=None)
+        point = gui.run_action(request_point, game, gui.hand_frame, gui.render_log, gui.status_panel)
+        self.assertTrue(point.success)
+        with patch("portable_deck.ui.chipbankui.simpledialog.askinteger", return_value=5):
+            self.assertTrue(chip.play_chips().success)
+        with patch("portable_deck.ui.chipbankui.ask_pot_recipient", return_value=0):
+            self.assertTrue(chip.take_pot().success)
+        self.assertEqual(saved.call_count, 3)
+        self.assertEqual(len(game.undo_stack), 3)
+        self.assertTrue(gui.run_action(end_turn, game, gui.hand_frame, gui.render_log, gui.status_panel).success)
+        gui.selection.hand_index = 0
+        before = game.capture_undo_state()
+        callback = Mock()
+        saved.reset_mock()
+        undo_count = len(game.undo_stack)
+        with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+            refused = gui.run_action(end_turn, game, gui.hand_frame, gui.render_log, gui.status_panel, callback)
+        self.assertEqual(refused.code, "confirmation_required")
+        self.assertEqual(warning.call_args.args[1], refused.message)
+        self.assertEqual(game.capture_undo_state(), before)
+        self.assertEqual(gui.selection.hand_index, 0)
+        self.assertEqual(len(game.undo_stack), undo_count)
+        saved.assert_not_called()
+        callback.assert_not_called()
+        with patch("portable_deck.ui.gameguiactions.messagebox.askyesno", side_effect=[False, True]) as prompt:
+            gui.run_action(gui.handle_turn_start)
+        self.assertEqual(prompt.call_count, 2)
+        self.assertEqual(game.scores, [0, 0])
+        self.assertEqual(game.chip_pot, 0)
+        self.assertIsNone(game.pending_point_request)
+        self.assertIsNone(game.pending_pot_withdrawal)
+        saved.assert_called_once_with(game)
+        self.assertEqual(len(game.undo_stack), undo_count + 1)
+        self.assertTrue(game.session.undo())
+        self.assertEqual(game.capture_undo_state(), before)
+
     def chip_action(self, action, answer, confirmations=False):
         game = self.game(enable_chip_accounts=True, require_pot_withdrawal_confirmation=confirmations)
         game.chip_pot = 5

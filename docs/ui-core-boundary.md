@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 363 tests; native Tk probes for session, deck and preset
+latest full suite passed 364 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -87,6 +87,18 @@ cover purchase/bet/pot success, confirmation-required withdrawal, typed failures
 selection/state preservation, one checkpoint/Undo/refresh and cancellation.
 No execute_value/sessionactions references remain in application code or tests,
 so the unused compatibility module was removed.
+
+The post-migration integration regression now links GUI point/pot requests,
+blocked end-turn handling, grouped approval decisions and persisted Undo state.
+A temporary native Tk probe passed actual GameGUI widgets across refused and
+successful card/chip actions, automatic hand drop onto an occupied table,
+dialog blocking, grouped score/pot decisions, Undo and player leave/return.
+It checked exact core failure messages, retained valid selection, no rejected
+action Undo/checkpoint and one successful transaction Undo/checkpoint, plus
+restored score/leave control states. Checkpoint counts were observed via a
+callback rather than real autosave writes. Probe files/windows were removed.
+No application-code fix was needed. This is targeted automated native GUI
+verification, not exhaustive manual testing of all settings/modes.
 
 ### Reads and responsibilities that can stay in the client
 
