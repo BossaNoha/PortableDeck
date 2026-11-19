@@ -38,6 +38,13 @@ class SessionController:
             self.game.log_action("", "autosave_failed", error=self.last_checkpoint_error)
         return self.last_checkpoint_error
 
+    def checkpoint_result(self):
+        """Report explicit checkpoint completion without a gameplay Undo step."""
+        error = self.checkpoint()
+        if error:
+            return ActionResult(False, message=error, checkpoint_error=error, code="checkpoint_failed")
+        return ActionResult(True, message="Checkpoint completed.")
+
     def restore(self, state):
         g = self.game
         stack, enabled = g.undo_stack, g.enable_undo

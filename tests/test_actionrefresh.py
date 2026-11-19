@@ -37,6 +37,23 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def test_gui_checkpoint_returns_result_renders_errors_and_does_not_create_undo(self):
+        for error in (None, "Disk full"):
+            with self.subTest(error=error):
+                game = self.game()
+                gui = HeadlessGUI(game)
+                saved = game.session.checkpoint_callback = Mock(return_value=error)
+                result = gui.checkpoint()
+                self.assertEqual(result.success, error is None)
+                self.assertEqual(result.checkpoint_error, error)
+                self.assertFalse(result.changed)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_called_once_with(game)
+                gui.table_frame.capture_view.assert_called_once()
+                gui.render_log.assert_called_once()
+                if error:
+                    self.assertIn(error, game.game_log[-1])
+
     def test_gui_undo_returns_result_and_preserves_selection_on_refusal(self):
         game = self.game()
         game.players[0].hand = ["HAND"]

@@ -65,8 +65,9 @@ class GameGUIActions:
     def checkpoint(self):
         self.table_frame.capture_view()
         self.refresh_action_availability()
-        self.session.checkpoint()
+        result = self.session.checkpoint_result()
         self.render_log()
+        return result
 
     def restart(self):
         if self.game.score_enabled:

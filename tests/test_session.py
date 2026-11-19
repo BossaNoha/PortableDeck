@@ -6,6 +6,41 @@ from portable_deck.core.game import Game
 
 
 class SessionTests(unittest.TestCase):
+    def test_checkpoint_result_has_status_and_no_gameplay_undo_step(self):
+        before = self.game.capture_undo_state()
+        result = self.game.session.checkpoint_result()
+        self.assertTrue(result.success)
+        self.assertFalse(result.changed)
+        self.assertEqual(result.code, "")
+        self.assertIsNone(result.checkpoint_error)
+        self.saved.assert_called_once_with(self.game)
+        self.assertEqual(self.game.capture_undo_state(), before)
+        self.assertEqual(self.game.undo_stack, [])
+
+    def test_checkpoint_result_handles_error_and_exception_and_clears_stale_error(self):
+        for raises in (False, True):
+            with self.subTest(raises=raises):
+                self.saved.reset_mock()
+                self.saved.side_effect = OSError("Disk full") if raises else None
+                self.saved.return_value = "Disk full"
+                result = self.game.session.checkpoint_result()
+                self.assertFalse(result.success)
+                self.assertFalse(result.changed)
+                self.assertEqual((result.code, result.message, result.checkpoint_error),
+                                 ("checkpoint_failed", "Disk full", "Disk full"))
+                self.assertIn("Disk full", self.game.game_log[-1])
+                self.assertEqual(self.game.undo_stack, [])
+                self.saved.assert_called_once_with(self.game)
+                self.saved.side_effect = None
+                self.saved.return_value = None
+                recovered = self.game.session.checkpoint_result()
+                self.assertTrue(recovered.success)
+                self.assertIsNone(recovered.checkpoint_error)
+                self.assertIsNone(self.game.session.last_checkpoint_error)
+        self.game.session.checkpoint_callback = None
+        self.assertTrue(self.game.session.checkpoint_result().success)
+        self.assertIsNone(self.game.session.checkpoint())
+
     def test_structured_undo_reports_refusal_success_and_checkpoint_failure(self):
         empty = self.game.session.undo_result()
         self.assertFalse(empty.success)

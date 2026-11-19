@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 370 tests; native Tk probes for session, deck and preset
+latest full suite passed 373 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -118,6 +118,16 @@ its former client-only nothing_to_undo code); text mode also reports checkpoint
 failure. A failed checkpoint does not convert successful Undo into a refusal.
 Tests cover state restoration, refusal without side effects, stale errors,
 checkpoint failure and both clients.
+
+`checkpoint_result()` now wraps the existing checkpoint operation in ActionResult:
+success or checkpoint_failed with message/checkpoint_error. changed remains False
+because this is persistence, not a gameplay action; existing failure log/history
+entries remain observable. No callback is still a successful no-op, as before.
+The original checkpoint() error-string/None API remains for automatic action/
+Undo paths. The GUI checkpoint wrapper returns the new result after capturing
+view state and rendering the existing log, without adding modal dialogs (the
+wrapper is also used at initialization/exit). Tests cover callback success,
+returned errors/exceptions, stale-error reset, no new Undo and GUI propagation.
 
 ### Reads and responsibilities that can stay in the client
 

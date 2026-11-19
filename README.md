@@ -404,6 +404,9 @@ game.session.undo()
 or successful restoration and `checkpoint_error`. `undo()` remains a boolean
 compatibility wrapper. GUI and CLI use the structured result; CLI empty-history
 failures use the core `empty_undo` code.
+`game.session.checkpoint_result()` returns checkpoint status as `ActionResult`,
+with `checkpoint_failed`/`checkpoint_error` on failure and no gameplay Undo step.
+The original `checkpoint()` error-string/`None` API remains supported.
 
 Card indices are zero-based. For example, `execute("play_card", card_index=0)`
 plays the first card; `execute("move_table_card", card_index=0,
