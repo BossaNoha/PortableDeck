@@ -170,13 +170,13 @@ def play_selected(game, hand_frame, table_frame, render_log, status_panel):
         if selected is None:
             messagebox.showwarning("No selection", "Select a card from your hand first!")
             return
-        card = execute_value(game, "play_card", card_index=selected)
-        if card is None:
-            messagebox.showwarning("Invalid", "Invalid card selection!")
-            return
+        result = game.session.execute("play_card", card_index=selected)
+        if not result.success:
+            messagebox.showwarning("Invalid", result.message)
+            return result
         hand_frame.game_gui.selection.hand_index = None
-        return
-    _play_from_hand_at(game, hand_frame, table_frame, None, render_log, status_panel)
+        return result
+    return _play_from_hand_at(game, hand_frame, table_frame, None, render_log, status_panel)
 
 
 def play_selected_face_down(game, hand_frame, table_frame, render_log, status_panel):
@@ -185,13 +185,13 @@ def play_selected_face_down(game, hand_frame, table_frame, render_log, status_pa
         messagebox.showwarning("No selection", "Select a card from your hand first!")
         return
     position = table_frame.selection.target_position if game.allow_positioned_play else None
-    card = execute_value(game, "play_face_down", card_index=selected, target_position=position)
-    if card:
-        player = game.players[game.current_player_index].name
+    result = game.session.execute("play_face_down", card_index=selected, target_position=position)
+    if result.success:
         hand_frame.game_gui.selection.hand_index = None
         _clear_table_selection(table_frame)
     else:
-        messagebox.showwarning("Invalid", "The card could not be played at that spot.")
+        messagebox.showwarning("Invalid", result.message)
+    return result
 
 
 def flip_selected_table_card(game, table_frame, render_log, status_panel):
@@ -218,13 +218,13 @@ def _play_from_hand_at(game, hand_frame, table_frame, position, render_log, stat
         messagebox.showwarning("No selection", "Select a card from your hand first!")
         return
 
-    card = execute_value(game, "play_at_position" if position is not None else "play_card", card_index=selected, target_position=position)
-    if card:
-        player_name = game.players[game.current_player_index].name
+    result = game.session.execute("play_at_position" if position is not None else "play_card", card_index=selected, target_position=position)
+    if result.success:
         hand_frame.game_gui.selection.hand_index = None
         _clear_table_selection(table_frame)
     else:
-        messagebox.showwarning("Invalid", "Invalid card selection!")
+        messagebox.showwarning("Invalid", result.message)
+    return result
 
 
 def play_at_selected_spot(game, hand_frame, table_frame, render_log, status_panel):
@@ -237,14 +237,14 @@ def play_at_selected_spot(game, hand_frame, table_frame, render_log, status_pane
                                       table_index=table_frame.selection.table_index)
         if not result.success:
             messagebox.showwarning("Cannot swap cards", result.message)
-            return
+            return result
         hand_frame.game_gui.selection.hand_index = None
         _clear_table_selection(table_frame)
-        return
+        return result
     if table_frame.selection.target_position is None:
         messagebox.showwarning("No spot selected", "Select an empty spot on the table first!")
         return
-    _play_from_hand_at(
+    return _play_from_hand_at(
         game, hand_frame, table_frame, table_frame.selection.target_position, render_log, status_panel
     )
 

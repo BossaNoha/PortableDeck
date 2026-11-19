@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 342 tests; native Tk probes for session, deck and preset
+latest full suite passed 345 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -20,7 +20,7 @@ wrap every model field or introduce a network protocol in advance.
 
 | Priority | Evidence and impact | Small next commit and acceptance criteria |
 | --- | --- | --- |
-| 1. Discard failure results — completed | Hand/table discard handlers now return ActionResult directly and display its message. Valid selection is retained on failure; stale sources still clear through selection synchronization. Other legacy card helpers still use execute_value. | Regression tests cover invalid destinations, disabled actions, stale sources, shared/personal success, single refresh/checkpoint/Undo and restored game state. Convert other handlers only in separately scoped changes. |
+| 1. Discard/play failure results — completed | Hand/table discard and normal/positioned/face-down play handlers return ActionResult directly and display its message. The return-to-draw and swap branches also propagate results. Valid selection is retained on failure; stale sources still clear through selection synchronization. Other legacy card helpers still use execute_value. | Regression tests cover failure messages/selection, valid transfers, one refresh/checkpoint/Undo and restored state. Hand-drop tests use the actual CardDrag.drop → GUI transaction → play-handler path on an occupied table in automatic and positioned modes. Convert other handlers only in separately scoped changes. |
 | 2. Score/leave control availability — completed | `update_point_button` and `update_leave_button` now refresh their actions through the same mapping/core availability used by full refresh. Reduce-score rules and pending confirmations are no longer approximated in these helpers. | Tests cover rule changes, pending approvals, all-left/return/Undo and temporary dialog blocking. Broader turn-button resets and Undo/return-specific queries remain separate scope. Execution continues revalidating every command. |
 | 3. Prepare only the capabilities a replacement client needs | `ui/gameguibuilder.py`, context menus and SpecialActionsUI construct controls from rule flags; `GameGUI` installs the checkpoint callback and renders game_log directly. These local reads work today but tie this client to the Game shape. | Once the replacement UI's first screen is chosen, define its minimal capability/log/lifecycle input and reuse the existing projections. Convert one screen or menu group per commit. Do not add a copy of every flag or a broad facade before a concrete consumer exists. |
 

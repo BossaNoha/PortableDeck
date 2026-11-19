@@ -8,6 +8,8 @@ from portable_deck.core.selectionsnapshot import build_selection_snapshot
 from portable_deck.ui.gameguiactions import GameGUIActions
 from portable_deck.ui.cardactions import draw_card, end_turn, _discard_to_destination, _finish_table_discard
 from portable_deck.ui.chipbankui import ChipBankUI
+from portable_deck.ui.cardactions import play_selected, play_selected_face_down, play_at_selected_spot
+from portable_deck.ui.carddrag import CardDrag
 
 
 class HeadlessGUI(GameGUIActions):
@@ -30,6 +32,99 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def play_gui(self, mode):
+        game = self.game(enable_table=mode != "fallback", enable_discard_pile=mode != "fallback",
+                         allow_positioned_play=mode in {"positioned", "hidden", "swap"},
+                         enable_flipping=True, allow_flip_table=True, allow_face_down_table_cards=mode == "hidden",
+                         occupied_slot_action="swap")
+        game.players[0].hand = ["HAND", "SECOND"]
+        game.players[0].revealed_indices = {0}
+        if mode != "fallback":
+            game.table_cards = [{"player": "Player1", "card": "BASE", "position": [0, 0], "face_up": True}]
+        gui = HeadlessGUI(game)
+        gui.table_frame.selection = gui.selection
+        gui.selection.synchronize(build_selection_snapshot(game))
+        gui.selection.hand_index = 0
+        gui.selection.table_index = 0 if mode == "swap" else None
+        gui.selection.target_position = None if mode == "swap" else (0, 1)
+        return game, gui
+
+    def play_action(self, game, gui, mode):
+        helper = (play_selected_face_down if mode == "hidden" else
+                  play_at_selected_spot if mode in {"positioned", "swap"} else play_selected)
+        return gui.run_action(helper, game, gui.hand_frame, gui.table_frame, gui.render_log, gui.status_panel)
+
+    def test_play_failures_preserve_core_reason_and_valid_selection(self):
+        for mode in ("normal", "positioned", "hidden", "fallback", "swap"):
+            with self.subTest(mode=mode):
+                game, gui = self.play_gui(mode)
+                if mode == "normal":
+                    game.enable_table = False
+                elif mode == "positioned":
+                    gui.selection.target_position = (99, 99)
+                elif mode == "hidden":
+                    game.allow_face_down_table_cards = False
+                elif mode == "fallback":
+                    game.enable_interactions = True
+                else:
+                    game.occupied_slot_action = "invalid"
+                before = game.capture_undo_state()
+                selection = (gui.selection.hand_index, gui.selection.table_index, gui.selection.target_position)
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                    result = self.play_action(game, gui, mode)
+                self.assertFalse(result.success)
+                self.assertEqual(result.code, "invalid_target" if mode == "positioned" else "action_disabled")
+                warning.assert_called_once_with("Cannot swap cards" if mode == "swap" else "Invalid", result.message)
+                self.assertEqual((gui.selection.hand_index, gui.selection.table_index, gui.selection.target_position), selection)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+                self.assert_single_refresh(gui)
+
+    def test_play_success_returns_result_with_one_checkpoint_refresh_and_undo(self):
+        for mode in ("normal", "positioned", "hidden", "fallback", "swap"):
+            with self.subTest(mode=mode):
+                game, gui = self.play_gui(mode)
+                before = game.capture_undo_state()
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                    result = self.play_action(game, gui, mode)
+                self.assertTrue(result.success, result.message)
+                self.assertIsNone(gui.selection.hand_index)
+                self.assertEqual(result.value, ("HAND", "BASE") if mode == "swap" else "HAND")
+                if mode == "fallback":
+                    self.assertIn("HAND", game.deck.flat_deck)
+                elif mode == "swap":
+                    self.assertEqual(game.table_cards[0]["card"], "HAND")
+                    self.assertEqual(game.players[0].hand, ["SECOND", "BASE"])
+                else:
+                    self.assertEqual(game.table_cards[-1]["card"], "HAND")
+                    self.assertEqual(game.table_cards[-1]["face_up"], mode != "hidden")
+                warning.assert_not_called()
+                saved.assert_called_once_with(game)
+                self.assertEqual(len(game.undo_stack), 1)
+                self.assert_single_refresh(gui)
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+
+    def test_drag_hand_drop_uses_play_handler_once_with_occupied_table(self):
+        for mode, position in (("normal", None), ("positioned", (0, 1))):
+            with self.subTest(mode=mode):
+                game, gui = self.play_gui(mode)
+                before = game.capture_undo_state()
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                drag = object.__new__(CardDrag)
+                drag.gui = gui
+                self.assertTrue(drag.drop("hand", 0, position))
+                self.assertEqual([entry["card"] for entry in game.table_cards], ["BASE", "HAND"])
+                self.assertEqual(game.table_cards[-1]["position"], [0, 1])
+                saved.assert_called_once_with(game)
+                self.assertEqual(len(game.undo_stack), 1)
+                self.assert_single_refresh(gui)
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+
     def discard_gui(self):
         game = self.game(allow_move_table_card_to_discard=True, personal_discard_pile_count=1)
         game.players[0].hand = ["HAND"]
