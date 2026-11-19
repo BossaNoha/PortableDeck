@@ -2,7 +2,7 @@
 import copy
 
 from ..core.settingsvalidation import validate_settings
-from .settings import save_settings
+from .settings import load_default_settings, save_settings
 
 
 class SettingsWriteError(OSError):
@@ -24,3 +24,9 @@ def apply_settings(values, current_settings):
     except OSError as error:
         raise SettingsWriteError(str(error)) from error
     return settings
+
+
+def restore_default_settings():
+    """Validate and persist defaults before the client replaces active settings."""
+    defaults = load_default_settings()
+    return apply_settings(defaults, defaults)

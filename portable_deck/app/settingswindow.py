@@ -3,7 +3,7 @@ import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
-from .settings import BASE_DIR, load_default_settings, load_settings, resolve_deck_path, save_settings
+from .settings import BASE_DIR, resolve_deck_path
 from .gamesettings import GameSettingsPanel
 from .basicsettings import BasicSettingsPanel
 from .deckbuilder import DeckBuilder
@@ -13,7 +13,7 @@ from ..ui.tooltip import add_tooltip
 from ..ui.collapsiblesection import CollapsibleSection
 from ..ui.contentscrollarea import ContentScrollArea
 from .deckcheck import check_deck
-from .settingsapplication import SettingsWriteError, apply_settings, prepare_settings
+from .settingsapplication import SettingsWriteError, apply_settings, prepare_settings, restore_default_settings
 
 
 class SettingsWindow:
@@ -246,13 +246,12 @@ class SettingsWindow:
             parent=self.root,
         ):
             return
-        self.settings = load_default_settings()
         try:
-            save_settings(self.settings)
-        except OSError as error:
+            restored = restore_default_settings()
+        except (OSError, ValueError, TypeError) as error:
             messagebox.showerror("Could not restore defaults", str(error), parent=self.root)
-            self.settings = load_settings()
             return
+        self.settings = restored
         self.show_settings()
 
     def browse_deck(self, deck_var):

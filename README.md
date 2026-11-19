@@ -110,6 +110,8 @@ non-negative integer hand size).
 `app.settingsapplication` prepares validated form settings with independent
 configuration metadata. Applying settings writes them before returning success;
 preparing a named preset leaves current application settings untouched.
+Restoring defaults uses the same validation/write service and only replaces
+active/form settings after success. Missing default files retain built-in fallback.
 `show` emits a structured player view rather than an encoded JSON string.
 Argument-parser help/startup errors retain argparse's usual output.
 

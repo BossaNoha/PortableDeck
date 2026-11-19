@@ -202,9 +202,19 @@ file-write failure from validation/deck-read failure, preserving GUI error
 titles. SettingsWindow only collects fields, chooses apply versus named-preset
 preparation, and updates form/menu after success. Named preparation does not
 write current settings. No game is started. Existing settings-file format/write
-behavior is unchanged; restore-defaults remains a separate GUI flow. Tests cover
+behavior is unchanged. Tests cover
 real temporary settings persistence, independent inputs/metadata, validation and
 IO errors, unchanged form/menu on failure, named/use separation and headless use.
+
+Restore Defaults now calls `settingsapplication.restore_default_settings`, which
+loads default values and applies the shared validation/persistence pipeline with
+the defaults' own configuration metadata. Existing built-in fallback for
+missing/unreadable/default JSON files is retained by load_default_settings.
+Invalid effective defaults fail validation before writing. GUI retains consent
+and errors but replaces active settings/clears the form only after success;
+it no longer mutates first or retries load_settings after failure. Tests cover
+saved-default persistence/metadata, missing-file fallback, invalid defaults,
+cancel/read/write/validation failures and update ordering on success.
 
 Game-changing card, chip, score, turn and player interaction actions in
 `portable_deck/ui` now execute through `SessionController`. Model methods remain
