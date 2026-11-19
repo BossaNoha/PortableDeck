@@ -254,13 +254,12 @@ def take_selected_from_table(game, table_frame, hand_frame, render_log, status_p
     if selected is None:
         messagebox.showwarning("No selection", "Select a table card first!")
         return
-    card = execute_value(game, "take_table_card", card_index=selected)
-    if card is None:
-        messagebox.showwarning("Invalid", "That table card is no longer available!")
-        _clear_table_selection(table_frame)
-        return
-    player_name = game.players[game.current_player_index].name
+    result = game.session.execute("take_table_card", card_index=selected)
+    if not result.success:
+        messagebox.showwarning("Invalid", result.message)
+        return result
     table_frame.selection.table_index = None
+    return result
 
 
 def move_selected_table_card_to_discard(game, table_frame, render_log, status_panel):
@@ -318,11 +317,12 @@ def move_selected_table_card(game, table_frame, render_log, status_panel):
     if position is None:
         messagebox.showwarning("No spot selected", "Select an empty table spot as the destination!")
         return
-    card = execute_value(game, "move_table_card", card_index=selected, target_position=position)
-    if card is None:
-        messagebox.showwarning("Invalid move", "The selected card could not be moved to that spot!")
-        return
+    result = game.session.execute("move_table_card", card_index=selected, target_position=position)
+    if not result.success:
+        messagebox.showwarning("Invalid move", result.message)
+        return result
     _clear_table_selection(table_frame)
+    return result
 
 
 def clear_table(game, table_frame, render_log, status_panel):

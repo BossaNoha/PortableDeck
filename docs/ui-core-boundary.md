@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 345 tests; native Tk probes for session, deck and preset
+latest full suite passed 348 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -28,6 +28,14 @@ The first bounded result-handling and score/leave availability changes are
 complete without a persistence-format change. Capability preparation (row 3)
 should be driven by a concrete replacement screen; other card handlers can
 migrate to ActionResult in independent small commits when needed.
+
+Table take/move handlers now also return ActionResult and display its failure
+message, preserving still-valid selection on refusal. Success retains existing
+selection clearing and outer transaction/refresh behavior. Regression tests
+cover disabled actions, occupied destinations, valid take/move/sequence moves,
+single checkpoint/Undo/refresh, and CardDrag.drop routing for both single cards
+and sequences. This extends result preservation without changing drag targeting
+or the core movement rules.
 
 ### Reads and responsibilities that can stay in the client
 

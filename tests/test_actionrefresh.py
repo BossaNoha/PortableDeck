@@ -10,6 +10,7 @@ from portable_deck.ui.cardactions import draw_card, end_turn, _discard_to_destin
 from portable_deck.ui.chipbankui import ChipBankUI
 from portable_deck.ui.cardactions import play_selected, play_selected_face_down, play_at_selected_spot
 from portable_deck.ui.carddrag import CardDrag
+from portable_deck.ui.cardactions import take_selected_from_table, move_selected_table_card
 
 
 class HeadlessGUI(GameGUIActions):
@@ -32,6 +33,91 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def table_gui(self, sequences=False):
+        game, gui = self.play_gui("positioned")
+        game.allow_take_from_table = True
+        game.allow_move_cards_on_table = True
+        game.allow_move_table_sequences = sequences
+        if sequences:
+            game.table_cards.append({"player": "Player1", "card": "BOTTOM", "position": [1, 0], "face_up": True})
+        gui.selection.synchronize(build_selection_snapshot(game))
+        gui.selection.table_index = 0
+        gui.selection.target_position = (0, 1)
+        return game, gui
+
+    def table_action(self, game, gui, move):
+        if move:
+            return gui.run_action(move_selected_table_card, game, gui.table_frame, gui.render_log, gui.status_panel)
+        return gui.run_action(take_selected_from_table, game, gui.table_frame, gui.hand_frame, gui.render_log, gui.status_panel)
+
+    def test_table_handlers_report_core_failure_and_preserve_selection(self):
+        for move, blocked in ((False, "disabled"), (True, "disabled"), (True, "occupied")):
+            with self.subTest(move=move, blocked=blocked):
+                game, gui = self.table_gui()
+                if blocked == "occupied":
+                    gui.selection.target_position = (0, 0)
+                elif move:
+                    game.allow_move_cards_on_table = False
+                else:
+                    game.allow_take_from_table = False
+                before = game.capture_undo_state()
+                target = gui.selection.target_position
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                    result = self.table_action(game, gui, move)
+                self.assertFalse(result.success)
+                self.assertEqual(result.code, "invalid_target" if blocked == "occupied" else "action_disabled")
+                warning.assert_called_once_with("Invalid move" if move else "Invalid", result.message)
+                self.assertEqual(gui.selection.table_index, 0)
+                self.assertEqual(gui.selection.target_position, target)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+                self.assert_single_refresh(gui)
+
+    def test_table_handler_success_and_sequence_move_keep_single_transaction(self):
+        for move, sequences in ((False, False), (True, False), (True, True)):
+            with self.subTest(move=move, sequences=sequences):
+                game, gui = self.table_gui(sequences)
+                before = game.capture_undo_state()
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                    result = self.table_action(game, gui, move)
+                self.assertTrue(result.success, result.message)
+                if move:
+                    self.assertEqual(game.table_cards[0]["position"], [0, 1])
+                    if sequences:
+                        self.assertEqual(result.value, ["BASE", "BOTTOM"])
+                        self.assertEqual(game.table_cards[1]["position"], [1, 1])
+                else:
+                    self.assertEqual(result.value, "BASE")
+                    self.assertEqual(game.players[0].hand, ["HAND", "SECOND", "BASE"])
+                self.assertIsNone(gui.selection.table_index)
+                warning.assert_not_called()
+                saved.assert_called_once_with(game)
+                self.assertEqual(len(game.undo_stack), 1)
+                self.assert_single_refresh(gui)
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+
+    def test_table_drag_routes_card_and_sequence_through_move_handler(self):
+        for sequences in (False, True):
+            with self.subTest(sequences=sequences):
+                game, gui = self.table_gui(sequences)
+                before = game.capture_undo_state()
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                drag = object.__new__(CardDrag)
+                drag.gui = gui
+                self.assertTrue(drag.drop("table", 0, (0, 1)))
+                self.assertEqual(game.table_cards[0]["position"], [0, 1])
+                if sequences:
+                    self.assertEqual(game.table_cards[1]["position"], [1, 1])
+                saved.assert_called_once_with(game)
+                self.assertEqual(len(game.undo_stack), 1)
+                self.assert_single_refresh(gui)
+                self.assertTrue(game.session.undo())
+                self.assertEqual(game.capture_undo_state(), before)
+
     def play_gui(self, mode):
         game = self.game(enable_table=mode != "fallback", enable_discard_pile=mode != "fallback",
                          allow_positioned_play=mode in {"positioned", "hidden", "swap"},
