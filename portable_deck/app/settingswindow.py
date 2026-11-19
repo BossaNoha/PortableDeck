@@ -12,7 +12,7 @@ from .deckpreview import show_deck_preview
 from ..ui.tooltip import add_tooltip
 from ..ui.collapsiblesection import CollapsibleSection
 from ..ui.contentscrollarea import ContentScrollArea
-from ..core.deck import Deck
+from .deckcheck import check_deck
 
 
 class SettingsWindow:
@@ -300,17 +300,14 @@ class SettingsWindow:
             messagebox.showerror("Deck check failed", "Choose a deck file first.", parent=self.root)
             return
         try:
-            deck = Deck(resolve_deck_path(deck_path))
             players = int(players_var.get())
             cards_per_player = int(cards_var.get())
-            if players < 1 or cards_per_player < 0:
-                raise ValueError("Enter at least one player and a non-negative hand size.")
+            capacity = check_deck(deck_path, players, cards_per_player)
         except (OSError, ValueError, TypeError) as error:
             messagebox.showerror("Deck check failed", str(error), parent=self.root)
             return
-        required = players * cards_per_player
-        available = len(deck.flat_deck)
-        if required > available:
+        required, available = capacity.required, capacity.available
+        if not capacity.sufficient:
             messagebox.showwarning(
                 "Deck is too small",
                 f"This setup needs {required} cards ({players} players × {cards_per_player}), "

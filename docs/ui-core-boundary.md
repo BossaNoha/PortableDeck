@@ -99,6 +99,7 @@ removed. All 272 tests passed; no application-code change was necessary.
 | Save application services | Checkpoints, named writes, rename/delete and metadata catalog reads now use headless application services. `SessionBrowser` renders entries and collects user decisions. | Basic save management is separated; add services only for concrete new client needs. |
 | Deck library | Catalog, import/export and editor validation/atomic writes use services without Tkinter. | Editor text parsing/loading still lives in GUI; separate it for concrete client reuse. |
 | Presets | `load_preset` returns settings/compatibility/notices; `save_preset` returns validated settings with saved configuration metadata after atomic writing. Legacy read/write entry points remain. | Keep existing recovery/player-count policies; separate further operations only where GUI still owns reusable logic. |
+| Deck capacity check | `app.deckcheck` loads/resolves the deck; `core.deckcapacity` supplies shared input limits and immutable counts. GUI only collects fields/displays results. | New-game validation uses the same counts/limits; no separate GUI capacity policy. |
 | Chip input data | `core/chipoptions.py` now supplies immutable players/accounts, amount bounds, pot and availability to chip controls/dialogs. | Input separation is complete; retain execution revalidation as clients evolve. |
 | Client lifecycle/capabilities | GUI/CLI new games and model restart share core construction/start operations. `GameGUI` still owns Game and client state; widget construction reads rule flags. | Define a broader client facade only for concrete replacement-client needs; do not add a snapshot per widget flag. |
 | Structured result completeness | Stable codes exist, but some model failures still use generic fallbacks. Internal ActionResult events may contain private authoritative data. | Extend typed failures per feature as clients need them; do not broadcast raw results/history to remote clients. |
@@ -183,6 +184,16 @@ created a game with modified configuration metadata. The probe used temporary
 presets and intercepted application-settings persistence; no user configuration
 was written. Probe files/windows were removed. No application-code fix was
 needed; this was automated GUI verification rather than exhaustive manual QA.
+
+`SettingsWindow.check_deck` now calls `app.deckcheck.check_deck`, which resolves
+project-relative paths, validates player/hand counts and loads the deck without
+shuffling, dealing or writing. `core.deckcapacity` returns immutable counts and
+the sufficient flag; new-game settings validation shares these rules/calculation
+while retaining SettingsValidationError field reporting. Check deck now also
+rejects more than 20 players, matching application new-game limits. GUI retains
+numeric field parsing and existing success/warning/error dialogs. Tests compare
+capacity with actual new-game acceptance at exact/insufficient/zero-hand limits,
+reject malformed inputs/files, verify dialogs and run headlessly.
 
 Game-changing card, chip, score, turn and player interaction actions in
 `portable_deck/ui` now execute through `SessionController`. Model methods remain

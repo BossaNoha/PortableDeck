@@ -5,6 +5,7 @@ from pathlib import Path
 from .settingsschema import DEFAULT_SETTINGS
 from .game import Game
 from .gamecreation import create_configured_game
+from .deckcapacity import DealInputError, deck_capacity, validate_deal_counts
 
 
 def resolve_deck_path(path):
@@ -70,10 +71,10 @@ def validate_settings_and_game(values):
     if not isinstance(values, dict):
         raise ValueError("The settings file must contain a settings object.")
     settings = validate_structure(values)
-    if not 1 <= settings["num_players"] <= 20:
-        invalid("Player count must be between 1 and 20.", "num_players")
-    if settings["cards_per_player"] < 0:
-        invalid("Starting hand size must be non-negative.", "cards_per_player")
+    try:
+        validate_deal_counts(settings["num_players"], settings["cards_per_player"])
+    except DealInputError as error:
+        invalid(str(error), error.field)
     if not 1 <= settings["autosave_count"] <= 1000:
         invalid("Autosaves to keep must be between 1 and 1000.", "autosave_count")
     for key, low, high in (("max_table_rows", 1, 20), ("max_table_columns", 1, 20),
@@ -141,7 +142,7 @@ def validate_settings_and_game(values):
     except (OSError, ValueError) as error:
         # All non-deck constructor constraints are checked above.
         raise SettingsValidationError(str(error), "deck_path") from error
-    if len(game.deck.flat_deck) < settings["num_players"] * settings["cards_per_player"]:
+    if not deck_capacity(game.deck, settings["num_players"], settings["cards_per_player"]).sufficient:
         invalid("The deck is too small for these settings.", "cards_per_player")
     return settings, game
 
