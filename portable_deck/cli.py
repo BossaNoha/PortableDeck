@@ -89,14 +89,14 @@ class CLIClient:
                 self.turn_work()
                 return True
             if command == "undo":
-                success = self.session.undo()
-                message = "Undone." if success else "Nothing to undo."
+                result = self.session.undo_result()
                 if self.structured:
-                    self.emit("result", action="undo", success=success, changed=success,
-                              code="" if success else "nothing_to_undo", message=message,
-                              checkpoint_error=self.session.last_checkpoint_error if success else None)
+                    self.emit("result", action="undo", success=result.success, changed=result.changed,
+                              code=result.code, message=result.message, checkpoint_error=result.checkpoint_error)
                 else:
-                    self.write(message)
+                    self.write(result.message)
+                    if result.checkpoint_error:
+                        self.write(f"Checkpoint failed: {result.checkpoint_error}")
                 self.turn_work()
                 return True
             parameters = {}

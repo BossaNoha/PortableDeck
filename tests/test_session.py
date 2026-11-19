@@ -6,6 +6,38 @@ from portable_deck.core.game import Game
 
 
 class SessionTests(unittest.TestCase):
+    def test_structured_undo_reports_refusal_success_and_checkpoint_failure(self):
+        empty = self.game.session.undo_result()
+        self.assertFalse(empty.success)
+        self.assertFalse(empty.changed)
+        self.assertEqual(empty.code, "empty_undo")
+        self.saved.assert_not_called()
+        before = self.game.capture_undo_state()
+        self.assertTrue(self.game.session.execute("draw_card").success)
+        self.saved.reset_mock()
+        result = self.game.session.undo_result()
+        self.assertTrue(result.success)
+        self.assertTrue(result.changed)
+        self.assertIsNone(result.checkpoint_error)
+        self.assertEqual(self.game.capture_undo_state(), before)
+        self.saved.assert_called_once_with(self.game)
+        self.game.session.execute("draw_card")
+        self.saved.return_value = "Disk full"
+        result = self.game.session.undo_result()
+        self.assertTrue(result.success)
+        self.assertTrue(result.changed)
+        self.assertEqual(result.checkpoint_error, "Disk full")
+        self.assertEqual(self.game.players[0].hand, [])
+        self.assertEqual(self.game.deck.flat_deck, before["remaining_deck"])
+        self.assertEqual(self.game.undo_stack, [])
+        self.assertEqual(result.events, ())
+        self.saved.reset_mock()
+        refused = self.game.session.undo_result()
+        self.assertEqual(refused.code, "empty_undo")
+        self.assertIsNone(refused.checkpoint_error)
+        self.assertIsNone(self.game.session.last_checkpoint_error)
+        self.saved.assert_not_called()
+
     def test_undo_availability_is_read_only_and_tracks_history(self):
         from dataclasses import FrozenInstanceError
         before = self.game.capture_undo_state()

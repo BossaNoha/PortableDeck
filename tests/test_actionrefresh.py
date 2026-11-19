@@ -37,6 +37,31 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def test_gui_undo_returns_result_and_preserves_selection_on_refusal(self):
+        game = self.game()
+        game.players[0].hand = ["HAND"]
+        gui = HeadlessGUI(game)
+        gui.selection.synchronize(build_selection_snapshot(game))
+        gui.selection.hand_index = 0
+        gui.handle_turn_start = Mock()
+        saved = game.session.checkpoint_callback = Mock(return_value=None)
+        with patch("portable_deck.ui.gameguiactions.messagebox.showwarning") as warning:
+            result = gui.undo()
+        self.assertEqual(result.code, "empty_undo")
+        warning.assert_called_once_with("Cannot undo", result.message, parent=None)
+        self.assertEqual(gui.selection.hand_index, 0)
+        gui.handle_turn_start.assert_not_called()
+        saved.assert_not_called()
+        before = game.capture_undo_state()
+        game.session.execute("draw_card")
+        saved.reset_mock()
+        result = gui.undo()
+        self.assertTrue(result.success)
+        self.assertIsNone(gui.selection.hand_index)
+        gui.handle_turn_start.assert_called_once()
+        saved.assert_called_once_with(game)
+        self.assertEqual(game.capture_undo_state(), before)
+
     def test_cross_feature_results_pending_refusal_and_grouped_decisions(self):
         game = self.game(score_enabled=True, require_point_confirmation=True,
                          enable_chip_accounts=True, require_pot_withdrawal_confirmation=True,

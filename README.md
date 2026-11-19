@@ -400,6 +400,11 @@ else:
 game.session.undo()
 ```
 
+`game.session.undo_result()` returns an `ActionResult` with refusal code/message
+or successful restoration and `checkpoint_error`. `undo()` remains a boolean
+compatibility wrapper. GUI and CLI use the structured result; CLI empty-history
+failures use the core `empty_undo` code.
+
 Card indices are zero-based. For example, `execute("play_card", card_index=0)`
 plays the first card; `execute("move_table_card", card_index=0,
 target_position=(0, 1))` moves a table card. Other actions include discard,

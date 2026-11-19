@@ -224,10 +224,16 @@ class SessionController:
             return ActionAvailability(False, "There is no action to undo.", "empty_undo")
         return ActionAvailability(True)
 
-    def undo(self):
-        if not self.undo_availability().allowed:
-            return False
+    def undo_result(self):
+        """Undo with an explicit refusal reason and checkpoint outcome."""
+        self.last_checkpoint_error = None
+        available = self.undo_availability()
+        if not available.allowed:
+            return ActionResult(False, message=available.reason, code=available.code)
         if not self.game.undo_last_action():
-            return False
-        self.checkpoint()
-        return True
+            return ActionResult(False, message="The action could not be undone.", code="action_rejected")
+        return ActionResult(True, changed=True, message="Undone.", checkpoint_error=self.checkpoint())
+
+    def undo(self):
+        """Compatibility adapter for callers expecting a boolean."""
+        return self.undo_result().success

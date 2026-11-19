@@ -13,6 +13,35 @@ from portable_deck.core.game import Game
 
 
 class CLITests(unittest.TestCase):
+    def test_cli_undo_uses_structured_core_codes_and_checkpoint_outcome(self):
+        for structured in (False, True):
+            with self.subTest(structured=structured):
+                game = Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"), enable_undo=True)
+                output = io.StringIO()
+                client = CLIClient(game, output, structured=structured)
+                client.command("undo")
+                if structured:
+                    record = next(json.loads(line) for line in output.getvalue().splitlines()
+                                  if json.loads(line)["type"] == "result")
+                    self.assertEqual(record["code"], "empty_undo")
+                    self.assertFalse(record["success"])
+                else:
+                    self.assertIn("There is no action to undo.", output.getvalue())
+                game.session.execute("draw_card")
+                game.session.checkpoint_callback = lambda current: "Disk full"
+                output.seek(0)
+                output.truncate()
+                client.command("undo")
+                if structured:
+                    record = next(json.loads(line) for line in output.getvalue().splitlines()
+                                  if json.loads(line)["type"] == "result")
+                    self.assertTrue(record["success"])
+                    self.assertTrue(record["changed"])
+                    self.assertEqual(record["checkpoint_error"], "Disk full")
+                else:
+                    self.assertIn("Checkpoint failed: Disk full", output.getvalue())
+                self.assertEqual(game.players[0].hand, [])
+
     def test_new_cli_games_use_shared_creation_with_correct_rules_and_deal(self):
         for confirmations in (False, True):
             with self.subTest(confirmations=confirmations), patch(

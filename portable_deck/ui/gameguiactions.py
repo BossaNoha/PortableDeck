@@ -42,8 +42,10 @@ class GameGUIActions:
         return result
 
     def undo(self):
-        if not self.session.undo():
-            return
+        result = self.session.undo_result()
+        if not result.success:
+            messagebox.showwarning("Cannot undo", result.message, parent=self.root)
+            return result
         self.selection.clear()
         if self.game.active_player_indices():
             for button in self._turn_action_buttons():
@@ -53,6 +55,7 @@ class GameGUIActions:
         self.update_point_button()
         self.update_undo_button()
         self.refresh_action_availability()
+        return result
 
     def update_undo_button(self):
         if hasattr(self, "undo_button"):

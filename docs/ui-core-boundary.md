@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 367 tests; native Tk probes for session, deck and preset
+latest full suite passed 370 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -107,6 +107,17 @@ this query rather than game.undo_stack. Session undo rechecks availability and
 retains its bool result and model-side guard. Tests cover read-only snapshots,
 availability changes before execution, no checkpoint/history mutation on refusal,
 successful restoration/checkpoint, GUI state transitions and headless import/use.
+
+`SessionController.undo_result()` now returns ActionResult, revalidates current
+availability and resets stale checkpoint errors. Refusal carries the availability
+code/message; success carries changed=True and any checkpoint error without
+exposing restored private history. The existing undo() delegates and retains its
+bool API. GUI uses the structured result, displays refusal and updates selection/
+turn UI only on success. CLI emits the core result fields (empty_undo replaces
+its former client-only nothing_to_undo code); text mode also reports checkpoint
+failure. A failed checkpoint does not convert successful Undo into a refusal.
+Tests cover state restoration, refusal without side effects, stale errors,
+checkpoint failure and both clients.
 
 ### Reads and responsibilities that can stay in the client
 
