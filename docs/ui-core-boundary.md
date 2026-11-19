@@ -2,6 +2,16 @@
 
 ## Current hotseat checkpoint
 
+`tests/test_appboundary.py` protects the 16 explicitly extracted application
+service modules. AST inspection checks ordinary absolute/relative imports,
+including function-local imports, against Tkinter, `portable_deck.ui` and app
+modules outside the service set. A separate clean process imports every service
+with GUI dependencies actively blocked, also checking that import creates no
+files in its temporary working directory. New extracted services must be added
+to this explicit set. Existing per-feature headless behavior tests remain;
+the boundary check supplements them rather than claiming to exercise every
+deferred/dynamic execution path. No application-code change was required.
+
 Score/pot confirmation inputs now share strict boolean validation in the model.
 Available confirmation commands with missing/non-boolean `approved` values
 return `invalid_confirmation`; direct model calls raise the corresponding
