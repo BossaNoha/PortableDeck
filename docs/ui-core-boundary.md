@@ -20,14 +20,13 @@ wrap every model field or introduce a network protocol in advance.
 
 | Priority | Evidence and impact | Small next commit and acceptance criteria |
 | --- | --- | --- |
-| 1. Preserve action failures in card handlers | `ui/sessionactions.py:execute_value` converts ActionResult to a raw value/None for card commands. `ui/cardactions.py:_discard_to_destination` and `_finish_table_discard` replace the core failure with generic selection text; the latter also clears selection on failure. Typed failures such as invalid_pile are therefore lost at this boundary. | Migrate hand/table discard handlers to ActionResult first. Display the core failure message, clear selection after success and preserve still-valid selection on failure; existing selection synchronization may clear a stale source. Retain the outer transaction/refresh. Verify no state/Undo/checkpoint on failure and one checkpoint/Undo step on success. Leave unrelated handlers for later commits. |
+| 1. Discard failure results — completed | Hand/table discard handlers now return ActionResult directly and display its message. Valid selection is retained on failure; stale sources still clear through selection synchronization. Other legacy card helpers still use execute_value. | Regression tests cover invalid destinations, disabled actions, stale sources, shared/personal success, single refresh/checkpoint/Undo and restored game state. Convert other handlers only in separately scoped changes. |
 | 2. Consolidate control availability | `ui/actionavailability.py` already uses the core availability API, but `GameGUIActions.update_point_button`, `update_leave_button`, Undo and turn-start flows also set button states from pending requests/active players. These are overlapping presentation decisions, not new model mutations. | Start with point/reduce/leave controls and route their final enabled state through the shared availability mapping. Keep temporary dialog blocking explicit. Verify confirmation, all-players-left, return and Undo states; execution must continue revalidating. Handle Undo/return queries separately rather than exposing undo_stack. |
 | 3. Prepare only the capabilities a replacement client needs | `ui/gameguibuilder.py`, context menus and SpecialActionsUI construct controls from rule flags; `GameGUI` installs the checkpoint callback and renders game_log directly. These local reads work today but tie this client to the Game shape. | Once the replacement UI's first screen is chosen, define its minimal capability/log/lifecycle input and reuse the existing projections. Convert one screen or menu group per commit. Do not add a copy of every flag or a broad facade before a concrete consumer exists. |
 
-Recommended immediate implementation: priority 1, hand/table discard result
-handling. It improves the existing GUI's error accuracy while reducing the
-behavior a future client would have to infer. No persistence-format change is
-needed. Proposed commit: `refactor: preserve action results in discard handlers`.
+The first bounded result-handling change is complete without a persistence-format
+change. The next audit priority is control availability (row 2); other card
+handlers can migrate to ActionResult in independent small commits when needed.
 
 ### Reads and responsibilities that can stay in the client
 

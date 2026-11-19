@@ -123,11 +123,12 @@ def discard_selected(game, hand_frame, render_log, status_panel):
 
 def _discard_to_destination(game, hand_frame, render_log, status_panel, selected, destination):
     name, pile_index, personal = destination
-    card = execute_value(game, "discard_card", card_index=selected, pile_index=pile_index, personal=personal)
-    if card:
+    result = game.session.execute("discard_card", card_index=selected, pile_index=pile_index, personal=personal)
+    if result.success:
         hand_frame.game_gui.selection.hand_index = None
     else:
-        messagebox.showwarning("Invalid", "Invalid card selection!")
+        messagebox.showwarning("Invalid", result.message)
+    return result
 
 
 def _choose_discard_destination(game, hand_frame, render_log, status_panel, selected, destinations):
@@ -299,12 +300,12 @@ def move_selected_table_card_to_discard(game, table_frame, render_log, status_pa
 
 def _finish_table_discard(game, table_frame, render_log, status_panel, selected, destination):
     name, pile_index, personal = destination
-    card = execute_value(game, "discard_table_card", card_index=selected, pile_index=pile_index, personal=personal)
-    if card is None:
-        messagebox.showwarning("Invalid", "That table card is no longer available!")
-        _clear_table_selection(table_frame)
-        return
-    table_frame.selection.table_index = None
+    result = game.session.execute("discard_table_card", card_index=selected, pile_index=pile_index, personal=personal)
+    if result.success:
+        table_frame.selection.table_index = None
+    else:
+        messagebox.showwarning("Invalid", result.message)
+    return result
 
 
 def move_selected_table_card(game, table_frame, render_log, status_panel):

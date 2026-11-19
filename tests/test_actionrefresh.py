@@ -4,8 +4,9 @@ from unittest.mock import Mock, patch
 
 from portable_deck.core.game import Game
 from portable_deck.core.selection import SelectionState
+from portable_deck.core.selectionsnapshot import build_selection_snapshot
 from portable_deck.ui.gameguiactions import GameGUIActions
-from portable_deck.ui.cardactions import draw_card, end_turn
+from portable_deck.ui.cardactions import draw_card, end_turn, _discard_to_destination, _finish_table_discard
 from portable_deck.ui.chipbankui import ChipBankUI
 
 
@@ -29,6 +30,90 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def discard_gui(self):
+        game = self.game(allow_move_table_card_to_discard=True, personal_discard_pile_count=1)
+        game.players[0].hand = ["HAND"]
+        game.players[0].revealed_indices = {0}
+        game.table_cards = [{"player": "Player1", "card": "TABLE", "position": [0, 0], "face_up": True}]
+        gui = HeadlessGUI(game)
+        gui.table_frame.selection = gui.selection
+        gui.selection.synchronize(build_selection_snapshot(game))
+        gui.selection.hand_index = gui.selection.table_index = 0
+        gui.selection.target_position = (0, 1)
+        return game, gui
+
+    def discard_action(self, game, gui, table, destination):
+        helper = _finish_table_discard if table else _discard_to_destination
+        frame = gui.table_frame if table else gui.hand_frame
+        return gui.run_action(helper, game, frame, gui.render_log, gui.status_panel, 0, destination)
+
+    def test_discard_failures_display_core_message_and_preserve_valid_selection(self):
+        for table in (False, True):
+            for disabled in (False, True):
+                with self.subTest(table=table, disabled=disabled):
+                    game, gui = self.discard_gui()
+                    destination = ("Missing", 99, False)
+                    if disabled:
+                        destination = ("Shared discard 1", 0, False)
+                        if table:
+                            game.allow_move_table_card_to_discard = False
+                        else:
+                            game.enable_discard_pile = False
+                    saved = game.session.checkpoint_callback = Mock(return_value=None)
+                    before = game.capture_undo_state()
+                    with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                        result = self.discard_action(game, gui, table, destination)
+                    self.assertFalse(result.success)
+                    self.assertEqual(result.code, "action_disabled" if disabled else "invalid_pile")
+                    warning.assert_called_once_with("Invalid", result.message)
+                    self.assertEqual((gui.selection.hand_index, gui.selection.table_index, gui.selection.target_position),
+                                     (0, 0, (0, 1)))
+                    self.assertEqual(game.capture_undo_state(), before)
+                    self.assertEqual(game.undo_stack, [])
+                    saved.assert_not_called()
+                    self.assert_single_refresh(gui)
+
+    def test_discard_success_has_one_checkpoint_undo_and_final_refresh(self):
+        for table in (False, True):
+            for personal in (False, True):
+                with self.subTest(table=table, personal=personal):
+                    game, gui = self.discard_gui()
+                    before = game.capture_undo_state()
+                    saved = game.session.checkpoint_callback = Mock(return_value=None)
+                    with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                        result = self.discard_action(game, gui, table, ("Destination", 0, personal))
+                    self.assertTrue(result.success)
+                    self.assertEqual(result.value, "TABLE" if table else "HAND")
+                    self.assertIsNone(gui.selection.table_index if table else gui.selection.hand_index)
+                    destination = game.personal_discard_piles[0][0] if personal else game.discard_piles[0]
+                    self.assertEqual(destination, [result.value])
+                    warning.assert_not_called()
+                    saved.assert_called_once_with(game)
+                    self.assertEqual(len(game.undo_stack), 1)
+                    self.assert_single_refresh(gui)
+                    self.assertTrue(game.session.undo())
+                    self.assertEqual(game.capture_undo_state(), before)
+
+    def test_discard_stale_source_is_cleared_by_existing_selection_sync(self):
+        for table in (False, True):
+            with self.subTest(table=table):
+                game, gui = self.discard_gui()
+                if table:
+                    game.table_cards.clear()
+                else:
+                    game.players[0].hand.clear()
+                    game.players[0].revealed_indices.clear()
+                before = game.capture_undo_state()
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                with patch("portable_deck.ui.cardactions.messagebox.showwarning") as warning:
+                    result = self.discard_action(game, gui, table, ("Shared discard 1", 0, False))
+                self.assertEqual(result.code, "invalid_selection")
+                warning.assert_called_once_with("Invalid", result.message)
+                self.assertIsNone(gui.selection.table_index if table else gui.selection.hand_index)
+                self.assertEqual(game.capture_undo_state(), before)
+                self.assertEqual(game.undo_stack, [])
+                saved.assert_not_called()
+
     def game(self, **options):
         return Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
                     enable_undo=True, **options)
