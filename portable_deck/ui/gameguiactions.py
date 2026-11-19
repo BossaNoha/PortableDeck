@@ -110,15 +110,12 @@ class GameGUIActions:
         self.update_point_button()
 
     def update_point_button(self):
-        if hasattr(self, "point_button"):
-            state = "disabled" if self.game.pending_point_request else "normal"
-            self.point_button.config(state=state)
-            if hasattr(self, "reduce_score_button"):
-                self.reduce_score_button.config(state=state)
+        from .actionavailability import refresh_action_availability
+        refresh_action_availability(self, {"request_point", "reduce_score"})
 
     def update_leave_button(self):
-        if hasattr(self, "leave_session_button"):
-            self.leave_session_button.configure(state="normal" if self.game.can_leave_session() else "disabled")
+        from .actionavailability import refresh_action_availability
+        refresh_action_availability(self, {"leave_session"})
         if not self.game.active_player_indices():
             for button in self._turn_action_buttons():
                 button.configure(state="disabled")

@@ -53,11 +53,13 @@ def selected_action_available(gui, action):
         target_position=gui.selection.target_position)).allowed
 
 
-def refresh_action_availability(gui):
+def refresh_action_availability(gui, actions=None):
     from .tooltip import Tooltip
-    if not hasattr(gui, "chip_bank_ui"):
+    if actions is None and not hasattr(gui, "chip_bank_ui"):
         return
     for button, action in gui_action_bindings(gui):
+        if actions is not None and action not in actions:
+            continue
         button.configure(state="disabled" if action_reason(gui, button) else "normal")
         if not hasattr(button, "_availability_tooltip"):
             button._availability_tooltip = Tooltip(button, lambda b=button: action_reason(gui, b))

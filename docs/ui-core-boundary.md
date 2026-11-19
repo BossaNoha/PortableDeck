@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 336 tests; native Tk probes for session, deck and preset
+latest full suite passed 342 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -21,12 +21,13 @@ wrap every model field or introduce a network protocol in advance.
 | Priority | Evidence and impact | Small next commit and acceptance criteria |
 | --- | --- | --- |
 | 1. Discard failure results — completed | Hand/table discard handlers now return ActionResult directly and display its message. Valid selection is retained on failure; stale sources still clear through selection synchronization. Other legacy card helpers still use execute_value. | Regression tests cover invalid destinations, disabled actions, stale sources, shared/personal success, single refresh/checkpoint/Undo and restored game state. Convert other handlers only in separately scoped changes. |
-| 2. Consolidate control availability | `ui/actionavailability.py` already uses the core availability API, but `GameGUIActions.update_point_button`, `update_leave_button`, Undo and turn-start flows also set button states from pending requests/active players. These are overlapping presentation decisions, not new model mutations. | Start with point/reduce/leave controls and route their final enabled state through the shared availability mapping. Keep temporary dialog blocking explicit. Verify confirmation, all-players-left, return and Undo states; execution must continue revalidating. Handle Undo/return queries separately rather than exposing undo_stack. |
+| 2. Score/leave control availability — completed | `update_point_button` and `update_leave_button` now refresh their actions through the same mapping/core availability used by full refresh. Reduce-score rules and pending confirmations are no longer approximated in these helpers. | Tests cover rule changes, pending approvals, all-left/return/Undo and temporary dialog blocking. Broader turn-button resets and Undo/return-specific queries remain separate scope. Execution continues revalidating every command. |
 | 3. Prepare only the capabilities a replacement client needs | `ui/gameguibuilder.py`, context menus and SpecialActionsUI construct controls from rule flags; `GameGUI` installs the checkpoint callback and renders game_log directly. These local reads work today but tie this client to the Game shape. | Once the replacement UI's first screen is chosen, define its minimal capability/log/lifecycle input and reuse the existing projections. Convert one screen or menu group per commit. Do not add a copy of every flag or a broad facade before a concrete consumer exists. |
 
-The first bounded result-handling change is complete without a persistence-format
-change. The next audit priority is control availability (row 2); other card
-handlers can migrate to ActionResult in independent small commits when needed.
+The first bounded result-handling and score/leave availability changes are
+complete without a persistence-format change. Capability preparation (row 3)
+should be driven by a concrete replacement screen; other card handlers can
+migrate to ActionResult in independent small commits when needed.
 
 ### Reads and responsibilities that can stay in the client
 

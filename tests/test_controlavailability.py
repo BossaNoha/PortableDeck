@@ -1,0 +1,98 @@
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
+
+from portable_deck.core.actionavailability import action_availability
+from portable_deck.core.game import Game
+from portable_deck.core.selection import SelectionState
+from portable_deck.ui.gameguiactions import GameGUIActions
+
+
+class Button:
+    def __init__(self):
+        self.state = "normal"
+        self._availability_tooltip = True
+
+    def configure(self, **values):
+        self.state = values["state"]
+
+    config = configure
+
+
+class ControlsGUI(GameGUIActions):
+    def __init__(self, game):
+        self.game, self.session = game, game.session
+        self.root = None
+        self.selection = SelectionState()
+        self.point_button, self.reduce_score_button, self.leave_session_button = Button(), Button(), Button()
+        self.refresh_session_panels = Mock()
+        self.update_chip_action_buttons = Mock()
+        self.render_log = Mock()
+
+    def _turn_action_buttons(self):
+        return [self.point_button, self.reduce_score_button, self.leave_session_button]
+
+
+class ControlAvailabilityTests(unittest.TestCase):
+    def game(self):
+        return Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
+                    enable_undo=True, score_enabled=True, allow_reduce_score=True,
+                    require_point_confirmation=True, enable_player_leaving=True, enable_player_return=True,
+                    enable_chip_accounts=True, require_pot_withdrawal_confirmation=True)
+
+    def assert_states(self, gui, expected):
+        gui.update_point_button()
+        gui.update_leave_button()
+        buttons = gui._turn_action_buttons()
+        self.assertEqual(tuple(button.state for button in buttons), expected)
+        for button, action in zip(buttons, ("request_point", "reduce_score", "leave_session")):
+            self.assertEqual(button.state == "normal", action_availability(gui.game, action).allowed)
+
+    def test_rule_and_pending_changes_match_core_availability(self):
+        game = self.game()
+        gui = ControlsGUI(game)
+        self.assert_states(gui, ("normal", "normal", "normal"))
+        game.allow_reduce_score = False
+        self.assert_states(gui, ("normal", "disabled", "normal"))
+        game.allow_reduce_score = True
+        self.assertTrue(game.session.execute("request_point").success)
+        self.assert_states(gui, ("disabled", "disabled", "disabled"))
+        self.assertTrue(game.session.execute("end_turn").success)
+        self.assert_states(gui, ("disabled", "disabled", "disabled"))
+        self.assertTrue(game.session.execute("confirm_point", approved=False).success)
+        self.assert_states(gui, ("normal", "normal", "normal"))
+        game.leave_conditions["no_chips"] = True
+        self.assert_states(gui, ("normal", "normal", "disabled"))
+
+    def test_all_left_return_and_undo_recompute_controls(self):
+        game = self.game()
+        gui = ControlsGUI(game)
+        for _ in range(2):
+            self.assertTrue(game.session.execute("leave_session").success)
+        self.assert_states(gui, ("disabled", "disabled", "disabled"))
+        self.assertTrue(game.session.execute("return_player", player_index=0).success)
+        self.assert_states(gui, ("normal", "normal", "normal"))
+        self.assertTrue(game.session.undo())
+        self.assert_states(gui, ("disabled", "disabled", "disabled"))
+        self.assertTrue(game.session.undo())
+        self.assert_states(gui, ("normal", "normal", "normal"))
+
+    def test_dialogs_keep_controls_blocked_and_restore_core_state(self):
+        game = self.game()
+        for action, parameters in (("request_point", {}), ("play_chips", {"amount": 3}),
+                                   ("take_pot", {"player_index": 0}), ("end_turn", {})):
+            self.assertTrue(game.session.execute(action, **parameters).success)
+        gui = ControlsGUI(game)
+        decisions = iter((False, True))
+        def decide(*args, **kwargs):
+            self.assertTrue(all(button.state == "disabled" for button in gui._turn_action_buttons()))
+            return next(decisions)
+        with patch("portable_deck.ui.gameguiactions.messagebox.askyesno", side_effect=decide) as prompt:
+            gui.handle_turn_start()
+        self.assertEqual(prompt.call_count, 2)
+        self.assertIsNone(game.pending_point_request)
+        self.assertIsNone(game.pending_pot_withdrawal)
+        self.assert_states(gui, ("normal", "normal", "normal"))
+        self.assertTrue(game.session.undo())
+        self.assert_states(gui, ("disabled", "disabled", "disabled"))
