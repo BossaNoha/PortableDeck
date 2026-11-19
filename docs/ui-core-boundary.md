@@ -1,6 +1,59 @@
 # UI/core boundary audit
 
-## Current hotseat checkpoint
+## Current assessment — 2026-11-19
+
+The local hotseat core and extracted application services can run without
+Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
+projections, turn-start decisions, saves, deck-library operations, presets and
+settings application/default restoration have independent entry points. The
+latest full suite passed 336 tests; native Tk probes for session, deck and preset
+lifecycles are recorded below. This audit changes documentation only and does
+not claim a new exhaustive native/manual test run.
+
+A replacement local client is feasible using these entry points. The present
+Tk client still owns a Game and invokes queries directly; there is no complete
+client-neutral facade. That alone is not a blocker for replacing widgets. The
+remaining work should address concrete duplicated interpretation rather than
+wrap every model field or introduce a network protocol in advance.
+
+### Prioritized next changes
+
+| Priority | Evidence and impact | Small next commit and acceptance criteria |
+| --- | --- | --- |
+| 1. Preserve action failures in card handlers | `ui/sessionactions.py:execute_value` converts ActionResult to a raw value/None for card commands. `ui/cardactions.py:_discard_to_destination` and `_finish_table_discard` replace the core failure with generic selection text; the latter also clears selection on failure. Typed failures such as invalid_pile are therefore lost at this boundary. | Migrate hand/table discard handlers to ActionResult first. Display the core failure message, clear selection after success and preserve still-valid selection on failure; existing selection synchronization may clear a stale source. Retain the outer transaction/refresh. Verify no state/Undo/checkpoint on failure and one checkpoint/Undo step on success. Leave unrelated handlers for later commits. |
+| 2. Consolidate control availability | `ui/actionavailability.py` already uses the core availability API, but `GameGUIActions.update_point_button`, `update_leave_button`, Undo and turn-start flows also set button states from pending requests/active players. These are overlapping presentation decisions, not new model mutations. | Start with point/reduce/leave controls and route their final enabled state through the shared availability mapping. Keep temporary dialog blocking explicit. Verify confirmation, all-players-left, return and Undo states; execution must continue revalidating. Handle Undo/return queries separately rather than exposing undo_stack. |
+| 3. Prepare only the capabilities a replacement client needs | `ui/gameguibuilder.py`, context menus and SpecialActionsUI construct controls from rule flags; `GameGUI` installs the checkpoint callback and renders game_log directly. These local reads work today but tie this client to the Game shape. | Once the replacement UI's first screen is chosen, define its minimal capability/log/lifecycle input and reuse the existing projections. Convert one screen or menu group per commit. Do not add a copy of every flag or a broad facade before a concrete consumer exists. |
+
+Recommended immediate implementation: priority 1, hand/table discard result
+handling. It improves the existing GUI's error accuracy while reducing the
+behavior a future client would have to infer. No persistence-format change is
+needed. Proposed commit: `refactor: preserve action results in discard handlers`.
+
+### Reads and responsibilities that can stay in the client
+
+- Tk widget/layout construction, dialog presentation and consent, selection,
+  drag feedback, zoom/scroll and form text conversion are client work.
+- Names, current-player IDs and rule flags read for display/control construction
+  are not equivalent to duplicating game rules or mutating authoritative cards.
+  Remove a read only when an existing projection or concrete client input fits.
+- `MainMenu` may orchestrate starting/loading/restarting a local Game through
+  services. Game persistence compatibility delegates may remain during migration;
+  application clients already use services directly.
+- Deck editor comma/newline parsing and loading remain widget-oriented. They
+  need extraction only if another editor/client will reuse that representation.
+
+### Separate future online milestone
+
+Player projections and action codes do not provide actor authentication,
+authorization for remote callers, revision/concurrency control, transport or
+private-result filtering. Full save data, internal history and raw ActionResult
+values/events must not be treated as a broadcast payload. These concerns should
+be designed for the actual hosting/session model, independently of the local
+Tk replacement. The application import guard also does not prohibit all
+core-to-app compatibility imports; a stricter dependency direction would be a
+separate, explicitly scoped migration.
+
+## Implementation evidence and earlier audits
 
 `tests/test_appboundary.py` protects the 16 explicitly extracted application
 service modules. AST inspection checks ordinary absolute/relative imports,
@@ -102,7 +155,7 @@ the restored GUI acknowledges turn notifications as designed; gameplay state is
 preserved. The probe used a hidden window and temporary files, which were
 removed. All 272 tests passed; no application-code change was necessary.
 
-### Remaining work before replacing the complete desktop interface
+### Subsystem status and supporting detail
 
 | Area | Current evidence | Next bounded step |
 | --- | --- | --- |
@@ -120,8 +173,9 @@ interaction or drag-and-drop. Authentication, actor authorization, revision chec
 and concurrency remain a future online milestone, separate from replacing the
 local GUI. Existing player snapshots alone do not implement those guarantees.
 
-The sections below retain the original findings and subsequent implementation
-notes; the table above is the current remaining-work summary.
+The sections below retain original findings and implementation notes. The
+prioritized next work is the current assessment at the beginning of this file;
+test counts attached to older probes describe those runs.
 
 Deck catalog loading is now owned by `app.deckcatalog.list_decks`, with the
 existing case-insensitive JSON filename ordering, deck validation and invalid
