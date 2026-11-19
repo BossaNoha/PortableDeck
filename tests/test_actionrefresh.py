@@ -37,6 +37,97 @@ class HeadlessGUI(GameGUIActions):
 
 
 class ActionRefreshTests(unittest.TestCase):
+    def test_player_leave_preserves_result_and_only_starts_turn_after_success(self):
+        for allowed in (False, True):
+            with self.subTest(allowed=allowed):
+                game = self.game(enable_player_leaving=allowed)
+                game.players[0].hand = ["HAND"]
+                gui = HeadlessGUI(game)
+                gui.selection.synchronize(build_selection_snapshot(game))
+                gui.selection.hand_index = 0
+                gui.handle_turn_start = Mock()
+                before = game.capture_undo_state()
+                saved = game.session.checkpoint_callback = Mock(return_value=None)
+                with patch("portable_deck.ui.gameguiactions.messagebox.showwarning") as warning:
+                    result = gui.leave_current_player()
+                self.assertEqual(result.success, allowed)
+                self.assert_single_refresh(gui)
+                if allowed:
+                    gui.handle_turn_start.assert_called_once()
+                    self.assertEqual(game.left_players, [0])
+                    self.assertIsNone(gui.selection.hand_index)
+                    saved.assert_called_once_with(game)
+                    self.assertEqual(len(game.undo_stack), 1)
+                    warning.assert_not_called()
+                    self.assertTrue(game.session.undo())
+                    self.assertEqual(game.capture_undo_state(), before)
+                else:
+                    self.assertEqual(result.code, "action_disabled")
+                    warning.assert_called_once_with("Cannot leave session", result.message, parent=None)
+                    self.assertEqual(gui.selection.hand_index, 0)
+                    gui.handle_turn_start.assert_not_called()
+                    self.assertEqual(game.capture_undo_state(), before)
+                    self.assertEqual(game.undo_stack, [])
+                    saved.assert_not_called()
+
+    def test_return_dialog_keeps_result_and_only_closes_or_starts_turn_on_success(self):
+        for stale in (False, True):
+            with self.subTest(stale=stale):
+                game = self.game(enable_player_leaving=True, enable_player_return=True)
+                game.left_players = [1]
+                game.players[0].hand = ["HAND"]
+                gui = HeadlessGUI(game)
+                gui.selection.synchronize(build_selection_snapshot(game))
+                gui.selection.hand_index = 0
+                gui.handle_turn_start = Mock()
+                dialog, choices = Mock(), Mock()
+                choices.curselection.return_value = (0,)
+                commands = {}
+                def button(*args, **kwargs):
+                    commands[kwargs["text"]] = kwargs["command"]
+                    return Mock()
+                with patch("portable_deck.ui.gameguiactions.tk.Toplevel", return_value=dialog), patch(
+                        "portable_deck.ui.gameguiactions.tk.Listbox", return_value=choices), patch(
+                        "portable_deck.ui.gameguiactions.tk.Button", side_effect=button), patch(
+                        "portable_deck.ui.gameguiactions.messagebox.showwarning") as warning:
+                    gui.choose_returning_player()
+                    if stale:
+                        game.left_players.clear()
+                    before = game.capture_undo_state()
+                    saved = game.session.checkpoint_callback = Mock(return_value=None)
+                    result = commands["Return player"]()
+                self.assertEqual(result.success, not stale)
+                self.assert_single_refresh(gui)
+                if stale:
+                    self.assertEqual(result.code, "return_unavailable")
+                    warning.assert_called_once_with("Cannot return player", result.message, parent=dialog)
+                    dialog.destroy.assert_not_called()
+                    gui.handle_turn_start.assert_not_called()
+                    self.assertEqual(gui.selection.hand_index, 0)
+                    self.assertEqual(game.capture_undo_state(), before)
+                    self.assertEqual(game.undo_stack, [])
+                    saved.assert_not_called()
+                else:
+                    dialog.destroy.assert_called_once()
+                    gui.handle_turn_start.assert_called_once()
+                    self.assertIsNone(gui.selection.hand_index)
+                    self.assertEqual(game.left_players, [])
+                    saved.assert_called_once_with(game)
+                    self.assertEqual(len(game.undo_stack), 1)
+                    warning.assert_not_called()
+                    self.assertTrue(game.session.undo())
+                    self.assertEqual(game.capture_undo_state(), before)
+
+    def test_last_player_leave_does_not_start_another_turn(self):
+        game = self.game(enable_player_leaving=True)
+        game.left_players = [1]
+        gui = HeadlessGUI(game)
+        gui.handle_turn_start = Mock()
+        result = gui.leave_current_player()
+        self.assertTrue(result.success)
+        self.assertFalse(game.active_player_indices())
+        gui.handle_turn_start.assert_not_called()
+
     def test_discard_draw_returns_result_for_top_any_shared_and_personal_piles(self):
         for mode in ("top", "any"):
             for personal in (False, True):

@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 355 tests; native Tk probes for session, deck and preset
+latest full suite passed 358 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -63,6 +63,16 @@ card removed before submission. A temporary native Tk probe verified both modal
 paths return success/failure results; it was removed afterward. This reuses the
 existing index/top-card revalidation, not a new revision/concurrency mechanism.
 `ui/cardactions.py` no longer uses execute_value; other GUI modules still may.
+
+Player leave/return handlers now execute through SessionController and preserve
+ActionResult. Leave returns its result from the GUI transaction; the return
+dialog's submit callback returns it too (the asynchronous dialog-opening method
+does not wait for a result). Failure displays the core message without clearing
+valid hand selection or starting turn handling. A failed return leaves its
+dialog open; success retains existing close/turn behavior. Tests cover disabled
+leave, stale return choices, the last active player, successful Undo/checkpoint/
+refresh counts and failure state preservation. Hand flip and score reduction
+still use the legacy adapter and remain outside this change.
 
 ### Reads and responsibilities that can stay in the client
 

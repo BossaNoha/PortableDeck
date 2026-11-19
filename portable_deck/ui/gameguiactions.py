@@ -141,8 +141,8 @@ class GameGUIActions:
                 return
             player = players[selected[0]].index
             def action():
-                ok, message = execute_value(self.game, "return_player", player_index=player)
-                if ok:
+                result = self.session.execute("return_player", player_index=player)
+                if result.success:
                     dialog.destroy()
                     for button in self._turn_action_buttons():
                         button.configure(state="normal")
@@ -150,20 +150,23 @@ class GameGUIActions:
                     self.handle_turn_start()
                     self.update_point_button()
                 else:
-                    messagebox.showwarning("Cannot return player", message, parent=dialog)
-            self.run_action(action)
+                    messagebox.showwarning("Cannot return player", result.message, parent=dialog)
+                return result
+            return self.run_action(action)
         tk.Button(dialog, text="Return player", command=restore).pack(side="right", padx=10, pady=(0, 10))
         tk.Button(dialog, text="Cancel", command=dialog.destroy).pack(side="right", pady=(0, 10))
 
     def leave_current_player(self):
         def action():
-            ok, message = execute_value(self.game, "leave_session")
-            if not ok:
-                return
+            result = self.session.execute("leave_session")
+            if not result.success:
+                messagebox.showwarning("Cannot leave session", result.message, parent=self.root)
+                return result
             self.selection.hand_index = None
             if self.game.active_player_indices():
                 self.handle_turn_start()
-        self.run_action(action)
+            return result
+        return self.run_action(action)
 
     def handle_turn_start(self):
         self.update_leave_button()
