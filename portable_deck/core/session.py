@@ -114,8 +114,12 @@ class SessionController:
                                 owner=parameters.get("owner"), pile_index=parameters.get("pile_index"))
         if action == "swap_table_card":
             context = ActionContext(hand_index=card, table_index=parameters.get("table_index"))
-        lifecycle = {"end_turn", "confirm_point", "confirm_pot", "return_player"}
-        if action in lifecycle:
+        lifecycle = {"confirm_point", "confirm_pot", "return_player"}
+        if action == "end_turn":
+            available = self.end_turn_availability()
+            if not available.allowed:
+                return ActionResult(False, message=available.reason, code=available.code)
+        elif action in lifecycle:
             reason = ""
             code = ""
             if action == "return_player":
@@ -130,9 +134,6 @@ class SessionController:
             elif action == "confirm_pot" and not g.current_player_must_confirm_pot_withdrawal():
                 reason = "No pot confirmation is required from this player."
                 code = "confirmation_not_required"
-            elif action == "end_turn" and (g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal()):
-                reason = "Complete the pending confirmation first."
-                code = "confirmation_required"
             if reason:
                 return ActionResult(False, message=reason, code=code)
         else:
@@ -225,6 +226,15 @@ class SessionController:
         name = (g.all_discard_piles()[pile_index][0] if "source_index" in parameters else f"Shared discard {pile_index + 1}")
         g.log_action(player.name, "draw_from_discard", card, destination=name)
         return card
+
+    def end_turn_availability(self):
+        """Describe whether this player can advance the turn right now."""
+        from .actionavailability import ActionAvailability
+        if not self.game.active_player_indices():
+            return ActionAvailability(False, "No active players remain.", "no_active_players")
+        if self.game.current_player_must_confirm_point() or self.game.current_player_must_confirm_pot_withdrawal():
+            return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
+        return ActionAvailability(True)
 
     def undo_availability(self):
         """Describe Undo without exposing mutable history to clients."""

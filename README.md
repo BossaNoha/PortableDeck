@@ -411,6 +411,8 @@ The original `checkpoint()` error-string/`None` API remains supported.
 messages; GUI rendering uses it instead of the mutable model list.
 `tests/test_uistateboundary.py` prevents GUI access to `game_log`, `gui_log` and
 `undo_stack`, directing clients to session log/Undo APIs instead.
+`game.session.end_turn_availability()` supplies the same availability/reason used
+by end-turn execution and the GUI Next turn button.
 
 Card indices are zero-based. For example, `execute("play_card", card_index=0)`
 plays the first card; `execute("move_table_card", card_index=0,

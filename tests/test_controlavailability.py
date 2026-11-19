@@ -7,6 +7,7 @@ from portable_deck.core.actionavailability import action_availability
 from portable_deck.core.game import Game
 from portable_deck.core.selection import SelectionState
 from portable_deck.ui.gameguiactions import GameGUIActions
+from portable_deck.ui.actionavailability import action_reason, selected_action_available
 
 
 class Button:
@@ -35,6 +36,36 @@ class ControlsGUI(GameGUIActions):
 
 
 class ControlAvailabilityTests(unittest.TestCase):
+    def test_next_turn_tracks_pending_votes_all_left_return_and_undo(self):
+        game = self.game()
+        gui = ControlsGUI(game)
+        gui.next_button = Button()
+        def check(allowed):
+            gui.update_leave_button()
+            availability = game.session.end_turn_availability()
+            self.assertEqual(availability.allowed, allowed)
+            self.assertEqual(gui.next_button.state, "normal" if allowed else "disabled")
+            self.assertEqual(action_reason(gui, gui.next_button), availability.reason)
+            self.assertEqual(selected_action_available(gui, "end_turn"), allowed)
+        check(True)
+        game.session.execute("request_point")
+        game.session.execute("play_chips", amount=3)
+        game.session.execute("take_pot", player_index=0)
+        check(True)  # Requester need not vote on their own request.
+        game.session.execute("end_turn")
+        check(False)
+        game.session.execute("confirm_point", approved=False)
+        check(False)  # Pot vote is still pending.
+        game.session.execute("confirm_pot", approved=True)
+        check(True)
+        game.session.execute("leave_session")
+        game.session.execute("leave_session")
+        check(False)
+        game.session.execute("return_player", player_index=0)
+        check(True)
+        self.assertTrue(game.session.undo())
+        check(False)
+
     def test_undo_button_uses_session_query_for_empty_available_and_disabled_states(self):
         game = self.game()
         gui = SimpleNamespace(session=game.session, undo_button=Button())

@@ -125,7 +125,7 @@ class GameGUIActions:
 
     def update_leave_button(self):
         from .actionavailability import refresh_action_availability
-        refresh_action_availability(self, {"leave_session"})
+        refresh_action_availability(self, {"leave_session", "end_turn"})
         if not self.game.active_player_indices():
             for button in self._turn_action_buttons():
                 button.configure(state="disabled")

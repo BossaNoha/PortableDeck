@@ -6,6 +6,31 @@ from portable_deck.core.game import Game
 
 
 class SessionTests(unittest.TestCase):
+    def test_end_turn_query_is_read_only_and_execution_rechecks_pending_decisions(self):
+        game = self.game
+        game.require_point_confirmation = True
+        self.assertTrue(game.session.end_turn_availability().allowed)
+        self.assertTrue(game.session.execute("request_point").success)
+        self.assertTrue(game.session.end_turn_availability().allowed)
+        self.assertTrue(game.session.execute("end_turn").success)
+        before = game.capture_undo_state()
+        count = len(game.undo_stack)
+        self.saved.reset_mock()
+        blocked = game.session.end_turn_availability()
+        self.assertFalse(blocked.allowed)
+        self.assertEqual(blocked.code, "confirmation_required")
+        result = game.session.execute("end_turn")
+        self.assertEqual((result.code, result.message), (blocked.code, blocked.reason))
+        self.assertEqual(game.capture_undo_state(), before)
+        self.assertEqual(len(game.undo_stack), count)
+        self.saved.assert_not_called()
+        self.assertTrue(game.session.execute("confirm_point", approved=True).success)
+        self.assertTrue(game.session.end_turn_availability().allowed)
+        game.left_players = [0, 1]
+        unavailable = game.session.end_turn_availability()
+        self.assertEqual(unavailable.code, "no_active_players")
+        self.assertEqual(game.session.execute("end_turn").code, unavailable.code)
+
     def test_checkpoint_result_has_status_and_no_gameplay_undo_step(self):
         before = self.game.capture_undo_state()
         result = self.game.session.checkpoint_result()

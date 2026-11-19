@@ -2,6 +2,7 @@
 from ..core.actionavailability import ActionContext, action_availability
 
 BUTTON_ACTIONS = {'draw_button': 'draw_card',
+ 'next_button': 'end_turn',
  'discard_button': 'discard_card',
  'play_button': 'play_card',
  'play_face_down_button': 'play_face_down',
@@ -38,6 +39,8 @@ def action_reason(gui, button):
     action = next((action for widget, action in gui_action_bindings(gui) if widget is button), None)
     if action is None:
         return ""
+    if action == "end_turn":
+        return gui.session.end_turn_availability().reason
     if (action == "play_at_position" and gui.selection.target_position is None
             and gui.selection.table_index is not None):
         action = "swap_table_card"
@@ -48,6 +51,8 @@ def action_reason(gui, button):
 
 
 def selected_action_available(gui, action):
+    if action == "end_turn":
+        return gui.session.end_turn_availability().allowed
     return action_availability(gui.game, action, ActionContext(
         hand_index=gui.selection.hand_index, table_index=gui.selection.table_index,
         target_position=gui.selection.target_position)).allowed

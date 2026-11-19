@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 378 tests; native Tk probes for session, deck and preset
+latest full suite passed 380 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -145,6 +145,15 @@ allow show_game_log, comments, text and public queries. This static guard does
 not infer arbitrary computed attribute names or general data flow. Application
 storage/core implementations remain outside its intentionally narrow UI scope.
 No application-code change was needed.
+
+`SessionController.end_turn_availability()` now supplies immutable availability
+for advancing the turn. Both execute(end_turn) and the GUI Next turn mapping
+use it, including tooltip/selected-action queries and the lifecycle control
+refresh. Existing semantics remain: the requester may advance, voters must
+complete pending score/pot decisions, and no active players blocks advancement.
+Temporary dialog blocking remains. Tests verify query/command agreement without
+mutation/checkpoints on refusal, pending votes, all-left/return/Undo transitions,
+GUI state/reasons and headless use.
 
 ### Reads and responsibilities that can stay in the client
 
