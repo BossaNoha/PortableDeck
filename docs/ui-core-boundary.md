@@ -1,12 +1,12 @@
 # UI/core boundary audit
 
-## Current assessment — 2026-11-19
+## Current assessment — 2026-11-20
 
 The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 381 tests; native Tk probes for session, deck and preset
+latest full suite passed 382 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -163,6 +163,16 @@ all-players-left does not, so return remains possible. Execution still rechecks
 the shared model reason. Tests cover these transitions, immutable prior options,
 return/Undo, state/reason agreement and headless use. Dialog submission tests
 continue covering stale choices without premature selection/turn changes.
+
+A combined lifecycle-control regression now drives the actual GUI transaction,
+turn-start and Undo methods together, checking Next turn/Undo/Return player
+against controller availability after every stage. A temporary native Tk probe
+also passed empty Undo, concurrent score/pot requests, disabled controls during
+dialogs, grouped decisions, Undo restoring pending requests, all players leaving,
+return through the actual button/dialog and Undo back to all-left. No manual
+state reset overrode the final controller result. No application-code fix was
+needed; probe files/windows were removed. Checkpoints used a callback stub and
+no user files were written. This was targeted automated GUI verification.
 
 ### Reads and responsibilities that can stay in the client
 

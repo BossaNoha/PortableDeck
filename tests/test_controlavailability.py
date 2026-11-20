@@ -7,7 +7,7 @@ from portable_deck.core.actionavailability import action_availability
 from portable_deck.core.game import Game
 from portable_deck.core.selection import SelectionState
 from portable_deck.ui.gameguiactions import GameGUIActions
-from portable_deck.ui.actionavailability import action_reason, selected_action_available
+from portable_deck.ui.actionavailability import action_reason, selected_action_available, refresh_action_availability
 
 
 class Button:
@@ -36,6 +36,59 @@ class ControlsGUI(GameGUIActions):
 
 
 class ControlAvailabilityTests(unittest.TestCase):
+    def test_lifecycle_refreshes_do_not_override_session_availability(self):
+        game = Game(3, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"),
+                    enable_undo=True, score_enabled=True, require_point_confirmation=True,
+                    enable_chip_accounts=True, require_pot_withdrawal_confirmation=True,
+                    enable_player_leaving=True, enable_player_return=True)
+        gui = ControlsGUI(game)
+        gui.next_button, gui.undo_button, gui.return_player_button = Button(), Button(), Button()
+        gui.chip_bank_ui = SimpleNamespace(buttons=[])
+        gui.refresh_action_availability = lambda: refresh_action_availability(gui)
+        buttons = gui._turn_action_buttons() + [gui.next_button]
+        gui._turn_action_buttons = lambda: buttons
+        def check():
+            for button, allowed in (
+                (gui.next_button, game.session.end_turn_availability().allowed),
+                (gui.undo_button, game.session.undo_availability().allowed),
+                (gui.return_player_button, game.session.return_player_options().allowed),
+            ):
+                self.assertEqual(button.state, "normal" if allowed else "disabled")
+        def execute(action, **parameters):
+            result = gui.run_action(lambda: game.session.execute(action, **parameters))
+            self.assertTrue(result.success, result.message)
+            check()
+        gui.update_undo_button()
+        gui.refresh_action_availability()
+        check()
+        execute("leave_session")
+        execute("request_point")
+        execute("play_chips", amount=3)
+        execute("take_pot", player_index=1)
+        def decide(*args, **kwargs):
+            self.assertEqual(gui.next_button.state, "disabled")
+            self.assertEqual(gui.return_player_button.state, "disabled")
+            return False
+        with patch("portable_deck.ui.gameguiactions.messagebox.askyesno", side_effect=decide) as prompt:
+            gui.run_action(lambda: (game.session.execute("end_turn"), gui.handle_turn_start()))
+        self.assertEqual(prompt.call_count, 2)
+        check()
+        self.assertTrue(gui.undo().success)
+        check()
+        self.assertIsNotNone(game.pending_point_request)
+        self.assertEqual(gui.return_player_button.state, "disabled")
+        with patch("portable_deck.ui.gameguiactions.messagebox.askyesno", side_effect=decide):
+            gui.run_action(lambda: (game.session.execute("end_turn"), gui.handle_turn_start()))
+        execute("leave_session")
+        execute("leave_session")
+        self.assertFalse(game.active_player_indices())
+        self.assertEqual(gui.next_button.state, "disabled")
+        self.assertEqual(gui.return_player_button.state, "normal")
+        execute("return_player", player_index=0)
+        self.assertTrue(gui.undo().success)
+        check()
+        self.assertFalse(game.active_player_indices())
+
     def test_return_button_and_reason_track_options_pending_requests_and_undo(self):
         game = self.game()
         gui = ControlsGUI(game)
