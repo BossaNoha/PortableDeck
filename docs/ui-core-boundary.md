@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 383 tests; native Tk probes for session, deck and preset
+latest full suite passed 384 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -184,6 +184,16 @@ save_session(game, path), load_session(Game, path) and save_discard_pile(game,
 path) respectively. Saved JSON and GUI/CLI behavior are unchanged. Core AST
 import checks now reject ordinary app/UI/Tk imports even inside functions, and
 the existing clean-process core query test also checks no app/UI modules load.
+
+A separate standalone-core lifecycle regression now actively blocks app/UI/CLI/
+Tkinter imports in a clean process, recording even caught attempts. It constructs
+a deck in memory with a nonexistent source path, blocks file opening, then runs
+configured creation/start, cards, score/pot requests, in-memory checkpoints,
+JSON data round trip, blocked end-turn, approvals/rejection, structured Undo,
+player/log queries and restart with retained scores. It verifies source-state
+independence and no files in the temporary working directory. All steps passed
+without application-code changes. File-storage behavior remains covered by the
+application-service tests; this regression exercises core data serialization.
 
 - Tk widget/layout construction, dialog presentation and consent, selection,
   drag feedback, zoom/scroll and form text conversion are client work.
