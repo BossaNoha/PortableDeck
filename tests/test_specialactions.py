@@ -3,6 +3,7 @@ import tempfile
 from unittest.mock import Mock, patch
 from pathlib import Path
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 class SpecialActionTests(unittest.TestCase):
     def test_invalid_direct_inputs_preserve_reveals_and_do_not_choose_random_position(self):
@@ -183,7 +184,7 @@ class SpecialActionTests(unittest.TestCase):
             game.insert_hand_card(1, "discard", 1)
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / "save.json")
-            game.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(game, path)
+            loaded = load_session(Game, path)
             self.assertTrue(loaded.allow_insert_draw_deck)
             self.assertTrue(loaded.restart().enable_special_actions)

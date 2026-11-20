@@ -10,16 +10,15 @@ from portable_deck.core.game import Game
 
 
 class DiscardStorageTests(unittest.TestCase):
-    def test_service_and_compatibility_method_preserve_format_and_game(self):
+    def test_service_preserves_format_and_game(self):
         game = Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"))
         game.discard_pile.extend(["A of Hearts", "Žaludy"])
         before = game.capture_undo_state()
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "data" / "discard.json"
-            for save in (save_discard_pile, Game.save_discard_pile):
-                save(game, path)
-                self.assertEqual(json.loads(path.read_text(encoding="utf-8")), game.discard_pile)
-                self.assertEqual(game.capture_undo_state(), before)
+            save_discard_pile(game, path)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), game.discard_pile)
+            self.assertEqual(game.capture_undo_state(), before)
 
     def test_exit_respects_discard_options(self):
         for enabled in (False, True):
@@ -30,7 +29,6 @@ class DiscardStorageTests(unittest.TestCase):
                     with patch("portable_deck.app.mainmenu.save_discard_pile") as save:
                         MainMenu.exit_to_desktop(menu, game, False)
                     self.assertEqual(save.call_count, int(enabled and save_on_exit))
-                    game.save_discard_pile.assert_not_called()
                     menu.root.destroy.assert_called_once()
 
     def test_exit_reports_write_error_and_still_closes(self):

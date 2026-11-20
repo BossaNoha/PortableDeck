@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 from portable_deck.app.checkpoints import save_checkpoint
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import load_session
 
 
 class CheckpointTests(unittest.TestCase):
@@ -44,7 +45,7 @@ class CheckpointTests(unittest.TestCase):
             retained = sorted(archive.glob("*.json"))
             self.assertEqual([p.name for p in retained], ["autosave_200.json", "autosave_300.json"])
             self.assertEqual([p.read_bytes() for p in retained], versions[1:])
-            self.assertEqual(len(Game.load_session(str(latest)).players[0].hand), 3)
+            self.assertEqual(len(load_session(Game, str(latest)).players[0].hand), 3)
             self.assertIsNone(save_checkpoint(g, latest, count=1))
             self.assertEqual(list(archive.iterdir()), [])
 
@@ -79,7 +80,7 @@ class CheckpointTests(unittest.TestCase):
             g.session.execute("draw_card")
             with patch("portable_deck.app.checkpoints.Path.unlink", side_effect=OSError("Cleanup denied")):
                 self.assertEqual(save_checkpoint(g, latest, count=1), "Cleanup denied")
-            self.assertEqual(len(Game.load_session(str(latest)).players[0].hand), 2)
+            self.assertEqual(len(load_session(Game, str(latest)).players[0].hand), 2)
 
     def test_service_is_usable_in_another_client_without_tkinter(self):
         with tempfile.TemporaryDirectory() as folder:

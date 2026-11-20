@@ -7,8 +7,9 @@ from unittest.mock import Mock, patch
 from portable_deck.app.sessionview import TableViewState, load_table_view, save_with_view
 from portable_deck.app.savemanager import SaveManager
 from portable_deck.app.mainmenu import MainMenu
-from portable_deck.app.sessionstorage import load_session_with_view
+from portable_deck.app.sessionstorage import load_session, load_session_with_view
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session
 from portable_deck.ui.tableframe import TableFrame
 
 
@@ -73,7 +74,7 @@ class SessionViewTests(unittest.TestCase):
             path = str(Path(folder) / "save.json")
             save_with_view(g, path, view)
             self.assertEqual(load_table_view(path), view)
-            self.assertFalse(hasattr(Game.load_session(path), "table_view_state"))
+            self.assertFalse(hasattr(load_session(Game, path), "table_view_state"))
             state = json.loads(Path(path).read_text())
             self.assertNotIn("table_view_state", state)
             self.assertEqual(state["client_state"]["table_view"]["zoom"], 150)

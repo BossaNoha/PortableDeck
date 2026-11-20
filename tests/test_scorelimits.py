@@ -2,6 +2,7 @@ import unittest
 import tempfile
 from pathlib import Path
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 class ScoreLimitTests(unittest.TestCase):
     def game(self):
@@ -49,8 +50,8 @@ class ScoreLimitTests(unittest.TestCase):
         g.turn_score_alerts()
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / "save.json")
-            g.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(g, path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.turn_score_alerts(), [])
             self.assertEqual(loaded.restart().target_score, 10)
         g.enable_target_score = False

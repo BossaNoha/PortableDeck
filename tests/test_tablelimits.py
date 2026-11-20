@@ -2,6 +2,7 @@ import unittest
 import tempfile
 from pathlib import Path
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 class TableLimitTests(unittest.TestCase):
     def game(self, **kwargs):
@@ -68,8 +69,8 @@ class TableLimitTests(unittest.TestCase):
         g = self.game()
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / "save.json")
-            g.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(g, path)
+            loaded = load_session(Game, path)
             self.assertTrue(loaded.enable_table_limits)
             self.assertEqual(loaded.restart().max_table_columns, 2)
 

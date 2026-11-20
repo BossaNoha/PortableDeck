@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 
 class TableMigrationTests(unittest.TestCase):
@@ -18,8 +19,8 @@ class TableMigrationTests(unittest.TestCase):
                 game.table_cards = [{"card": "A", "player": "Player1"},
                                     {"card": "B", "player": "Player2"}]
                 path = str(Path(folder) / "legacy.json")
-                game.save_session(path)
-                loaded = Game.load_session(path)
+                save_session(game, path)
+                loaded = load_session(Game, path)
                 self.assertEqual([entry["position"] for entry in loaded.table_cards], [[0, 0], [0, 1]])
                 self.assertNotIn((0, 0), loaded.available_table_positions())
                 self.assertNotIn((0, 1), loaded.available_table_positions())

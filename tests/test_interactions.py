@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 from portable_deck.core.interactions import INTERACTIONS
 
 class InteractionTests(unittest.TestCase):
@@ -134,7 +135,7 @@ class InteractionTests(unittest.TestCase):
         game.enable_interactions = True
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
             path = str(Path(directory) / "save.json")
-            game.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(game, path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.interaction_options, game.interaction_options)
             self.assertTrue(loaded.restart().enable_interactions)

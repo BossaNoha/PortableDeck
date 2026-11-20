@@ -3,6 +3,7 @@ import tempfile
 import unittest
 
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 
 class RolesTeamsTests(unittest.TestCase):
@@ -39,8 +40,8 @@ class RolesTeamsTests(unittest.TestCase):
         self.assertEqual(game.player_team_name(0), "Red")
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
             path = str(Path(directory) / "save.json")
-            game.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(game, path)
+            loaded = load_session(Game, path)
             restarted = loaded.restart()
             for instance in (loaded, restarted):
                 self.assertTrue(instance.player_is_dealer(0))
@@ -52,8 +53,8 @@ class RolesTeamsTests(unittest.TestCase):
                          team_count=2, team_names=["Red"], player_teams=["team_1", "team_1", "dealer"])
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
             path = str(Path(directory) / "save.json")
-            game.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(game, path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.teams, game.teams)
             self.assertEqual(loaded.player_teams, game.player_teams)
             restarted = loaded.restart()

@@ -2,6 +2,7 @@ import unittest
 import tempfile
 from pathlib import Path
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 class PlayerLeavingTests(unittest.TestCase):
     def game(self, rules, **kwargs):
@@ -41,8 +42,8 @@ class PlayerLeavingTests(unittest.TestCase):
         self.assertEqual(g.current_player_index, 1)
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / "save.json")
-            g.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(g, path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.left_players, [0])
             self.assertTrue(loaded.undo_last_action())
             self.assertEqual(loaded.capture_undo_state(), state)
@@ -74,8 +75,8 @@ class PlayerLeavingTests(unittest.TestCase):
         g.leave_conditions["match"] = "any"
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / "save.json")
-            g.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(g, path)
+            loaded = load_session(Game, path)
             self.assertTrue(loaded.can_leave_session())
             self.assertEqual(loaded.restart().leave_conditions["match"], "any")
         g.leave_conditions.update(own_score=False, no_chips=False)
@@ -96,8 +97,8 @@ class PlayerLeavingTests(unittest.TestCase):
         self.assertEqual(g.capture_undo_state(), before)
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / "save.json")
-            g.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(g, path)
+            loaded = load_session(Game, path)
             self.assertTrue(loaded.enable_player_return)
             self.assertTrue(loaded.return_player(0)[0])
             self.assertTrue(loaded.restart().enable_player_return)

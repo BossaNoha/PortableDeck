@@ -10,6 +10,7 @@ from unittest.mock import patch
 from portable_deck.cli import CLIClient, run_cli, main
 from portable_deck.app.newgame import create_game
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session
 
 
 class CLITests(unittest.TestCase):
@@ -159,7 +160,7 @@ class CLITests(unittest.TestCase):
         g = self.game()
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "session.json"
-            g.save_session(str(path))
+            save_session(g, str(path))
             before = path.read_bytes()
             script = ("import sys; from portable_deck.cli import main; "
                       "main(['--load',sys.argv[1]]); assert 'tkinter' not in sys.modules")

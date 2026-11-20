@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import Mock
 
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 
 class PersonalPileTests(unittest.TestCase):
@@ -136,8 +137,8 @@ class PersonalPileTests(unittest.TestCase):
                 self.assertEqual(game.personal_piles[0][0], expected)
                 with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
                     path = str(Path(directory) / "save.json")
-                    game.save_session(path)
-                    loaded = Game.load_session(path)
+                    save_session(game, path)
+                    loaded = load_session(Game, path)
                     self.assertEqual(loaded.personal_pile_settings[0][0]["size_order"], direction)
                     self.assertEqual(loaded.take_from_personal_pile(0, 0), expected[-1])
 
@@ -149,8 +150,8 @@ class PersonalPileTests(unittest.TestCase):
         game.play_to_personal_pile(1, 0, 0)
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
             path = str(Path(directory) / "save.json")
-            game.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(game, path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.personal_piles, game.personal_piles)
             self.assertTrue(loaded.undo_last_action())
             self.assertEqual(loaded.capture_undo_state(), original)
@@ -162,7 +163,7 @@ class PersonalPileTests(unittest.TestCase):
         game = self.game()
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
             path = str(Path(directory) / "legacy.json")
-            game.save_session(path)
+            save_session(game, path)
             data = json.loads(Path(path).read_text())
             for key in ("enable_personal_piles", "personal_pile_count", "personal_pile_settings", "personal_piles"):
                 data.pop(key)
@@ -173,7 +174,7 @@ class PersonalPileTests(unittest.TestCase):
             snapshot["personal_discard_piles"] = [[["3 of Test"]], [[]]]
             data["undo_stack"] = [snapshot]
             Path(path).write_text(json.dumps(data))
-            loaded = Game.load_session(path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.personal_piles, [[["2 of Test"]], [[]]])
             self.assertEqual(loaded.personal_discard_pile_count, 0)
             self.assertTrue(loaded.undo_last_action())
@@ -191,8 +192,8 @@ class PersonalPileTests(unittest.TestCase):
         self.assertEqual(game.play_to_personal_pile(1, 1, 2), "2 of Test")
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
             path = str(Path(directory) / "save.json")
-            game.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(game, path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.personal_pile_counts, [0, 3])
             self.assertEqual(loaded.personal_piles, game.personal_piles)
             self.assertEqual(loaded.restart().personal_pile_counts, [0, 3])

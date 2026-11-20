@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 from portable_deck.app.namedsaves import next_session_number, save_named_session
 from portable_deck.app.savemanager import SaveManager
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import load_session
 
 
 class NamedSaveTests(unittest.TestCase):
@@ -50,7 +51,7 @@ class NamedSaveTests(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text())["client_state"], metadata)
             g.session.execute("draw_card")
             save_named_session(g, path, overwrite=True)
-            self.assertEqual(len(Game.load_session(str(path)).players[0].hand), 1)
+            self.assertEqual(len(load_session(Game, str(path)).players[0].hand), 1)
 
     def test_write_failure_preserves_file_and_previous_association(self):
         g = self.game()

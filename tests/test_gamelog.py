@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 
 class GameLogTests(unittest.TestCase):
@@ -71,16 +72,16 @@ class GameLogTests(unittest.TestCase):
                     g.current_player_index = 1
                     g.game_log = list(log)
                     path = Path(folder) / "session.json"
-                    g.save_session(str(path))
+                    save_session(g, str(path))
                     if legacy:
                         state = json.loads(path.read_text(encoding="utf-8"))
                         state["gui_log"] = state.pop("game_log")
                         path.write_text(json.dumps(state), encoding="utf-8")
-                    loaded = Game.load_session(str(path))
+                    loaded = load_session(Game, str(path))
                     self.assertEqual(loaded.game_log, log or ["Player2's turn starts."])
                     self.assertEqual(len(loaded.history), 0 if log else 1)
-                    loaded.save_session(str(path))
-                    reloaded = Game.load_session(str(path))
+                    save_session(loaded, str(path))
+                    reloaded = load_session(Game, str(path))
                     self.assertEqual(reloaded.game_log, loaded.game_log)
                     self.assertEqual(reloaded.history, loaded.history)
 
@@ -89,8 +90,8 @@ class GameLogTests(unittest.TestCase):
         g.left_players = [0, 1]
         with tempfile.TemporaryDirectory() as folder:
             path = str(Path(folder) / "session.json")
-            g.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(g, path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.game_log, [])
             self.assertEqual(loaded.history, [])
 
@@ -178,13 +179,13 @@ class GameLogTests(unittest.TestCase):
         g.deal_card_to_current()
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = Path(folder) / 'session.json'
-            g.save_session(str(path))
+            save_session(g, str(path))
             saved = json.loads(path.read_text(encoding='utf-8'))
             self.assertIn('game_log', saved)
-            self.assertEqual(Game.load_session(str(path)).game_log, g.game_log)
+            self.assertEqual(load_session(Game, str(path)).game_log, g.game_log)
             saved['gui_log'] = saved.pop('game_log')
             path.write_text(json.dumps(saved), encoding='utf-8')
-            self.assertEqual(Game.load_session(str(path)).game_log, g.game_log)
+            self.assertEqual(load_session(Game, str(path)).game_log, g.game_log)
 
     def test_checkpoint_receives_core_log_and_reports_failures(self):
         g = self.game()

@@ -4,6 +4,7 @@ from pathlib import Path
 from dataclasses import FrozenInstanceError
 from unittest.mock import Mock
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 
 class ScoreNotificationTests(unittest.TestCase):
@@ -76,8 +77,8 @@ class ScoreNotificationTests(unittest.TestCase):
         self.assertFalse(g.score_notifications())
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / 'session.json')
-            g.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(g, path)
+            loaded = load_session(Game, path)
             self.assertFalse(loaded.score_notifications())
         self.assertTrue(g.session.undo())
         self.assertEqual(g.score_notifications(), notices)

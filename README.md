@@ -37,8 +37,9 @@ embedded definition still require their external deck file.
 `core.gamesession.export_session(game)` and `restore_session(Game, data)` convert
 between a game and independent save data without file access. JSON files,
 atomic writes, legacy external-deck lookup and named-save association belong to
-`app.sessionstorage`. Existing `Game.save_session` / `Game.load_session` methods
-delegate to this service for compatibility; the save format is unchanged.
+`app.sessionstorage`. Use `save_session(game, path, client_state=...)` and
+`load_session(Game, path)` from that module. The former Game persistence
+methods have been removed; the save format is unchanged.
 GUI load/resume, CLI load, named saves, table-view saves and checkpoints call
 the application service directly.
 GUI load/resume uses `load_session_with_view(Game, path)` to restore the game
@@ -683,8 +684,8 @@ the session controller revalidates submitted commands.
 Table zoom and scroll offsets are client state, separate from `Game`. The desktop
 app stores them under `client_state.table_view` in named saves and checkpoints,
 and reads the legacy `table_view_state` field from older saves. Other clients can
-save optional metadata using `game.save_session(path, client_state=...)`;
-`Game.load_session` restores game data only. View changes do not affect Undo.
+save optional metadata using `app.sessionstorage.save_session(game, path, client_state=...)`;
+`app.sessionstorage.load_session(Game, path)` restores game data only. View changes do not affect Undo.
 
 `portable_deck.core.sessionstatus.build_session_status(game)` prepares an immutable
 snapshot of player names, card counts, active/current state, roles, team membership,

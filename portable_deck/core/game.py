@@ -322,16 +322,3 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         self.current_player_index = following
         self.log_action(self.players[following].name, "turn_started")
         return round_ended, cleared_count
-
-    def save_discard_pile(self, path):
-        from ..app.discardstorage import save_discard_pile
-        return save_discard_pile(self, path)
-
-    def save_session(self, path, *, client_state=None):
-        from ..app.sessionstorage import save_session
-        return save_session(self, path, client_state=client_state)
-
-    @classmethod
-    def load_session(cls, path):
-        from ..app.sessionstorage import load_session
-        return load_session(cls, path)

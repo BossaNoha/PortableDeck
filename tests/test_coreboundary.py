@@ -1,5 +1,7 @@
 """One architectural check for all core modules, including lazy query paths."""
 import subprocess
+import ast
+import importlib.util
 import sys
 import unittest
 from pathlib import Path
@@ -7,6 +9,28 @@ from textwrap import dedent
 
 
 class CoreBoundaryTests(unittest.TestCase):
+    def test_core_does_not_import_application_or_presentation_modules(self):
+        root = Path(__file__).resolve().parents[1]
+        violations = []
+        for path in (root / "portable_deck" / "core").rglob("*.py"):
+            module = ".".join(path.relative_to(root).with_suffix("").parts)
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                if isinstance(node, ast.Import):
+                    names = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    base = node.module or ""
+                    if node.level:
+                        base = importlib.util.resolve_name("." * node.level + base, module.rpartition(".")[0])
+                    names = [base] + [base + "." + alias.name for alias in node.names]
+                else:
+                    continue
+                for name in names:
+                    if (name == "tkinter" or name.startswith("tkinter.")
+                            or (name.startswith("portable_deck.") and not
+                                (name == "portable_deck.core" or name.startswith("portable_deck.core.")))):
+                        violations.append(f"{path.name}:{node.lineno}: {name}")
+        self.assertEqual(violations, [])
+
     def test_all_core_modules_and_public_queries_work_without_tkinter(self):
         script = dedent('''
             import importlib
@@ -71,6 +95,7 @@ class CoreBoundaryTests(unittest.TestCase):
             assert restarted.pending_point_request is None
             assert restarted.pending_pot_withdrawal is None
             assert not any(name == 'tkinter' or name.startswith('tkinter.') for name in sys.modules)
+            assert not any(name.startswith(('portable_deck.app', 'portable_deck.ui')) for name in sys.modules)
         ''')
         result = subprocess.run([sys.executable, '-B', '-c', script],
                                 cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)

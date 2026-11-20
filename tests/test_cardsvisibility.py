@@ -2,6 +2,7 @@ import unittest
 import tempfile
 from pathlib import Path
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 class CardsVisibilityTests(unittest.TestCase):
     def game(self, **kwargs):
@@ -33,7 +34,7 @@ class CardsVisibilityTests(unittest.TestCase):
         self.assertEqual(game.players[1].hand, ["A of Test"])
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / "session.json")
-            game.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(game, path)
+            loaded = load_session(Game, path)
             self.assertTrue(loaded.can_view_hand(2, 0))
             self.assertEqual(loaded.restart().cards_visibility, game.cards_visibility)

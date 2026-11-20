@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 class TeamResourceTests(unittest.TestCase):
     def game(self, **options):
@@ -41,8 +42,8 @@ class TeamResourceTests(unittest.TestCase):
         game.request_point()
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
             path = str(Path(directory) / "save.json")
-            game.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(game, path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.chip_balance(1), 190)
             self.assertEqual(loaded.team_scores["team_1"], 1)
             self.assertEqual(loaded.restart(keep_scores=True).team_scores, loaded.team_scores)
@@ -66,7 +67,7 @@ class TeamResourceTests(unittest.TestCase):
                     self.assertEqual(game.chip_balances, balances)
                     with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
                         path = str(Path(folder) / "session.json")
-                        game.save_session(path)
-                        loaded = Game.load_session(path)
+                        save_session(game, path)
+                        loaded = load_session(Game, path)
                         self.assertEqual(loaded.reset_chip_accounts_on_restart, reset)
                         self.assertEqual(loaded.restart().chip_pot, 0 if reset else 10)

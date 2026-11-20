@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 class FlippingTests(unittest.TestCase):
     def test_invalid_hand_indices_preserve_reveals_undo_and_checkpoint(self):
@@ -60,8 +61,8 @@ class FlippingTests(unittest.TestCase):
         g.flip_hand_card(0)
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as folder:
             path = str(Path(folder) / "save.json")
-            g.save_session(path)
-            loaded = Game.load_session(path)
+            save_session(g, path)
+            loaded = load_session(Game, path)
             self.assertEqual(loaded.visible_hand(1,0), ["A"])
             self.assertTrue(loaded.undo_last_action())
             self.assertEqual(loaded.capture_undo_state(), before)

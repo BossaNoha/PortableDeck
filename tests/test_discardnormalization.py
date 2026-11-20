@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 from portable_deck.core.actionavailability import action_availability
 from portable_deck.core.playerview import build_player_discard_view
 from portable_deck.core.sessionstatus import build_session_status
@@ -29,7 +30,7 @@ class DiscardNormalizationTests(unittest.TestCase):
             action_availability(g, "draw_from_discard")
         self.assertIs(piles[-1][1], personal[1][0])
         with tempfile.TemporaryDirectory() as folder:
-            g.save_session(str(Path(folder) / "session.json"))
+            save_session(g, str(Path(folder) / "session.json"))
         self.assertEqual(g.capture_undo_state(), before)
         self.assertEqual(set(g.__dict__), fields)
         self.assertIs(g.personal_discard_piles, personal)
@@ -41,14 +42,14 @@ class DiscardNormalizationTests(unittest.TestCase):
         g = self.game()
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "legacy.json"
-            g.save_session(str(path))
+            save_session(g, str(path))
             data = json.loads(path.read_text(encoding="utf-8"))
             for key in ("discard_piles", "shared_discard_pile_count", "personal_discard_piles",
                         "personal_discard_pile_count"):
                 data.pop(key)
             data["discard_pile"] = ["LEGACY"]
             path.write_text(json.dumps(data), encoding="utf-8")
-            loaded = Game.load_session(str(path))
+            loaded = load_session(Game, str(path))
         self.assertEqual(loaded.discard_piles, [["LEGACY"]])
         self.assertEqual(loaded.personal_discard_piles, [[], []])
         self.assertEqual(loaded.shared_discard_pile_count, 1)
@@ -80,8 +81,8 @@ class DiscardNormalizationTests(unittest.TestCase):
         g.personal_discard_piles[1][0] = ["A"]
         with tempfile.TemporaryDirectory() as folder:
             path = str(Path(folder) / "session.json")
-            g.save_session(path)
-            g = Game.load_session(path)
+            save_session(g, path)
+            g = load_session(Game, path)
         self.assertEqual(g.discard_piles, [])
         self.assertEqual(g.shared_discard_pile_count, 0)
         self.assertEqual(len(g.all_discard_piles()), 2)

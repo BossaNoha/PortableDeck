@@ -6,7 +6,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 382 tests; native Tk probes for session, deck and preset
+latest full suite passed 383 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -176,14 +176,23 @@ no user files were written. This was targeted automated GUI verification.
 
 ### Reads and responsibilities that can stay in the client
 
+The persistence dependency migration removed Game.save_session, Game.load_session
+and Game.save_discard_pile after repository-wide caller inspection found only
+tests still using them. Tests now call app.sessionstorage/app.discardstorage;
+application clients already did. External Python callers must migrate to
+save_session(game, path), load_session(Game, path) and save_discard_pile(game,
+path) respectively. Saved JSON and GUI/CLI behavior are unchanged. Core AST
+import checks now reject ordinary app/UI/Tk imports even inside functions, and
+the existing clean-process core query test also checks no app/UI modules load.
+
 - Tk widget/layout construction, dialog presentation and consent, selection,
   drag feedback, zoom/scroll and form text conversion are client work.
 - Names, current-player IDs and rule flags read for display/control construction
   are not equivalent to duplicating game rules or mutating authoritative cards.
   Remove a read only when an existing projection or concrete client input fits.
 - `MainMenu` may orchestrate starting/loading/restarting a local Game through
-  services. Game persistence compatibility delegates may remain during migration;
-  application clients already use services directly.
+  services. Persistence belongs to application services; the former Game
+  persistence compatibility delegates have now been removed.
 - Deck editor comma/newline parsing and loading remain widget-oriented. They
   need extraction only if another editor/client will reuse that representation.
 
@@ -194,9 +203,8 @@ authorization for remote callers, revision/concurrency control, transport or
 private-result filtering. Full save data, internal history and raw ActionResult
 values/events must not be treated as a broadcast payload. These concerns should
 be designed for the actual hosting/session model, independently of the local
-Tk replacement. The application import guard also does not prohibit all
-core-to-app compatibility imports; a stricter dependency direction would be a
-separate, explicitly scoped migration.
+Tk replacement. Core import checks now prohibit dependencies on application
+and GUI modules, including function-local ordinary imports.
 
 ## Implementation evidence and earlier audits
 
@@ -460,7 +468,7 @@ Table zoom and scroll offsets belong to client-owned `TableViewState`, passed
 to the GUI separately from `Game`. Named saves and checkpoints store it under
 `client_state.table_view`. The application reads legacy `table_view_state` on
 load. Core-only saves omit client metadata unless explicitly supplied; loading
-with `Game.load_session` intentionally restores only the game, not client views.
+with `app.sessionstorage.load_session` intentionally restores only the game, not client views.
 New games and restarts use the default view. Presentation state is excluded from
 gameplay snapshots and Undo.
 
@@ -887,8 +895,8 @@ boundary. This full private save state is not a player-facing view.
 
 `app.sessionstorage` owns JSON encoding/decoding, atomic replacement/cleanup,
 optional client state, named-save association and external-deck resolution for
-legacy saves. Existing `Game.save_session` and `Game.load_session` remain lazy
-compatibility delegates to this application service. The on-disk shape and
+legacy saves. Former Game compatibility delegates were subsequently removed;
+clients use this application service directly. The on-disk shape and
 existing GUI/CLI behavior are unchanged. Tests verify a JSON round trip with
 file access blocked, pending confirmations, draw order, Undo, independent
 mutable state, and the existing storage failure and legacy-save cases.
@@ -910,8 +918,8 @@ write-failure tests cover the application routes.
 `app.discardstorage.save_discard_pile` owns directory creation and UTF-8 JSON
 writing of the existing shared-discard list. Desktop exit calls this service
 directly when discard is enabled and `save_discard_on_exit` is selected.
-`Game.save_discard_pile` remains a compatibility delegate; Game no longer
-performs direct file writes. A canceled/failed requested session save still
+The former `Game.save_discard_pile` compatibility delegate was subsequently
+removed. Game performs no persistence writes. A canceled/failed requested session save still
 prevents export and exit. Discard write errors still show a dialog before the
 application closes. Tests cover format/state preservation, both option flags,
 cancellation and write failure. This remains a separate export, not a session

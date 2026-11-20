@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 
 class SessionDeckTests(unittest.TestCase):
@@ -17,14 +18,14 @@ class SessionDeckTests(unittest.TestCase):
                 game.start(1)
                 game.session.execute("draw_card")
                 saved = str(Path(folder) / "session.json")
-                game.save_session(saved)
+                save_session(game, saved)
                 if source_state == "deleted":
                     deck_path.unlink()
                 elif source_state == "invalid":
                     deck_path.write_text("broken", encoding="utf-8")
                 else:
                     deck_path.write_text(json.dumps({"types": ["New"], "cards": [[99]]}), encoding="utf-8")
-                loaded = Game.load_session(saved)
+                loaded = load_session(Game, saved)
                 self.assertEqual(loaded.deck.cards, definition["cards"])
                 self.assertEqual(loaded.capture_undo_state(), game.capture_undo_state())
                 for source in (game, loaded):
@@ -43,18 +44,18 @@ class SessionDeckTests(unittest.TestCase):
             game = Game(1, str(deck_path))
             game.start(1)
             saved = Path(folder) / "session.json"
-            game.save_session(str(saved))
+            save_session(game, str(saved))
             state = json.loads(saved.read_text(encoding="utf-8"))
             del state["deck_types"]
             del state["deck_cards"]
             saved.write_text(json.dumps(state), encoding="utf-8")
-            self.assertEqual(Game.load_session(str(saved)).deck.types, ["Legacy"])
+            self.assertEqual(load_session(Game, str(saved)).deck.types, ["Legacy"])
             state["deck_types"] = ["Incomplete"]
             saved.write_text(json.dumps(state), encoding="utf-8")
             with self.assertRaises(ValueError):
-                Game.load_session(str(saved))
+                load_session(Game, str(saved))
             del state["deck_types"]
             saved.write_text(json.dumps(state), encoding="utf-8")
             deck_path.unlink()
             with self.assertRaises(FileNotFoundError):
-                Game.load_session(str(saved))
+                load_session(Game, str(saved))

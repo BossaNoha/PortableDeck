@@ -4,6 +4,7 @@ import tempfile
 from dataclasses import asdict
 from pathlib import Path
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 from portable_deck.core.selection import SelectionState
 from portable_deck.core.selectionsnapshot import SelectionSnapshot, build_selection_snapshot
 from portable_deck.core.playerview import build_player_hands_view, build_player_table_view
@@ -62,11 +63,11 @@ class SelectionTests(unittest.TestCase):
         self.assertIsNone(self.state.hand_index)
         with tempfile.TemporaryDirectory() as folder:
             path = str(Path(folder) / 'session.json')
-            self.game.save_session(path)
+            save_session(self.game, path)
             data = Path(path).read_text(encoding='utf-8')
             self.assertNotIn(first.session, data)
             self.assertNotIn(first.hand_revision, data)
-            loaded = Game.load_session(path)
+            loaded = load_session(Game, path)
             self.assertNotEqual(build_selection_snapshot(loaded).session, first.session)
 
     def test_undo_invalidates_only_changed_collections(self):

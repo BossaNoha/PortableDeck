@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from portable_deck.core.game import Game
+from portable_deck.app.sessionstorage import save_session, load_session
 
 
 class RestartTests(unittest.TestCase):
@@ -37,8 +38,8 @@ class RestartTests(unittest.TestCase):
                 with self.subTest(keep_scores=keep_scores, reset_chips=reset_chips), tempfile.TemporaryDirectory() as folder:
                     original = self.game(reset_chips)
                     path = str(Path(folder) / "saved.json")
-                    original.save_session(path)
-                    loaded = Game.load_session(path)
+                    save_session(original, path)
+                    loaded = load_session(Game, path)
                     before = loaded.capture_undo_state()
                     restarted = loaded.restart(keep_scores=keep_scores)
                     self.assertEqual(loaded.capture_undo_state(), before)
