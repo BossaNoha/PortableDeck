@@ -23,6 +23,15 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Discard pile → Allow discarding multiple hand cards
+at once** to add **Discard multiple cards…**. Select at least two hand cards
+with Ctrl/Shift and a shared or your own personal discard pile. Cards move in
+hand order; the last selected card becomes the top card. The whole batch is
+validated before removal and creates one Undo step and one autosave. The rule
+defaults to off, is stored in presets/saves and survives restart. CLI: enable
+`--discard-multiple-cards` for new games, then use `discard-many shared 1 1 3`
+or `discard-many personal 1 1 3` (pile and card numbers start at 1).
+
 Enable **Game Settings → Table → Table actions → Allow playing multiple hand
 cards at once** to add **Play multiple cards…**. Select at least two cards in
 the dialog with Ctrl/Shift. The group plays face up in hand order at automatic

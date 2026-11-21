@@ -3,18 +3,14 @@ import copy
 
 from .actionavailability import action_availability
 from .actionerrors import ActionValidationError
+from .cardselection import batch_hand_indices
 
 
 def play_cards(game, indices):
     available = action_availability(game, "play_cards")
     if not available.allowed:
         raise ActionValidationError(available.code, available.reason)
-    hand = game.players[game.current_player_index].hand
-    if (not isinstance(indices, (list, tuple)) or len(indices) < 2
-            or any(type(index) is not int or not 0 <= index < len(hand) for index in indices)
-            or len(set(indices)) != len(indices)):
-        raise ActionValidationError("invalid_selection", "Choose at least two distinct available hand cards.")
-    indices = sorted(indices)
+    indices = batch_hand_indices(game, indices)
     # Position queries only need a private table list. Plan every destination
     # before touching the real hand, table, log or revealed-card indices.
     planner = copy.copy(game)

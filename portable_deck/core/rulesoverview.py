@@ -90,6 +90,8 @@ def build_rules_overview(game):
         table.append(RuleEntry("occupied_slot_action", "Occupied position", g.occupied_slot_action))
     add("table", "Table", g.enable_table, table)
     discard = [RuleEntry("shared_piles", "Shared piles", len(g.discard_piles))]
+    if g.allow_discard_multiple_cards:
+        discard.append(RuleEntry("allow_discard_multiple_cards", "Discard multiple hand cards at once"))
     if g.allow_draw_from_discard:
         discard.append(RuleEntry("draw_from_discard", "Draw from discard", "any card" if g.draw_from_discard_mode == "any" else "top card"))
     if g.allow_recycle_discard_to_deck:

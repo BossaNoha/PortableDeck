@@ -1,5 +1,14 @@
 # UI/core boundary audit
 
+Optional batch discard: allow_discard_multiple_cards defaults to False under
+Discard pile. Session discard_cards accepts card_indices plus pile_index and
+personal, validates the complete selection and destination before removal, and
+uses existing single-card discard/log behavior in one Undo/checkpoint transaction.
+Shared batch index validation is core-owned. GUI shares the batch selector with
+play, uses immutable discard destination options, and guards stale hands. CLI
+discard-many shared|personal PILE CARD CARD uses the same command. Preset, save,
+legacy, restart, rollback and both native Tk layouts are covered.
+
 Optional batch play: allow_play_multiple_cards defaults to False, under Table /
 Table actions. Session play_cards accepts distinct zero-based card_indices,
 sorts them into hand order, plans every automatic table position on a private
@@ -92,7 +101,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 442 tests; native Tk probes for session, deck and preset
+latest full suite passed 450 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

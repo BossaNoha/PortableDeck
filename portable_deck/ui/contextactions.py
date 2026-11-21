@@ -64,6 +64,7 @@ class ContextActions:
             if button is not None and condition:
                 shown.append(button)
         include("play_multiple_button")
+        include("discard_multiple_button")
         hand = gui.selection.hand_index is not None
         table = gui.selection.table_index is not None
         spot = gui.selection.target_position is not None

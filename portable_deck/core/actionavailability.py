@@ -23,7 +23,7 @@ class ActionAvailability:
 
 
 ACTIONS = frozenset((
-    "play_cards", "reverse_turn_order", "draw_card", "discard_card", "play_card", "play_face_down", "play_personal_pile", "take_personal_pile", "swap_table_card",
+    "discard_cards", "play_cards", "reverse_turn_order", "draw_card", "discard_card", "play_card", "play_face_down", "play_personal_pile", "take_personal_pile", "swap_table_card",
     "flip_hand_card", "play_at_position", "take_table_card", "discard_table_card",
     "flip_table_card", "move_table_card", "request_point", "reduce_score",
     "draw_from_discard", "recycle_discard", "clear_table", "leave_session",
@@ -40,6 +40,7 @@ def action_availability(game, action, context=None):
 def _evaluate_availability(g, action, context):
     enabled = {
         "play_cards": g.enable_table and g.allow_play_multiple_cards,
+        "discard_cards": g.enable_discard_pile and g.allow_discard_multiple_cards,
         "reverse_turn_order": g.allow_reverse_turn_order,
         "draw_card": True,
         "discard_card": g.enable_discard_pile,
@@ -80,7 +81,7 @@ def _evaluate_availability(g, action, context):
                 return ActionAvailability(False, message, "invalid_selection")
     if g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal():
         return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
-    if action == "play_cards" and len(g.players[g.current_player_index].hand) < 2:
+    if action in {"play_cards", "discard_cards"} and len(g.players[g.current_player_index].hand) < 2:
         return ActionAvailability(False, "At least two hand cards are needed.", "not_enough_cards")
     if action in {"play_personal_pile", "take_personal_pile"}:
         if context.owner is not None or context.pile_index is not None:

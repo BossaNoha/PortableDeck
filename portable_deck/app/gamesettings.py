@@ -24,6 +24,7 @@ class GameSettingsPanel:
         self.team_score_var = tk.BooleanVar(value=settings.get("enable_team_score", False))
         self.player_name = player_name
         self.settings = settings
+        self.discard_multiple_var = tk.BooleanVar(value=settings.get("allow_discard_multiple_cards", False))
         self.play_multiple_var = tk.BooleanVar(value=settings.get("allow_play_multiple_cards", False))
         self.skip_next_player_var = tk.BooleanVar(value=settings.get("allow_skip_next_player", False))
         self.reverse_turn_order_var = tk.BooleanVar(value=settings.get("allow_reverse_turn_order", False))
@@ -135,6 +136,10 @@ class GameSettingsPanel:
         self.discard_options = tk.Frame(discard_section)
         self.discard_options.pack(fill="x")
         discard_pile = self.discard_options
+        add_tooltip(tk.Checkbutton(discard_pile, text="Allow discarding multiple hand cards at once",
+                                  variable=self.discard_multiple_var, wraplength=280, justify="left"),
+                    "Choose multiple hand cards and one shared or personal discard pile. "
+                    "Cards are discarded in hand order as one action.").pack(anchor="w")
         add_tooltip(tk.Checkbutton(
             discard_pile,
             text="Save discard pile when the game window closes",
@@ -408,6 +413,7 @@ class GameSettingsPanel:
             "allow_reverse_turn_order": self.reverse_turn_order_var.get(),
             "allow_skip_next_player": self.skip_next_player_var.get(),
             "allow_play_multiple_cards": self.play_multiple_var.get(),
+            "allow_discard_multiple_cards": self.discard_multiple_var.get(),
             "limit_table_rows": self.limit_rows_var.get(),
             "limit_table_columns": self.limit_columns_var.get(),
             "enable_table_limits": self.table_limits_var.get(),
