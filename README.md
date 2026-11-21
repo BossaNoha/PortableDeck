@@ -4,9 +4,6 @@ Portable Deck is a Python and Tkinter app for managing cards in tabletop games.
 It provides a configurable deck, player hands, a shared table, turn actions,
 and save/resume support. It does not enforce rules for a specific card game.
 
-Version 1 will ship the current Tkinter interface; the replacement interface is
-planned for version 2. See [version 1 scope, blockers and release checks](docs/version-1-release.md).
-
 ## Run
 
 Use Python 3 with Tkinter available, then start the app from the project folder:

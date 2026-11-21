@@ -1,9 +1,5 @@
 # UI/core boundary audit
 
-Release priority: version 1 retains Tkinter; replacement UI work belongs to
-version 2. Use [the version 1 release scope and blockers](version-1-release.md)
-for current delivery priorities. This audit records architecture evidence.
-
 ## Current assessment — 2026-11-20
 
 The local hotseat core and extracted application services can run without
