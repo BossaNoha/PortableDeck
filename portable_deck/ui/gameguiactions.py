@@ -16,6 +16,9 @@ class GameGUIActions:
     def give_multiple_cards(self, target):
         return self._choose_multiple_cards("give_cards", "Give", target=target)
 
+    def take_multiple_cards(self):
+        return self._choose_multiple_cards("take_table_cards", "Take")
+
     def _choose_multiple_cards(self, action, verb, target=None):
         from ..core.actionavailability import action_availability
         from ..core.pileoptions import discard_destinations
@@ -25,12 +28,14 @@ class GameGUIActions:
             return
         snapshot = build_selection_snapshot(self.game)
         view = build_player_session_view(self.game, snapshot.owner)
+        from_table = action == "take_table_cards"
         dialog = tk.Toplevel(self.root)
         dialog.title(f"{verb} multiple cards")
         dialog.transient(self.root)
         instruction = {"play_cards": "Cards play face up in hand order.",
                        "discard_cards": "Cards are discarded in hand order; the last selected card becomes the top card.",
-                       "give_cards": "Cards are appended to the recipient's hand in hand order."}[action]
+                       "give_cards": "Cards are appended to the recipient's hand in hand order.",
+                       "take_table_cards": "Cards are appended to your hand in table order."}[action]
         if action == "give_cards":
             from ..core.interactions import build_interaction_options
             options = build_interaction_options(self.game, action)
@@ -44,8 +49,10 @@ class GameGUIActions:
                  wraplength=420).pack(padx=12, pady=8)
         choices = tk.Listbox(dialog, selectmode="extended", exportselection=False, width=48, height=12)
         choices.pack(padx=12, pady=5, fill="both", expand=True)
-        for slot in view.hands.hands[snapshot.owner].cards:
-            choices.insert("end", f"{slot.index + 1}. {slot.card if slot.card is not None else 'Hidden card'}")
+        slots = view.table.cards if from_table else view.hands.hands[snapshot.owner].cards
+        for slot in slots:
+            position = f" at {slot.position}" if from_table else ""
+            choices.insert("end", f"{slot.index + 1}. {slot.card if slot.card is not None else 'Hidden card'}{position}")
         destinations = discard_destinations(self.game, snapshot.owner) if action == "discard_cards" else ()
         if destinations:
             tk.Label(dialog, text="Destination:").pack(padx=12, anchor="w")
@@ -57,9 +64,10 @@ class GameGUIActions:
 
         def play():
             current = build_selection_snapshot(self.game)
-            if (current.session, current.owner, current.hand_revision) != (
-                    snapshot.session, snapshot.owner, snapshot.hand_revision):
-                messagebox.showwarning("Hand changed", "Reopen the card selector before moving cards.", parent=dialog)
+            revision = "table_revision" if from_table else "hand_revision"
+            if (current.session, current.owner, getattr(current, revision)) != (
+                    snapshot.session, snapshot.owner, getattr(snapshot, revision)):
+                messagebox.showwarning("Cards changed", "Reopen the card selector before moving cards.", parent=dialog)
                 return
             indices = list(choices.curselection())
             parameters = {"card_indices": indices}

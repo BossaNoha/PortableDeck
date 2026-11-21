@@ -31,7 +31,8 @@ def format_game_event(event):
         "draw_from_discard": f"{player} took {card} from {event.get('destination', 'a discard pile')}.",
         "play_back_to_draw_pile": f"{player} played {card}; it was shuffled into the draw pile.",
         "swap_table_card": f"{player} swapped {card} for {event.get('returned_card', 'a table card')} on the table.",
-        "take_from_table": f"{player} took {card} from the table.",
+        "take_from_table": (f"{player} took {card} from the table." if event.get("face_up", True)
+                            else f"{player} took a face-down card from the table."),
         "table_to_discard": f"{card} was moved from the table to {event.get('destination', 'the discard pile')}.",
         "move_table_card": f"{player} moved {card} to another spot on the table.",
         "move_table_sequence": f"{player} moved a sequence starting with {card} on the table.",

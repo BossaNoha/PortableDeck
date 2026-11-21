@@ -23,6 +23,16 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Table → Table actions → Allow taking multiple table
+cards at once**, together with taking individual table cards, to add
+**Take multiple table cards…**. Select at least two shared table cards with
+Ctrl/Shift. They are appended to your hand in table order; remaining table
+positions stay unchanged. Face-down cards are unnamed in the selector and public
+logs. The entire selection is validated before moving any card and creates one
+Undo step and one autosave. The rule defaults to off, is stored in presets/saves
+and survives restart. CLI: `--take-multiple-cards` enables both taking rules for
+new games; `take-many 1 3` uses table card numbers before the batch.
+
 Enable **Game Settings → Player interactions → Enable interactions** and
 **Give multiple selected cards to a chosen player** for batch handoff. In
 **Player interactions**, choose that action and another active player, then

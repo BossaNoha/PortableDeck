@@ -142,6 +142,7 @@ class SessionController:
                 return ActionResult(False, message=available.reason, code=available.code or "action_unavailable")
         handlers = {
             "play_cards": lambda: self.play_cards(parameters.get("card_indices")),
+            "take_table_cards": lambda: self.take_table_cards(parameters.get("card_indices")),
             "discard_cards": lambda: self.discard_cards(parameters),
             "reverse_turn_order": lambda: g.reverse_turn_order(),
             "draw_card": lambda: g.deal_card_to_current(),
@@ -217,6 +218,10 @@ class SessionController:
         from .bulkdiscard import discard_cards
         return discard_cards(self.game, parameters.get("card_indices"),
                              parameters.get("pile_index", 0), parameters.get("personal", False))
+
+    def take_table_cards(self, indices):
+        from .bulktake import take_table_cards
+        return take_table_cards(self.game, indices)
 
     def play_cards(self, indices):
         from .bulkplay import play_cards

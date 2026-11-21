@@ -57,7 +57,8 @@ class GameTableActions(TablePlacementActions):
         card = entry["card"]
         player = self.players[self.current_player_index]
         player.draw_card(card)
-        self.log_action(player.name, "take_from_table", card)
+        face_up = entry.get("face_up", True)
+        self.log_action(player.name, "take_from_table", card if face_up else None, face_up=face_up)
         return card
 
     def move_table_card_to_discard(self, index, pile_index=0, personal=False):

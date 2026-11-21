@@ -159,6 +159,10 @@ class GameGUIBuilder:
             self.positioned_play_buttons.append(self.play_at_spot_button)
 
         self.table_action_buttons = []
+        if self.game.enable_table and self.game.allow_take_from_table and self.game.allow_take_multiple_cards:
+            self.take_multiple_button = tk.Button(self.card_actions_frame, text="Take multiple table cards…", command=self.take_multiple_cards)
+            self.take_multiple_button.pack(side="left", padx=5)
+            self.table_action_buttons.append(self.take_multiple_button)
         if self.game.allow_take_from_table:
             self.take_table_button = tk.Button(
                 self.card_actions_frame,

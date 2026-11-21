@@ -1,5 +1,15 @@
 # UI/core boundary audit
 
+Optional batch take: allow_take_multiple_cards defaults to False under Table /
+Table actions, requiring allow_take_from_table. Session take_table_cards accepts
+distinct zero-based card_indices into the shared table and validates all before
+removal. Existing take behavior appends in table order in one Undo/checkpoint.
+Batch index validation is shared with hand batches. GUI selects from table
+projections and guards table revisions; face-down identities remain hidden.
+Single and batch take logs now omit face-down identities. CLI take-many shares
+the command; --take-multiple-cards enables both taking flags for new games.
+Preset/save/legacy/restart, rollback and both native Tk layouts are covered.
+
 Optional batch give: interaction_options.give_cards defaults to False and is
 configured alongside other Player interactions. Session give_cards accepts a
 target and distinct zero-based card_indices; core validates both before removal,
@@ -112,7 +122,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 458 tests; native Tk probes for session, deck and preset
+latest full suite passed 466 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

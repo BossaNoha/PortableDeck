@@ -15,7 +15,7 @@ from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
 
-HELP = "Commands: show, draw, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: show, draw, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
@@ -97,9 +97,9 @@ class CLIClient:
             elif command == "discard-many":
                 if len(args) < 4 or args[0] not in {"shared", "personal"}:
                     raise ValueError("Use discard-many shared|personal PILE CARD CARD [...].")
-            elif command == "play-many":
+            elif command in {"play-many", "take-many"}:
                 if len(args) < 2:
-                    raise ValueError("Use play-many with at least two card numbers.")
+                    raise ValueError(f"Use {command} with at least two card numbers.")
             elif command not in arity or (len(args) != arity[command] and not (command == "end" and len(args) == 1)):
                 raise ValueError("Unknown command or incorrect arguments. Use help.")
             if command == "quit":
@@ -140,7 +140,7 @@ class CLIClient:
                 self.turn_work()
                 return True
             parameters = {}
-            actions = {"give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
+            actions = {"take-many": "take_table_cards", "give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
                        "point": "request_point", "bet": "play_chips", "pot": "take_pot"}
             if command in {"approve", "reject"}:
                 prompt = build_turn_start_view(self.game).next_confirmation
@@ -159,7 +159,7 @@ class CLIClient:
                 elif command == "discard-many":
                     parameters = {"personal": args[0] == "personal", "pile_index": self.positive(args[1]) - 1,
                                   "card_indices": [self.positive(arg) - 1 for arg in args[2:]]}
-                elif command == "play-many":
+                elif command in {"play-many", "take-many"}:
                     parameters["card_indices"] = [self.positive(arg) - 1 for arg in args]
                 elif command == "skip":
                     parameters["skip_next"] = True
@@ -212,6 +212,7 @@ def main(argv=None):
     parser.add_argument("--play-multiple-cards", action="store_true", help="Allow play-many for new games")
     parser.add_argument("--discard-multiple-cards", action="store_true", help="Allow discard-many for new games")
     parser.add_argument("--give-multiple-cards", action="store_true", help="Allow give-many for new games")
+    parser.add_argument("--take-multiple-cards", action="store_true", help="Allow take-many for new games")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -228,6 +229,8 @@ def main(argv=None):
                 "allow_skip_next_player": args.skip_next_player,
                 "allow_play_multiple_cards": args.play_multiple_cards,
                 "allow_discard_multiple_cards": args.discard_multiple_cards,
+                "allow_take_multiple_cards": args.take_multiple_cards,
+                "allow_take_from_table": args.take_multiple_cards,
                 "enable_interactions": args.give_multiple_cards,
                 "interaction_options": {"give_cards": args.give_multiple_cards},
                 "enable_score_counter": args.confirmations,
