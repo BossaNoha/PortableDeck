@@ -1,5 +1,16 @@
 # UI/core boundary audit
 
+Optional batch give: interaction_options.give_cards defaults to False and is
+configured alongside other Player interactions. Session give_cards accepts a
+target and distinct zero-based card_indices; core validates both before removal,
+then appends cards in hand order in one Undo/checkpoint transaction. Sender
+revealed indices are maintained; received cards are not marked revealed.
+Public history/log output contains recipient and count only. GUI uses existing
+interaction target options and shared batch selection with stale-hand checks;
+execution revalidates the recipient. CLI give-many uses the same command and
+never prints private action values. Preset/save/legacy/restart, rollback,
+privacy and both native Tk interaction flows are covered.
+
 Optional batch discard: allow_discard_multiple_cards defaults to False under
 Discard pile. Session discard_cards accepts card_indices plus pile_index and
 personal, validates the complete selection and destination before removal, and
@@ -101,7 +112,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 450 tests; native Tk probes for session, deck and preset
+latest full suite passed 458 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

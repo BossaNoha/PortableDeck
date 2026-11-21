@@ -54,6 +54,9 @@ class InteractionsUI:
                 messagebox.showwarning("Cannot interact", reason, parent=dialog)
                 refresh_targets()
                 return
+            if action == "give_cards":
+                dialog.destroy()
+                return gui.give_multiple_cards(target)
             amount = None
             if action == "steal_chips" and target is not None:
                 amount = simpledialog.askinteger("Steal chips", "How many chips?", minvalue=1,

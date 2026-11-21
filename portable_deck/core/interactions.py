@@ -7,6 +7,7 @@ INTERACTIONS = {
     "take_random_card": "Take a random card from a chosen player",
     "discard_random_card": "Discard a random card from a random player",
     "give_card": "Give a selected card to a chosen player",
+    "give_cards": "Give multiple selected cards to a chosen player",
     "steal_chips": "Steal chips from a chosen player",
     "peek_random_card": "Look at a random card of a chosen player",
     "peek_all_cards": "Look at all cards of a chosen player",
@@ -89,7 +90,7 @@ class PlayerInteractions:
                 and (action != "steal_chips" or self.enable_chip_accounts)
                 and (action != "discard_random_card" or self.enable_discard_pile))
 
-    def interact(self, action, target=None, hand_index=None, amount=None):
+    def interact(self, action, target=None, hand_index=None, amount=None, card_indices=None):
         if not self.interaction_allowed(action):
             raise ActionValidationError("action_disabled", "This interaction is disabled.")
         if self.current_player_must_confirm_point() or self.current_player_must_confirm_pot_withdrawal():
@@ -105,7 +106,22 @@ class PlayerInteractions:
             raise error
         other = self.players[target]
         result = {"target": target}
-        if action == "give_card":
+        if action == "give_cards":
+            from .cardselection import batch_hand_indices
+            from .actionavailability import action_availability
+            available = action_availability(self, action)
+            if not available.allowed:
+                raise ActionValidationError(available.code, available.reason)
+            indices = batch_hand_indices(self, card_indices)
+            cards = []
+            for offset, index in enumerate(indices):
+                card = self.players[actor].play_card(index - offset + 1)
+                if card is None:
+                    raise ActionValidationError("action_rejected", "The selected cards could not be given.")
+                other.draw_card(card)
+                cards.append(card)
+            result["cards"] = tuple(cards)
+        elif action == "give_card":
             if not isinstance(hand_index, int) or isinstance(hand_index, bool) or not 1 <= hand_index <= len(self.players[actor].hand):
                 raise ActionValidationError("invalid_selection", "Select a card in your hand first.")
             card = self.players[actor].play_card(hand_index)
@@ -130,6 +146,8 @@ class PlayerInteractions:
                 self.discard_pile.append(card)
             result["card"] = card
         entry = {"player": self.players[actor].name, "action": action, "target": other.name}
+        if action == "give_cards":
+            entry["count"] = len(result["cards"])
         # Revealed cards stay in the private dialog, outside logs and saved history.
         entry.update({key: result[key] for key in ("card", "amount") if key in result})
         self.record_event(entry)

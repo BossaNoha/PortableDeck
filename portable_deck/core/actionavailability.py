@@ -81,7 +81,7 @@ def _evaluate_availability(g, action, context):
                 return ActionAvailability(False, message, "invalid_selection")
     if g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal():
         return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
-    if action in {"play_cards", "discard_cards"} and len(g.players[g.current_player_index].hand) < 2:
+    if action in {"play_cards", "discard_cards", "give_cards"} and len(g.players[g.current_player_index].hand) < 2:
         return ActionAvailability(False, "At least two hand cards are needed.", "not_enough_cards")
     if action in {"play_personal_pile", "take_personal_pile"}:
         if context.owner is not None or context.pile_index is not None:

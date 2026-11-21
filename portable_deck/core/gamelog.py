@@ -58,6 +58,7 @@ def format_game_event(event):
         "take_random_card": f"{player} took a random card from {target}.",
         "discard_random_card": f"{player} discarded {target}'s card: {card}.",
         "give_card": f"{player} gave {card} to {target}.",
+        "give_cards": f"{player} gave {event.get('count', 0)} cards to {target}.",
         "steal_chips": f"{player} stole {amount} chips from {target}.",
         "peek_random_card": f"{player} looked at a random card of {target}.",
         "peek_all_cards": f"{player} looked at all cards of {target}.",

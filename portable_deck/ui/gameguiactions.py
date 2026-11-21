@@ -13,7 +13,10 @@ class GameGUIActions:
     def discard_multiple_cards(self):
         return self._choose_multiple_cards("discard_cards", "Discard")
 
-    def _choose_multiple_cards(self, action, verb):
+    def give_multiple_cards(self, target):
+        return self._choose_multiple_cards("give_cards", "Give", target=target)
+
+    def _choose_multiple_cards(self, action, verb, target=None):
         from ..core.actionavailability import action_availability
         from ..core.pileoptions import discard_destinations
         available = action_availability(self.game, action)
@@ -25,8 +28,18 @@ class GameGUIActions:
         dialog = tk.Toplevel(self.root)
         dialog.title(f"{verb} multiple cards")
         dialog.transient(self.root)
-        instruction = ("Cards play face up in hand order." if action == "play_cards" else
-                       "Cards are discarded in hand order; the last selected card becomes the top card.")
+        instruction = {"play_cards": "Cards play face up in hand order.",
+                       "discard_cards": "Cards are discarded in hand order; the last selected card becomes the top card.",
+                       "give_cards": "Cards are appended to the recipient's hand in hand order."}[action]
+        if action == "give_cards":
+            from ..core.interactions import build_interaction_options
+            options = build_interaction_options(self.game, action)
+            recipient = next((item for item in options.targets if item.index == target), None)
+            if recipient is None or not recipient.allowed:
+                dialog.destroy()
+                messagebox.showwarning("Cannot give cards", recipient.reason if recipient else "Choose another player.", parent=self.root)
+                return
+            instruction = f"To {recipient.name}. " + instruction
         tk.Label(dialog, text="Select at least two cards (Ctrl/Shift). " + instruction,
                  wraplength=420).pack(padx=12, pady=8)
         choices = tk.Listbox(dialog, selectmode="extended", exportselection=False, width=48, height=12)
@@ -50,6 +63,8 @@ class GameGUIActions:
                 return
             indices = list(choices.curselection())
             parameters = {"card_indices": indices}
+            if action == "give_cards":
+                parameters["target"] = target
             if destinations:
                 selected = pile_choices.curselection()
                 if not selected:

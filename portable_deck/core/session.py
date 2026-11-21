@@ -177,6 +177,9 @@ class SessionController:
             handlers[action] = lambda: g.interact(
                 action, parameters.get("target"),
                 None if card is None else card + 1, parameters.get("amount"))
+            if action == "give_cards":
+                handlers[action] = lambda: g.interact(action, parameters.get("target"),
+                                                     card_indices=parameters.get("card_indices"))
         if action not in handlers:
             raise ValueError(f"No execution handler for action: {action}")
         before = g.capture_undo_state()

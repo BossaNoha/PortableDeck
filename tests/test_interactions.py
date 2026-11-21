@@ -11,17 +11,19 @@ class InteractionTests(unittest.TestCase):
         for action in INTERACTIONS:
             with self.subTest(action=action):
                 game = self.game()
+                if action == "give_cards":
+                    game.players[0].hand.append("B of Test")
                 before = game.capture_undo_state()
                 saved = Mock(return_value=None)
                 game.session.checkpoint_callback = saved
                 result = game.session.run(lambda: game.session.execute(
-                    action, target=1, card_index=0, amount=5))
+                    action, target=1, card_index=0, amount=5, card_indices=[0, 1]))
                 self.assertTrue(result.success, result.message)
                 self.assertTrue(result.changed)
                 self.assertTrue(result.events)
                 self.assertEqual(len(game.undo_stack), 1)
                 saved.assert_called_once_with(game)
-                if action == "give_card":
+                if action in {"give_card", "give_cards"}:
                     self.assertIn("A of Test", game.players[1].hand)
                 elif action == "steal_chips":
                     self.assertEqual(game.chip_balance(0), 105)

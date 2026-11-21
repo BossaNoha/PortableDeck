@@ -23,6 +23,17 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Player interactions → Enable interactions** and
+**Give multiple selected cards to a chosen player** for batch handoff. In
+**Player interactions**, choose that action and another active player, then
+select at least two cards with Ctrl/Shift. Cards are appended to the recipient's
+hand in original hand order; received cards are not marked revealed and follow
+the configured hand visibility. Public logs show
+only the count and recipient. The entire batch has one Undo step and one
+autosave. This interaction defaults to off, is stored in presets/saves and
+survives restart. CLI: enable `--give-multiple-cards` for new games and use
+`give-many 2 1 3` (player and card numbers start at 1).
+
 Enable **Game Settings → Discard pile → Allow discarding multiple hand cards
 at once** to add **Discard multiple cards…**. Select at least two hand cards
 with Ctrl/Shift and a shared or your own personal discard pile. Cards move in
