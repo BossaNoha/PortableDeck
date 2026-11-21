@@ -45,10 +45,19 @@ def load_settings():
 
 
 def save_settings(settings):
+    text = json.dumps(settings, indent=2) + "\n"
     os.makedirs(CONFIG_DIR, exist_ok=True)
-    with open(CONFIG_PATH, "w", encoding="utf-8") as config_file:
-        json.dump(settings, config_file, indent=2)
-        config_file.write("\n")
+    temporary_path = os.fspath(CONFIG_PATH) + ".tmp"
+    try:
+        with open(temporary_path, "w", encoding="utf-8") as config_file:
+            config_file.write(text)
+        os.replace(temporary_path, CONFIG_PATH)
+    except OSError:
+        try:
+            os.remove(temporary_path)
+        except OSError:
+            pass
+        raise
 
 
 def resolve_deck_path(path):
