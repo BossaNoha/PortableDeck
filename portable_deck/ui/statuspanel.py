@@ -15,6 +15,10 @@ class StatusPanel(tk.LabelFrame):
 
         # Create frames for players and decks
         self.player_labels = []
+        self.turn_direction_label = None
+        if status.turn_direction is not None:
+            self.turn_direction_label = tk.Label(self, text="")
+            self.turn_direction_label.pack(anchor="w")
         for player in status.players:
             lbl = tk.Label(self, text="")
             lbl.pack(anchor="w")
@@ -45,6 +49,9 @@ class StatusPanel(tk.LabelFrame):
     def update_status(self, status=None):
         if status is None:
             status = build_session_status(self.game)
+        if self.turn_direction_label is not None:
+            direction = "forward" if status.turn_direction == 1 else "reverse"
+            self.turn_direction_label.config(text=f"Turn direction: {direction}")
         for player in status.players:
             count = player.card_count
             display = f"{count} card{'s' if count != 1 else ''}" if count < 8 else "many"

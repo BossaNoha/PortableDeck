@@ -212,6 +212,9 @@ class GameGUIBuilder:
             command=self.next_turn,
         )
         self.next_button.pack(side="left", padx=5)
+        if self.game.allow_reverse_turn_order:
+            self.reverse_turn_button = tk.Button(self.turn_actions_frame, text="Reverse turn direction", command=self.reverse_turn_order)
+            self.reverse_turn_button.pack(side="left", padx=5)
         if self.game.allow_choose_next_player:
             self.choose_next_button = tk.Button(self.turn_actions_frame, text="Pass turn to…", command=self.choose_next_player)
             self.choose_next_button.pack(side="left", padx=5)

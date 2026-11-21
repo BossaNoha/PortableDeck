@@ -55,6 +55,7 @@ class SessionStatus:
     table_count: int | None
     chip_pot: int | None
     minimum_bet: int | None
+    turn_direction: int | None = None
 
 
 def build_session_status(game):
@@ -110,4 +111,5 @@ def build_session_status(game):
     return SessionStatus(tuple(players), tuple(teams), tuple(accounts), len(g.deck.flat_deck),
         discard, len(g.table_cards) + personal_count if g.enable_table else None,
         g.chip_pot if g.enable_chip_accounts else None,
-        g.minimum_bet if g.enable_chip_accounts else None)
+        g.minimum_bet if g.enable_chip_accounts else None,
+        g.turn_direction if g.allow_reverse_turn_order else None)

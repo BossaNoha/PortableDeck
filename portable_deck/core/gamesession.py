@@ -50,6 +50,8 @@ def export_session(game):
         "personal_piles": game.personal_piles,
         "enable_table": game.enable_table,
         "allow_choose_next_player": game.allow_choose_next_player,
+        "allow_reverse_turn_order": game.allow_reverse_turn_order,
+        "turn_direction": game.turn_direction,
         "enable_discard_pile": game.enable_discard_pile,
         "deck_path": game.deck.path,
         "deck_types": game.deck.types,
@@ -104,6 +106,14 @@ def restore_session(game_class, state):
     game.allow_choose_next_player = state.get("allow_choose_next_player", False)
     if not isinstance(game.allow_choose_next_player, bool):
         raise ValueError("Saved allow_choose_next_player must be true or false")
+    game.allow_reverse_turn_order = state.get("allow_reverse_turn_order", False)
+    if not isinstance(game.allow_reverse_turn_order, bool):
+        raise ValueError("Saved allow_reverse_turn_order must be true or false")
+    game.turn_direction = state.get("turn_direction", 1)
+    if type(game.turn_direction) is not int or game.turn_direction not in (-1, 1):
+        raise ValueError("Saved turn_direction must be 1 or -1")
+    if not game.allow_reverse_turn_order and game.turn_direction != 1:
+        raise ValueError("Reverse direction requires allow_reverse_turn_order")
     game.enable_table = state.get("enable_table", True)
     game.enable_discard_pile = state.get("enable_discard_pile", True)
     original_deck = {"types": state.get("deck_types"), "cards": state.get("deck_cards")}

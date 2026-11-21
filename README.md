@@ -23,6 +23,15 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Turn order → Allow reversing turn direction** to add
+**Reverse turn direction** in the GUI. This optional rule defaults to off. It
+changes subsequent automatic turns without ending the current turn, skips
+departed players, and supports Undo. The status panel shows the current direction.
+An automatic wrap across the seat boundary ends the round in either direction;
+manual handoff preserves the direction and does not end the round. Rules and
+direction are saved; restart keeps the rule and resets the direction to forward.
+In the CLI, enable `--reverse-turn-order` for new games and use `reverse`.
+
 Enable **Game Settings → Turn order → Allow choosing the next player** to add
 **Pass turn to…** beside Next Turn. Choose any active player, including the
 current player for another turn. Ordinary Next Turn keeps its normal ordering.

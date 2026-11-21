@@ -4,6 +4,7 @@ from ..core.actionavailability import ActionContext, action_availability
 BUTTON_ACTIONS = {'draw_button': 'draw_card',
  'next_button': 'end_turn',
  'choose_next_button': 'choose_next_player',
+ 'reverse_turn_button': 'reverse_turn_order',
  'return_player_button': 'return_player',
  'discard_button': 'discard_card',
  'play_button': 'play_card',

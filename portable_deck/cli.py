@@ -15,7 +15,7 @@ from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
 
-HELP = "Commands: show, draw, play CARD, end [PLAYER], ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: show, draw, play CARD, end [PLAYER], reverse, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
@@ -88,7 +88,7 @@ class CLIClient:
             if not parts:
                 return True
             command, args = parts[0].lower(), parts[1:]
-            arity = {"show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
+            arity = {"reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
                      "pending": 0, "approve": 0, "reject": 0, "point": 0,
                      "bet": 1, "pot": 1, "help": 0, "quit": 0, "ready": 0, "cancel": 0}
             if command not in arity or (len(args) != arity[command] and not (command == "end" and len(args) == 1)):
@@ -129,7 +129,7 @@ class CLIClient:
                 self.turn_work()
                 return True
             parameters = {}
-            actions = {"draw": "draw_card", "play": "play_card", "end": "end_turn",
+            actions = {"reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
                        "point": "request_point", "bet": "play_chips", "pot": "take_pot"}
             if command in {"approve", "reject"}:
                 prompt = build_turn_start_view(self.game).next_confirmation
@@ -184,6 +184,7 @@ def main(argv=None):
     parser.add_argument("--confirmations", action="store_true", help="Enable score/chip accounts and approval requests")
     parser.add_argument("--confirm-next-turn", action="store_true", help="Require ready after end before advancing the turn")
     parser.add_argument("--choose-next-player", action="store_true", help="Allow end PLAYER for new games")
+    parser.add_argument("--reverse-turn-order", action="store_true", help="Allow reverse for new games")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -196,6 +197,7 @@ def main(argv=None):
                 "deck_path": str(Path(args.deck).absolute()),
                 "enable_undo": True,
                 "allow_choose_next_player": args.choose_next_player,
+                "allow_reverse_turn_order": args.reverse_turn_order,
                 "enable_score_counter": args.confirmations,
                 "enable_chip_accounts": args.confirmations,
                 "require_point_confirmation": args.confirmations,

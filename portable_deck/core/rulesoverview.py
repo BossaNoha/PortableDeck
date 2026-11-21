@@ -42,10 +42,18 @@ def build_rules_overview(game):
     def flags(pairs):
         return [RuleEntry(attribute, label) for attribute, label in pairs if getattr(g, attribute, False)]
 
-    add("turn_order", "Turn order", g.allow_choose_next_player, [
-        RuleEntry("allow_choose_next_player", "Choose any active player for the next turn"),
-        RuleEntry("manual_handoff", "Manual handoff does not end the round or clear the table"),
-    ])
+    turn_rules = []
+    if g.allow_choose_next_player:
+        turn_rules.extend([
+            RuleEntry("allow_choose_next_player", "Choose any active player for the next turn"),
+            RuleEntry("manual_handoff", "Manual handoff does not end the round or clear the table"),
+        ])
+    if g.allow_reverse_turn_order:
+        turn_rules.extend([
+            RuleEntry("allow_reverse_turn_order", "Reverse the order without ending the current turn"),
+            RuleEntry("turn_direction", "Current direction", "forward" if g.turn_direction == 1 else "reverse"),
+        ])
+    add("turn_order", "Turn order", bool(turn_rules), turn_rules)
 
     scoring = flags((("allow_reduce_score", "Reduce score"),
         ("require_point_confirmation", "Other players approve score changes"),

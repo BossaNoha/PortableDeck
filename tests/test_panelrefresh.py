@@ -82,12 +82,16 @@ class PanelRefreshTests(unittest.TestCase):
 
     def test_status_renderer_uses_supplied_snapshot_without_game_access(self):
         g = self.game()
+        g.allow_reverse_turn_order = True
+        g.turn_direction = -1
         status = build_player_session_view(g, 0).status
         panel = SimpleNamespace(player_labels=[Mock(), Mock()], deck_label=Mock(),
-                                discard_label=Mock(), table_label=Mock(), chip_pot_label=None)
+                                discard_label=Mock(), table_label=Mock(), chip_pot_label=None,
+                                turn_direction_label=Mock())
         with patch("portable_deck.ui.statuspanel.build_session_status", side_effect=AssertionError("unexpected query")):
             StatusPanel.update_status(panel, status)
         panel.table_label.config.assert_called_once_with(text="Cards on Table: 0")
+        panel.turn_direction_label.config.assert_called_once_with(text="Turn direction: reverse")
 
     def test_pile_renderer_uses_supplied_snapshot_without_game_access(self):
         g = self.game()

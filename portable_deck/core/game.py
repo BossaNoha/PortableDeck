@@ -81,10 +81,15 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         enable_cards_visibility=False,
         cards_visibility=None,
         allow_choose_next_player=False,
+        allow_reverse_turn_order=False,
     ):
         if not isinstance(allow_choose_next_player, bool):
             raise ValueError("allow_choose_next_player must be true or false")
         self.allow_choose_next_player = allow_choose_next_player
+        if not isinstance(allow_reverse_turn_order, bool):
+            raise ValueError("allow_reverse_turn_order must be true or false")
+        self.allow_reverse_turn_order = allow_reverse_turn_order
+        self.turn_direction = 1
         if not isinstance(num_players, int) or isinstance(num_players, bool) or num_players < 1:
             raise ValueError("num_players must be a positive integer")
         if player_names is not None and len(player_names) != num_players:
@@ -324,9 +329,14 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         if not active:
             self.log_action("", "all_players_left")
             return True, 0
-        following = (next_player if next_player is not None else
-                     next((i for i in active if i > self.current_player_index), active[0]))
-        round_ended = next_player is None and following <= self.current_player_index
+        if self.turn_direction == 1:
+            automatic = next((i for i in active if i > self.current_player_index), active[0])
+        else:
+            automatic = next((i for i in reversed(active) if i < self.current_player_index), active[-1])
+        following = next_player if next_player is not None else automatic
+        round_ended = next_player is None and (
+            following <= self.current_player_index if self.turn_direction == 1
+            else following >= self.current_player_index)
         if next_player is not None:
             self.log_action(self.players[self.current_player_index].name, "turn_passed",
                             target=self.players[following].name)
@@ -338,3 +348,14 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         self.current_player_index = following
         self.log_action(self.players[following].name, "turn_started")
         return round_ended, cleared_count
+
+    def reverse_turn_order(self):
+        from .actionavailability import action_availability
+        from .actionerrors import ActionValidationError
+        available = action_availability(self, "reverse_turn_order")
+        if not available.allowed:
+            raise ActionValidationError(available.code, available.reason)
+        self.turn_direction *= -1
+        self.log_action(self.players[self.current_player_index].name, "turn_direction_changed",
+                        direction="forward" if self.turn_direction == 1 else "reverse")
+        return self.turn_direction

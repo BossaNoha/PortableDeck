@@ -46,6 +46,7 @@ DEFAULT_SETTINGS = {
     "require_exit_confirmation": True,
     "confirm_next_turn": False,
     "allow_choose_next_player": False,
+    "allow_reverse_turn_order": False,
     "num_players": 3,
     "cards_per_player": 5,
     "deck_path": os.path.join("decks", "demodeck.json"),

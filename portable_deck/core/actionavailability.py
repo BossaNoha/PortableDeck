@@ -23,7 +23,7 @@ class ActionAvailability:
 
 
 ACTIONS = frozenset((
-    "draw_card", "discard_card", "play_card", "play_face_down", "play_personal_pile", "take_personal_pile", "swap_table_card",
+    "reverse_turn_order", "draw_card", "discard_card", "play_card", "play_face_down", "play_personal_pile", "take_personal_pile", "swap_table_card",
     "flip_hand_card", "play_at_position", "take_table_card", "discard_table_card",
     "flip_table_card", "move_table_card", "request_point", "reduce_score",
     "draw_from_discard", "recycle_discard", "clear_table", "leave_session",
@@ -39,6 +39,7 @@ def action_availability(game, action, context=None):
 
 def _evaluate_availability(g, action, context):
     enabled = {
+        "reverse_turn_order": g.allow_reverse_turn_order,
         "draw_card": True,
         "discard_card": g.enable_discard_pile,
         "play_card": g.enable_table or (not g.enable_discard_pile and not g.enable_interactions),

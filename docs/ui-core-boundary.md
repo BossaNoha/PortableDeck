@@ -1,5 +1,15 @@
 # UI/core boundary audit
 
+Optional reverse turns: allow_reverse_turn_order defaults to False under Turn
+order. The core reverse_turn_order action validates availability and changes
+turn_direction (1/-1) without advancing the player. Automatic turns skip departed
+players in either direction; only crossing the seat boundary ends a round.
+Explicit handoff leaves direction unchanged. Saves and Undo preserve direction;
+legacy saves default to forward, restart preserves the rule and resets direction.
+GUI controls (including contextual layout), status projection and CLI reverse
+share the core action and transaction. Presets and CLI --reverse-turn-order
+configure the rule. Native Tk checks cover setting, both layouts, next and Undo.
+
 Optional manual turns: allow_choose_next_player is a game rule under Turn order
 (default False), persisted in presets/saves and preserved by restart. Core
 turnorder validates active targets and supplies immutable choices. Session
@@ -53,7 +63,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 408 tests; native Tk probes for session, deck and preset
+latest full suite passed 417 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

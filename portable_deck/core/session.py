@@ -141,6 +141,7 @@ class SessionController:
             if not available.allowed:
                 return ActionResult(False, message=available.reason, code=available.code or "action_unavailable")
         handlers = {
+            "reverse_turn_order": lambda: g.reverse_turn_order(),
             "draw_card": lambda: g.deal_card_to_current(),
             "draw_from_discard": lambda: self.draw_from_discard(parameters),
             "end_turn": lambda: g.finish_turn(parameters.get("next_player")),

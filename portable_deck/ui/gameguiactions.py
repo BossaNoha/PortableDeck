@@ -22,6 +22,12 @@ class GameGUIActions:
             return None
         return result
 
+    def reverse_turn_order(self):
+        result = self.run_action(lambda: self.session.execute("reverse_turn_order"))
+        if not result.success:
+            messagebox.showwarning("Cannot reverse turn direction", result.message, parent=self.root)
+        return result
+
     def choose_next_player(self):
         options = self.session.next_player_options()
         if not options.allowed:
@@ -258,6 +264,8 @@ class GameGUIActions:
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
+        if hasattr(self, "reverse_turn_button"):
+            buttons.append(self.reverse_turn_button)
         if hasattr(self, "choose_next_button"):
             buttons.append(self.choose_next_button)
         if self.discard_draw_button is not None:

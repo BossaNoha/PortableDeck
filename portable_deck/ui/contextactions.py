@@ -10,6 +10,8 @@ class ContextActions:
         for button in self.buttons + list(gui.turn_actions_frame.winfo_children()):
             button.pack_forget()
         gui.next_button.pack(side="left", padx=5)
+        if hasattr(gui, "reverse_turn_button"):
+            gui.reverse_turn_button.pack(side="left", padx=5)
         if hasattr(gui, "choose_next_button"):
             gui.choose_next_button.pack(side="left", padx=5)
         if hasattr(gui, "undo_button"):
