@@ -1,12 +1,23 @@
 # UI/core boundary audit
 
+Settings failure recovery (2026-11-21): application settings now serialize before
+an atomic temporary-file replacement; partial-write/replacement failures preserve
+the previous file. Startup uses load_settings_result to retain readable/default
+settings if persistence fails and displays one warning after opening the menu.
+The legacy load_settings API retains exception propagation. Tests cover partial
+output, replacement denial, serialization failure, default fallback without a
+writable config directory and MainMenu starting a game after write failure.
+A temporary native Tk probe passed the same startup/new-game recovery using
+isolated settings/saves; it was removed. This does not promise recovery from
+unrelated save-library directory failures.
+
 ## Current assessment — 2026-11-20
 
 The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 384 tests; native Tk probes for session, deck and preset
+latest full suite passed 390 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

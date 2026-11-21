@@ -5,7 +5,7 @@ from tkinter import messagebox
 
 from ..core.game import Game
 from ..ui.guibase import GameGUI
-from .settings import BASE_DIR, DISCARD_PATH, load_settings
+from .settings import BASE_DIR, DISCARD_PATH, load_settings_result
 from .settingswindow import SettingsWindow
 from .savemanager import SaveManager
 from .sessionbrowser import SessionBrowser
@@ -22,13 +22,21 @@ AUTOSAVE_PATH = os.path.join(SAVES_DIR, "last_session.json")
 class MainMenu:
     def __init__(self, root):
         self.root = root
-        self.settings = load_settings()
+        loaded = load_settings_result()
+        self.settings = loaded.settings
         self.migrate_discard_data()
         os.makedirs(SAVES_DIR, exist_ok=True)
         self.save_manager = SaveManager(self.root, SAVES_DIR)
         self.root.title("Portable Deck")
         self.root.protocol("WM_DELETE_WINDOW", self.quit_app)
         self.show_main_menu()
+        if loaded.error:
+            messagebox.showwarning(
+                "Could not save settings",
+                "The application is using the loaded or default settings in memory. "
+                "Changes could not be saved to disk.\n\n" + loaded.error,
+                parent=self.root,
+            )
 
     def migrate_discard_data(self):
         """Move the previous user-visible discard file into internal app data."""

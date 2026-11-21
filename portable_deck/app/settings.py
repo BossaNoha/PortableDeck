@@ -1,6 +1,7 @@
 """Load and save the application's user settings."""
 import json
 import os
+from dataclasses import dataclass
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -24,8 +25,7 @@ def load_default_settings():
     return defaults
 
 
-def load_settings():
-    os.makedirs(CONFIG_DIR, exist_ok=True)
+def _read_settings():
     settings = load_default_settings()
     try:
         with open(CONFIG_PATH, "r", encoding="utf-8") as config_file:
@@ -39,7 +39,28 @@ def load_settings():
     except (OSError, json.JSONDecodeError):
         pass
 
-    # Create a usable config on first launch and repair missing config files.
+    return settings
+
+
+@dataclass(frozen=True)
+class SettingsLoadResult:
+    settings: dict
+    error: str | None = None
+
+
+def load_settings_result():
+    """Keep loaded/default values usable if startup persistence fails."""
+    settings = _read_settings()
+    try:
+        save_settings(settings)
+    except OSError as error:
+        return SettingsLoadResult(settings, str(error))
+    return SettingsLoadResult(settings)
+
+
+def load_settings():
+    """Compatibility loader retaining write-error propagation."""
+    settings = _read_settings()
     save_settings(settings)
     return settings
 

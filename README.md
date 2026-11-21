@@ -115,6 +115,9 @@ Restoring defaults uses the same validation/write service and only replaces
 active/form settings after success. Missing default files retain built-in fallback.
 Current settings are serialized before writing and replaced atomically, so a
 failed write/replacement preserves the previous settings file.
+Startup uses `load_settings_result()` to retain loaded/default values in memory
+and warn if settings cannot be saved. The menu can still open; this does not
+guarantee that other application directories are writable.
 `tests/test_appboundary.py` guards extracted services against GUI imports,
 including function-local imports, and imports them with GUI dependencies blocked
 in a clean process. Add newly extracted services to its explicit service set.
