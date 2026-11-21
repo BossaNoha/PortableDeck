@@ -305,8 +305,11 @@ These choices are preserved in game saves and on restart.
 
 **Game Settings -> Personal piles on table** enables personal piles and sets
 the number per player (1-20). Each player/pile has independent access and
-ordering preferences. **Everyone** permits all players to play and take cards;
-**Team** currently permits only the owner, as does **Owner**.
+ordering preferences. **Everyone** permits all players to play and take cards.
+**Owner** and **Team** both give the pile owner access. **Team** also gives
+teammates access when teams and **Enable team access to Team personal piles**
+are enabled. **Enable dealer access to personal piles** grants dealers
+access to **Owner** and **Team** piles.
 
 Choose **Not ordered**, **Ordered by time**, or **Ordered by size**. Time ordering lets new cards
 go on top or underneath the stack. Size ordering offers **up** (smallest at the bottom, largest on top)
