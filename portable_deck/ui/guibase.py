@@ -7,7 +7,11 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
     def __init__(
         self, root, game, on_save=None, on_exit_menu=None, on_exit_desktop=None,
         on_restart=None, on_checkpoint=None, require_exit_confirmation=True, on_save_as=None, show_game_log=True, contextual_session_actions=False, table_view=None,
+        confirm_next_turn=False,
     ):
+        from .turnhandoff import TurnHandoff
+        self.confirm_next_turn = bool(confirm_next_turn)
+        self.turn_handoff = TurnHandoff(self)
         self.contextual_session_actions = bool(contextual_session_actions)
         self.show_game_log = bool(show_game_log)
         self.root = root

@@ -44,6 +44,7 @@ DEFAULT_SETTINGS = {
     "autosave_enabled": True,
     "autosave_count": 5,
     "require_exit_confirmation": True,
+    "confirm_next_turn": False,
     "num_players": 3,
     "cards_per_player": 5,
     "deck_path": os.path.join("decks", "demodeck.json"),

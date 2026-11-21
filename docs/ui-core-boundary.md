@@ -1,5 +1,17 @@
 # UI/core boundary audit
 
+Hotseat handoff: confirm_next_turn is an application preference (default False),
+offered in Basic Settings and preserved across preset loads. Next Turn checks
+availability, then the client hides the entire game/options area before any
+turn mutation. A ready button executes the existing end-turn transaction with
+turn-start decisions while still covered, then reveals the refreshed screen.
+Cancellation does not advance or checkpoint. Execution revalidates; refusal
+keeps the curtain and valid selection until retry/cancel. This is transient UI
+state, not a new core confirmation or saved-session rule. Tests cover privacy
+sequencing, cancel/reentry, changed availability, grouped score/pot approvals,
+Undo/checkpoint counts and preference handling. A temporary native Tk probe
+verified hidden pack managers and normal restore, plus the disabled-option path.
+
 Settings failure recovery (2026-11-21): application settings now serialize before
 an atomic temporary-file replacement; partial-write/replacement failures preserve
 the previous file. Startup uses load_settings_result to retain readable/default
@@ -17,7 +29,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 390 tests; native Tk probes for session, deck and preset
+latest full suite passed 396 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

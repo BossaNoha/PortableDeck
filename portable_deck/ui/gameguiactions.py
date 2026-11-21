@@ -1,12 +1,22 @@
 """Turn flow, confirmations, undo, and session exit controls for GameGUI."""
 import tkinter as tk
 from tkinter import messagebox
-from .cardactions import request_point
+from .cardactions import request_point, end_turn
 from ..core.selectionsnapshot import build_selection_snapshot
 from ..core.playersessionview import build_player_session_view
 from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
+    def next_turn(self):
+        def advance():
+            return self.run_action(end_turn, self.game, self.hand_frame, self.render_log,
+                                   self.status_panel, self.handle_turn_start)
+        if (getattr(self, "confirm_next_turn", False)
+                and self.session.end_turn_availability().allowed):
+            self.turn_handoff.show(advance)
+            return None
+        return advance()
+
 
     def refresh_session_panels(self):
         self.selection.synchronize(build_selection_snapshot(self.game))

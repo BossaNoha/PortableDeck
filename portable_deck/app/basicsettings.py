@@ -13,6 +13,7 @@ class BasicSettingsPanel:
         self.autosave_var = tk.BooleanVar(value=settings.get("autosave_enabled", True))
         self.count_var = tk.StringVar(value=str(settings.get("autosave_count", 5)))
         self.confirm_exit_var = tk.BooleanVar(value=settings.get("require_exit_confirmation", True))
+        self.confirm_turn_var = tk.BooleanVar(value=settings.get("confirm_next_turn", False))
         self.section = CollapsibleSection(parent, "Basic Settings", fit_window)
         self.section.grid(row=6, column=0, columnspan=3, sticky="ew", pady=(8, 0))
         self.frame = self.section.content
@@ -34,6 +35,8 @@ class BasicSettingsPanel:
         tk.Checkbutton(self.frame, text="Show game log", variable=self.show_log_var).grid(row=5, column=0, sticky="w")
         tk.Checkbutton(self.frame, text="Use contextual actions and session menus", variable=self.context_actions_var,
                        wraplength=420, justify="left").grid(row=6, column=0, sticky="w")
+        tk.Checkbutton(self.frame, text="Hide cards until the next player confirms (hotseat)",
+                       variable=self.confirm_turn_var, wraplength=420, justify="left").grid(row=7, column=0, sticky="w")
         self.update_controls()
 
     def update_controls(self):
@@ -50,4 +53,4 @@ class BasicSettingsPanel:
     def values(self):
         count = int(self.count_var.get()) if self.autosave_var.get() else 5
         return {"contextual_session_actions": self.context_actions_var.get(), "show_game_log": self.show_log_var.get(), "color_game_settings_categories": self.color_categories_var.get(), "enable_undo": self.undo_var.get(), "autosave_enabled": self.autosave_var.get(), "autosave_count": count,
-                "require_exit_confirmation": self.confirm_exit_var.get()}
+                "require_exit_confirmation": self.confirm_exit_var.get(), "confirm_next_turn": self.confirm_turn_var.get()}

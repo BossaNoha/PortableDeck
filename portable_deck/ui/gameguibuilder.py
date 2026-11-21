@@ -14,7 +14,7 @@ from .cardcontextmenu import show_card_menu
 from .carddrag import CardDrag
 from ..app.deckpreview import show_deck_preview
 from .cardactions import (
-    clear_table, draw_card, discard_selected, end_turn,
+    clear_table, draw_card, discard_selected,
     move_selected_table_card_to_discard, move_selected_table_card,
     play_at_selected_spot, play_selected, take_selected_from_table, draw_from_discard,
     play_selected_face_down, flip_selected_table_card, recycle_discard_into_deck,
@@ -209,10 +209,7 @@ class GameGUIBuilder:
         self.next_button = tk.Button(
             self.turn_actions_frame,
             text="Next Turn",
-            command=lambda: self.run_action(
-                end_turn,
-                self.game, self.hand_frame, self.render_log, self.status_panel, self.handle_turn_start,
-            ),
+            command=self.next_turn,
         )
         self.next_button.pack(side="left", padx=5)
 

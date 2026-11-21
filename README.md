@@ -14,6 +14,15 @@ python main.py
 
 On Windows, `py main.py` can be used if the Python launcher is installed.
 
+For hotseat privacy, enable **Hide cards until the next player confirms
+(hotseat)** under **Basic Settings**, then use the current settings. Next Turn
+hides the game and options before advancing. Pass the device to the next player,
+who selects **Start next turn — show cards**. Any score/pot approval prompts run
+while the game remains hidden; the refreshed screen is shown afterward.
+**Cancel handoff** restores the current player's screen without advancing.
+The option is off by default and is an application preference, preserved when
+loading presets and applied to new/resumed games; it does not change game rules.
+
 ## Development CLI
 
 New games from application settings can be created without Tkinter using
