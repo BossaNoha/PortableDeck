@@ -75,6 +75,7 @@ def build_rules_overview(game):
         ("allow_move_table_card_to_discard", "Discard table cards"),
         ("allow_manual_table_cleanup", "Manual table cleanup"),
         ("clear_table_on_round_end", "Clear table at round end"),
+        ("allow_play_multiple_cards", "Play multiple hand cards at once"),
         ("allow_positioned_play", "Play at selected positions"),
         ("allow_move_cards_on_table", "Move cards between positions"),
         ("allow_play_in_front_of_players", "Cards in front of players"),

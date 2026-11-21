@@ -49,6 +49,7 @@ DEFAULT_SETTINGS = {
     "allow_choose_next_player": False,
     "allow_reverse_turn_order": False,
     "allow_skip_next_player": False,
+    "allow_play_multiple_cards": False,
     "num_players": 3,
     "cards_per_player": 5,
     "deck_path": os.path.join("decks", "demodeck.json"),

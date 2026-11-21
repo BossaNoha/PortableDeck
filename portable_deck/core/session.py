@@ -141,6 +141,7 @@ class SessionController:
             if not available.allowed:
                 return ActionResult(False, message=available.reason, code=available.code or "action_unavailable")
         handlers = {
+            "play_cards": lambda: self.play_cards(parameters.get("card_indices")),
             "reverse_turn_order": lambda: g.reverse_turn_order(),
             "draw_card": lambda: g.deal_card_to_current(),
             "draw_from_discard": lambda: self.draw_from_discard(parameters),
@@ -207,6 +208,10 @@ class SessionController:
         result = self.run(perform)
         return ActionResult(result.success, result.changed, result.value, result.message, self.last_checkpoint_error,
                             tuple(copy.deepcopy(g.history[event_offset:])), tuple(g.game_log[log_offset:]), result.code)
+
+    def play_cards(self, indices):
+        from .bulkplay import play_cards
+        return play_cards(self.game, indices)
 
     def draw_from_discard(self, parameters):
         g = self.game

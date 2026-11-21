@@ -7,6 +7,43 @@ from ..core.playersessionview import build_player_session_view
 from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
+    def play_multiple_cards(self):
+        from ..core.actionavailability import action_availability
+        available = action_availability(self.game, "play_cards")
+        if not available.allowed:
+            messagebox.showwarning("Cannot play cards", available.reason, parent=self.root)
+            return
+        snapshot = build_selection_snapshot(self.game)
+        view = build_player_session_view(self.game, snapshot.owner)
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Play multiple cards")
+        dialog.transient(self.root)
+        tk.Label(dialog, text="Select at least two cards (Ctrl/Shift). Cards play face up in hand order.",
+                 wraplength=420).pack(padx=12, pady=8)
+        choices = tk.Listbox(dialog, selectmode="extended", exportselection=False, width=48, height=12)
+        choices.pack(padx=12, pady=5, fill="both", expand=True)
+        for slot in view.hands.hands[snapshot.owner].cards:
+            choices.insert("end", f"{slot.index + 1}. {slot.card if slot.card is not None else 'Hidden card'}")
+
+        def play():
+            current = build_selection_snapshot(self.game)
+            if (current.session, current.owner, current.hand_revision) != (
+                    snapshot.session, snapshot.owner, snapshot.hand_revision):
+                messagebox.showwarning("Hand changed", "Reopen the card selector before playing.", parent=dialog)
+                return
+            indices = list(choices.curselection())
+            result = self.run_action(lambda: self.session.execute("play_cards", card_indices=indices))
+            if result.success:
+                dialog.destroy()
+            else:
+                messagebox.showwarning("Cannot play cards", result.message, parent=dialog)
+            return result
+
+        tk.Button(dialog, text="Play selected cards", command=play).pack(pady=5)
+        tk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=(0, 10))
+        dialog.grab_set()
+        choices.focus_set()
+
     def next_turn(self, next_player=None, skip_next=False):
         from ..app.turnhandoff import TurnHandoffController
         def advance():
@@ -272,6 +309,8 @@ class GameGUIActions:
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
+        if hasattr(self, "play_multiple_button"):
+            buttons.append(self.play_multiple_button)
         if hasattr(self, "skip_next_button"):
             buttons.append(self.skip_next_button)
         if hasattr(self, "reverse_turn_button"):

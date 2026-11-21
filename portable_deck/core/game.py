@@ -83,6 +83,7 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         allow_choose_next_player=False,
         allow_reverse_turn_order=False,
         allow_skip_next_player=False,
+        allow_play_multiple_cards=False,
     ):
         if not isinstance(allow_choose_next_player, bool):
             raise ValueError("allow_choose_next_player must be true or false")
@@ -94,6 +95,9 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         if not isinstance(allow_skip_next_player, bool):
             raise ValueError("allow_skip_next_player must be true or false")
         self.allow_skip_next_player = allow_skip_next_player
+        if not isinstance(allow_play_multiple_cards, bool):
+            raise ValueError("allow_play_multiple_cards must be true or false")
+        self.allow_play_multiple_cards = allow_play_multiple_cards
         if not isinstance(num_players, int) or isinstance(num_players, bool) or num_players < 1:
             raise ValueError("num_players must be a positive integer")
         if player_names is not None and len(player_names) != num_players:

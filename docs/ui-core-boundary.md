@@ -1,5 +1,16 @@
 # UI/core boundary audit
 
+Optional batch play: allow_play_multiple_cards defaults to False, under Table /
+Table actions. Session play_cards accepts distinct zero-based card_indices,
+sorts them into hand order, plans every automatic table position on a private
+table copy, then plays the group face up in one transaction. Invalid selection
+or insufficient space leaves all game state untouched. Unexpected execution
+failure rolls back the entire batch. Revealed indices, Undo, checkpoint and
+selection revision handling reuse existing mechanisms. GUI provides an extended
+selection dialog built from player projections, guards stale hand revisions,
+and supports both layouts. CLI play-many uses the same action. Presets, saves,
+legacy defaults and restart are covered, alongside native Tk dialog checks.
+
 Optional skip confirmation: confirm_skip is an application preference in Basic
 Settings, default False, preserved across preset loads. The shared app handoff
 controller holds a skip confirmation phase without mutating the game. GUI asks
@@ -81,7 +92,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 432 tests; native Tk probes for session, deck and preset
+latest full suite passed 442 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

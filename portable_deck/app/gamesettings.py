@@ -24,6 +24,7 @@ class GameSettingsPanel:
         self.team_score_var = tk.BooleanVar(value=settings.get("enable_team_score", False))
         self.player_name = player_name
         self.settings = settings
+        self.play_multiple_var = tk.BooleanVar(value=settings.get("allow_play_multiple_cards", False))
         self.skip_next_player_var = tk.BooleanVar(value=settings.get("allow_skip_next_player", False))
         self.reverse_turn_order_var = tk.BooleanVar(value=settings.get("allow_reverse_turn_order", False))
         self.choose_next_player_var = tk.BooleanVar(value=settings.get("allow_choose_next_player", False))
@@ -181,6 +182,7 @@ class GameSettingsPanel:
         table_options = tk.Frame(self.table_actions_section.content)
         table_options.pack(fill="x")
         table_options.columnconfigure(0, weight=1)
+        self._add_check(table_options, "Allow playing multiple hand cards at once", self.play_multiple_var, "Choose multiple hand cards and play them face up in hand order at automatic positions. The entire group must fit.", row=9, column=0)
         self._add_check(table_options, "Take a selected table card into the current hand", self.take_table_var, "Move a selected table card into the current player's hand.", row=0, column=0)
         self.table_to_discard_check = self._add_check(table_options, "Discard a selected table card to discard pile", self.table_to_discard_var, "Move a selected table card directly to the discard pile.", row=1, column=0)
         self._add_check(table_options, "Let the current player clear the table", self.manual_cleanup_var, "Add an action that sends all table cards to the discard pile.", row=2, column=0)
@@ -405,6 +407,7 @@ class GameSettingsPanel:
             "allow_choose_next_player": self.choose_next_player_var.get(),
             "allow_reverse_turn_order": self.reverse_turn_order_var.get(),
             "allow_skip_next_player": self.skip_next_player_var.get(),
+            "allow_play_multiple_cards": self.play_multiple_var.get(),
             "limit_table_rows": self.limit_rows_var.get(),
             "limit_table_columns": self.limit_columns_var.get(),
             "enable_table_limits": self.table_limits_var.get(),

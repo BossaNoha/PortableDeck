@@ -126,6 +126,10 @@ class GameGUIBuilder:
         if self.game.enable_table or (not self.game.enable_discard_pile and not self.game.enable_interactions):
             self.play_button.pack(side="left", padx=5)
 
+        if self.game.enable_table and self.game.allow_play_multiple_cards:
+            self.play_multiple_button = tk.Button(self.card_actions_frame, text="Play multiple cards…", command=self.play_multiple_cards)
+            self.play_multiple_button.pack(side="left", padx=5)
+
         if self.game.allow_face_down_table_cards:
             self.play_face_down_button = tk.Button(
                 self.card_actions_frame,

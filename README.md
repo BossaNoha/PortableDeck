@@ -23,6 +23,15 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Table → Table actions → Allow playing multiple hand
+cards at once** to add **Play multiple cards…**. Select at least two cards in
+the dialog with Ctrl/Shift. The group plays face up in hand order at automatic
+positions, using the existing table placement rules. Every card must fit;
+otherwise the entire action is rejected. Successful play creates one Undo step
+and one autosave. The rule defaults to off, is stored in presets/saves and is
+preserved by restart. CLI: enable `--play-multiple-cards` for new games, then
+use `play-many 1 3 4` (card numbers refer to the hand before the batch).
+
 Enable **Game Settings → Turn order → Allow skipping the next player** to add
 **Skip next player** in the GUI. This optional rule defaults to off. It ends the
 current turn and skips one active player in the current direction; departed
