@@ -31,6 +31,7 @@
   "autosave_count": 5,
   "require_exit_confirmation": true,
   "confirm_next_turn": false,
+  "confirm_skip": false,
   "allow_choose_next_player": false,
   "allow_reverse_turn_order": false,
   "allow_skip_next_player": false,

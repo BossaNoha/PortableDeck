@@ -45,6 +45,7 @@ DEFAULT_SETTINGS = {
     "autosave_count": 5,
     "require_exit_confirmation": True,
     "confirm_next_turn": False,
+    "confirm_skip": False,
     "allow_choose_next_player": False,
     "allow_reverse_turn_order": False,
     "allow_skip_next_player": False,

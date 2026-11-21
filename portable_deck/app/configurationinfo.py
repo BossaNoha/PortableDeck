@@ -2,7 +2,7 @@
 import copy
 from .settings import DEFAULT_SETTINGS, load_default_settings
 
-APP_SETTINGS = {"contextual_session_actions", "show_game_log", "color_game_settings_categories", "autosave_enabled", "autosave_count", "require_exit_confirmation", "confirm_next_turn", "enable_undo", "num_players"}
+APP_SETTINGS = {"contextual_session_actions", "show_game_log", "color_game_settings_categories", "autosave_enabled", "autosave_count", "require_exit_confirmation", "confirm_next_turn", "confirm_skip", "enable_undo", "num_players"}
 METADATA = {"configuration_name", "configuration_baseline"}
 
 def preset_values(settings):

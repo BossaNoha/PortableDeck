@@ -15,8 +15,16 @@ class GameGUIActions:
         if not self.session.end_turn_availability(next_player, skip_next=skip_next).allowed:
             return advance()
         if not hasattr(self, "turn_flow"):
-            self.turn_flow = TurnHandoffController(self.session, enabled=getattr(self, "confirm_next_turn", False))
+            self.turn_flow = TurnHandoffController(self.session, enabled=getattr(self, "confirm_next_turn", False),
+                                                 confirm_skip=getattr(self, "confirm_skip", False))
         result = self.turn_flow.request(advance, next_player=next_player, skip_next=skip_next)
+        if result.code == "skip_confirmation_required":
+            if not messagebox.askyesno("Skip next player", "End your turn and skip the next active player?", parent=self.root):
+                return self.turn_flow.cancel()
+            result = self.turn_flow.confirm_skip()
+            if not result.success:
+                messagebox.showwarning("Cannot skip player", result.message, parent=self.root)
+                self.turn_flow.cancel()
         if result.code == "handoff_required":
             self.turn_handoff.show()
             return None

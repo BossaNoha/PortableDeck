@@ -1,5 +1,13 @@
 # UI/core boundary audit
 
+Optional skip confirmation: confirm_skip is an application preference in Basic
+Settings, default False, preserved across preset loads. The shared app handoff
+controller holds a skip confirmation phase without mutating the game. GUI asks
+yes/no; CLI exposes --confirm-skip and confirm-skip/cancel. Acceptance either
+executes the existing skip transaction or enters the optional privacy handoff.
+Ready cannot bypass skip confirmation. Cancellation, blocked commands and
+revalidation are covered; successful execution retains one Undo/checkpoint.
+
 Optional skip: allow_skip_next_player defaults to False under Turn order. Core
 end_turn accepts skip_next=True, mutually exclusive with a manual destination.
 Availability requires at least two active players and the usual turn checks.
@@ -73,7 +81,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 425 tests; native Tk probes for session, deck and preset
+latest full suite passed 432 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

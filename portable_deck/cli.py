@@ -15,16 +15,16 @@ from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
 
-HELP = "Commands: show, draw, play CARD, end [PLAYER], skip, reverse, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: show, draw, play CARD, end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
-    def __init__(self, game, output, structured=False, confirm_next_turn=False):
+    def __init__(self, game, output, structured=False, confirm_next_turn=False, confirm_skip=False):
         self.game = game
         self.session = game.session
         self.output = output
         self.structured = structured
-        self.turn_flow = TurnHandoffController(self.session, enabled=confirm_next_turn)
+        self.turn_flow = TurnHandoffController(self.session, enabled=confirm_next_turn, confirm_skip=confirm_skip)
 
     def emit(self, kind, **values):
         print(json.dumps({"type": kind, **values}, ensure_ascii=False), file=self.output)
@@ -76,7 +76,7 @@ class CLIClient:
                 self.write(message)
         else:
             self.write(f"Unavailable: {result.message}")
-        if result.success and result.code not in {"handoff_required", "handoff_cancelled"}:
+        if result.success and result.code not in {"handoff_required", "handoff_cancelled", "skip_confirmation_required", "skip_cancelled"}:
             self.turn_work()
         if result.checkpoint_error and not self.structured:
             self.write(f"Checkpoint failed: {result.checkpoint_error}")
@@ -88,7 +88,7 @@ class CLIClient:
             if not parts:
                 return True
             command, args = parts[0].lower(), parts[1:]
-            arity = {"skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
+            arity = {"confirm-skip": 0, "skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
                      "pending": 0, "approve": 0, "reject": 0, "point": 0,
                      "bet": 1, "pot": 1, "help": 0, "quit": 0, "ready": 0, "cancel": 0}
             if command not in arity or (len(args) != arity[command] and not (command == "end" and len(args) == 1)):
@@ -98,13 +98,15 @@ class CLIClient:
             if command == "help":
                 self.write(HELP)
                 return True
-            if command in {"ready", "cancel"}:
-                result = self.turn_flow.confirm() if command == "ready" else self.turn_flow.cancel()
-                self.report_result("end_turn" if command == "ready" else "cancel_handoff", result)
+            if command in {"ready", "cancel", "confirm-skip"}:
+                result = (self.turn_flow.confirm_skip() if command == "confirm-skip" else
+                          self.turn_flow.confirm() if command == "ready" else self.turn_flow.cancel())
+                self.report_result("end_turn" if command != "cancel" else "cancel_handoff", result)
                 return True
             if self.turn_flow.pending:
                 self.report_result(command, ActionResult(False, code="handoff_pending",
-                    message="Confirm with ready or cancel the pending handoff first."))
+                    message="Use confirm-skip or cancel first." if self.turn_flow.awaiting_skip else
+                            "Confirm with ready or cancel the pending handoff first."))
                 return True
             if command == "show":
                 viewer = build_turn_start_view(self.game).player
@@ -167,8 +169,8 @@ class CLIClient:
         return True
 
 
-def run_cli(game, source, output, structured=False, confirm_next_turn=False):
-    client = CLIClient(game, output, structured=structured, confirm_next_turn=confirm_next_turn)
+def run_cli(game, source, output, structured=False, confirm_next_turn=False, confirm_skip=False):
+    client = CLIClient(game, output, structured=structured, confirm_next_turn=confirm_next_turn, confirm_skip=confirm_skip)
     client.write(HELP)
     client.turn_work()
     for line in source:
@@ -189,6 +191,7 @@ def main(argv=None):
     parser.add_argument("--choose-next-player", action="store_true", help="Allow end PLAYER for new games")
     parser.add_argument("--reverse-turn-order", action="store_true", help="Allow reverse for new games")
     parser.add_argument("--skip-next-player", action="store_true", help="Allow skip for new games")
+    parser.add_argument("--confirm-skip", action="store_true", help="Require confirm-skip before skipping a player")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -211,7 +214,7 @@ def main(argv=None):
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     try:
-        return run_cli(game, sys.stdin, sys.stdout, structured=args.json, confirm_next_turn=args.confirm_next_turn)
+        return run_cli(game, sys.stdin, sys.stdout, structured=args.json, confirm_next_turn=args.confirm_next_turn, confirm_skip=args.confirm_skip)
     except KeyboardInterrupt:
         return 0
 

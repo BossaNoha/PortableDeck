@@ -33,6 +33,14 @@ Skipping supports Undo and the optional hotseat handoff confirmation. The rule
 is stored in presets and saves and preserved by restart. In the CLI, enable
 `--skip-next-player` for new games and use `skip`.
 
+Enable **Basic Settings → Confirm before skipping a player** for an additional
+confirmation before a skip. It defaults to off and is an application preference
+preserved when loading presets. Cancelling leaves the current turn unchanged.
+With hotseat privacy enabled, accepting the skip opens the handoff screen;
+the turn changes only when the next player is ready. In the CLI, use
+`--confirm-skip`, then `confirm-skip` to accept or `cancel` to go back.
+If `--confirm-next-turn` is also enabled, `ready` is required afterwards.
+
 Enable **Game Settings → Turn order → Allow reversing turn direction** to add
 **Reverse turn direction** in the GUI. This optional rule defaults to off. It
 changes subsequent automatic turns without ending the current turn, skips
