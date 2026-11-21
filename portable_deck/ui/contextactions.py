@@ -10,6 +10,8 @@ class ContextActions:
         for button in self.buttons + list(gui.turn_actions_frame.winfo_children()):
             button.pack_forget()
         gui.next_button.pack(side="left", padx=5)
+        if hasattr(gui, "choose_next_button"):
+            gui.choose_next_button.pack(side="left", padx=5)
         if hasattr(gui, "undo_button"):
             gui.undo_button.pack(side="left", padx=5)
         self.add_menu("Players", [getattr(getattr(gui, "interactions_ui", None), "button", None),
