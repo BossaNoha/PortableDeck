@@ -19,6 +19,8 @@ class ContextTurnOrderTests(unittest.TestCase):
                     buttons.append(gui.choose_next_button)
                     gui.reverse_turn_button = Mock()
                     buttons.append(gui.reverse_turn_button)
+                    gui.skip_next_button = Mock()
+                    buttons.append(gui.skip_next_button)
                 gui.turn_actions_frame.winfo_children.return_value = buttons
                 with patch.object(ContextActions, "add_menu"), patch.object(ContextActions, "refresh"):
                     ContextActions(gui)

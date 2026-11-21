@@ -15,7 +15,7 @@ from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
 
-HELP = "Commands: show, draw, play CARD, end [PLAYER], reverse, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: show, draw, play CARD, end [PLAYER], skip, reverse, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
@@ -88,7 +88,7 @@ class CLIClient:
             if not parts:
                 return True
             command, args = parts[0].lower(), parts[1:]
-            arity = {"reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
+            arity = {"skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
                      "pending": 0, "approve": 0, "reject": 0, "point": 0,
                      "bet": 1, "pot": 1, "help": 0, "quit": 0, "ready": 0, "cancel": 0}
             if command not in arity or (len(args) != arity[command] and not (command == "end" and len(args) == 1)):
@@ -129,7 +129,7 @@ class CLIClient:
                 self.turn_work()
                 return True
             parameters = {}
-            actions = {"reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
+            actions = {"skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
                        "point": "request_point", "bet": "play_chips", "pot": "take_pot"}
             if command in {"approve", "reject"}:
                 prompt = build_turn_start_view(self.game).next_confirmation
@@ -142,7 +142,9 @@ class CLIClient:
                 action, parameters = prompt.action, {"approved": command == "approve"}
             else:
                 action = actions[command]
-                if command == "play":
+                if command == "skip":
+                    parameters["skip_next"] = True
+                elif command == "play":
                     parameters["card_index"] = self.positive(args[0]) - 1
                 elif command == "bet":
                     parameters["amount"] = self.positive(args[0])
@@ -152,7 +154,8 @@ class CLIClient:
                     parameters["next_player"] = self.positive(args[0]) - 1
             if action == "end_turn":
                 result = self.turn_flow.request(lambda: self.session.execute(action, **parameters),
-                                                next_player=parameters.get("next_player"))
+                                                next_player=parameters.get("next_player"),
+                                                skip_next=parameters.get("skip_next", False))
             else:
                 result = self.session.execute(action, **parameters)
             self.report_result(action, result)
@@ -185,6 +188,7 @@ def main(argv=None):
     parser.add_argument("--confirm-next-turn", action="store_true", help="Require ready after end before advancing the turn")
     parser.add_argument("--choose-next-player", action="store_true", help="Allow end PLAYER for new games")
     parser.add_argument("--reverse-turn-order", action="store_true", help="Allow reverse for new games")
+    parser.add_argument("--skip-next-player", action="store_true", help="Allow skip for new games")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -198,6 +202,7 @@ def main(argv=None):
                 "enable_undo": True,
                 "allow_choose_next_player": args.choose_next_player,
                 "allow_reverse_turn_order": args.reverse_turn_order,
+                "allow_skip_next_player": args.skip_next_player,
                 "enable_score_counter": args.confirmations,
                 "enable_chip_accounts": args.confirmations,
                 "require_point_confirmation": args.confirmations,

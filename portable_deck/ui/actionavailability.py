@@ -5,6 +5,7 @@ BUTTON_ACTIONS = {'draw_button': 'draw_card',
  'next_button': 'end_turn',
  'choose_next_button': 'choose_next_player',
  'reverse_turn_button': 'reverse_turn_order',
+ 'skip_next_button': 'skip_next_player',
  'return_player_button': 'return_player',
  'discard_button': 'discard_card',
  'play_button': 'play_card',
@@ -44,6 +45,8 @@ def action_reason(gui, button):
         return ""
     if action == "end_turn":
         return gui.session.end_turn_availability().reason
+    if action == "skip_next_player":
+        return gui.session.end_turn_availability(skip_next=True).reason
     if action == "choose_next_player":
         return gui.session.next_player_options().reason
     if action == "return_player":
@@ -60,6 +63,8 @@ def action_reason(gui, button):
 def selected_action_available(gui, action):
     if action == "end_turn":
         return gui.session.end_turn_availability().allowed
+    if action == "skip_next_player":
+        return gui.session.end_turn_availability(skip_next=True).allowed
     if action == "choose_next_player":
         return gui.session.next_player_options().allowed
     if action == "return_player":

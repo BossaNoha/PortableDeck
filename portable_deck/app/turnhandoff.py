@@ -10,10 +10,10 @@ class TurnHandoffController:
         self.completing = False
         self._advance = None
 
-    def request(self, advance, *, next_player=None):
+    def request(self, advance, *, next_player=None, skip_next=False):
         if self.pending:
             return ActionResult(False, message="Confirm or cancel the pending handoff first.", code="handoff_pending")
-        if not self.enabled or not self.session.end_turn_availability(next_player).allowed:
+        if not self.enabled or not self.session.end_turn_availability(next_player, skip_next=skip_next).allowed:
             return advance()
         self._advance = advance
         self.pending = True

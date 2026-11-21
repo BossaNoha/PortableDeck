@@ -116,7 +116,7 @@ class SessionController:
             context = ActionContext(hand_index=card, table_index=parameters.get("table_index"))
         lifecycle = {"confirm_point", "confirm_pot", "return_player"}
         if action == "end_turn":
-            available = self.end_turn_availability(parameters.get("next_player"))
+            available = self.end_turn_availability(parameters.get("next_player"), parameters.get("skip_next", False))
             if not available.allowed:
                 return ActionResult(False, message=available.reason, code=available.code)
         elif action in lifecycle:
@@ -144,7 +144,7 @@ class SessionController:
             "reverse_turn_order": lambda: g.reverse_turn_order(),
             "draw_card": lambda: g.deal_card_to_current(),
             "draw_from_discard": lambda: self.draw_from_discard(parameters),
-            "end_turn": lambda: g.finish_turn(parameters.get("next_player")),
+            "end_turn": lambda: g.finish_turn(parameters.get("next_player"), parameters.get("skip_next", False)),
             "confirm_point": lambda: g.confirm_point_request(parameters.get("approved")),
             "confirm_pot": lambda: g.confirm_pot_withdrawal(parameters.get("approved")),
             "return_player": lambda: g.return_player(parameters["player_index"]),
@@ -228,9 +228,18 @@ class SessionController:
         g.log_action(player.name, "draw_from_discard", card, destination=name)
         return card
 
-    def end_turn_availability(self, next_player=None):
+    def end_turn_availability(self, next_player=None, skip_next=False):
         """Describe whether this player can advance the turn right now."""
         from .actionavailability import ActionAvailability
+        if type(skip_next) is not bool:
+            return ActionAvailability(False, "skip_next must be true or false.", "invalid_parameters")
+        if skip_next:
+            if not self.game.allow_skip_next_player:
+                return ActionAvailability(False, "Skipping the next player is disabled.", "action_disabled")
+            if next_player is not None:
+                return ActionAvailability(False, "Choose either a manual destination or skip.", "invalid_parameters")
+            if len(self.game.active_player_indices()) < 2:
+                return ActionAvailability(False, "At least two active players are needed to skip.", "not_enough_players")
         if not self.game.active_player_indices():
             return ActionAvailability(False, "No active players remain.", "no_active_players")
         if self.game.current_player_must_confirm_point() or self.game.current_player_must_confirm_pot_withdrawal():

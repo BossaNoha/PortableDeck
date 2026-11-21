@@ -82,6 +82,7 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         cards_visibility=None,
         allow_choose_next_player=False,
         allow_reverse_turn_order=False,
+        allow_skip_next_player=False,
     ):
         if not isinstance(allow_choose_next_player, bool):
             raise ValueError("allow_choose_next_player must be true or false")
@@ -90,6 +91,9 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
             raise ValueError("allow_reverse_turn_order must be true or false")
         self.allow_reverse_turn_order = allow_reverse_turn_order
         self.turn_direction = 1
+        if not isinstance(allow_skip_next_player, bool):
+            raise ValueError("allow_skip_next_player must be true or false")
+        self.allow_skip_next_player = allow_skip_next_player
         if not isinstance(num_players, int) or isinstance(num_players, bool) or num_players < 1:
             raise ValueError("num_players must be a positive integer")
         if player_names is not None and len(player_names) != num_players:
@@ -314,8 +318,13 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         else:
             return None   # ❌ failure
 
-    def finish_turn(self, next_player=None):
+    def finish_turn(self, next_player=None, skip_next=False):
         """End a turn and report whether it ended the round and cleared the table."""
+        if skip_next or type(skip_next) is not bool:
+            from .actionerrors import ActionValidationError
+            available = self.session.end_turn_availability(next_player, skip_next=skip_next)
+            if not available.allowed:
+                raise ActionValidationError(available.code, available.reason)
         if next_player is not None:
             from .turnorder import next_player_error
             error = next_player_error(self, next_player)
@@ -337,6 +346,14 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         round_ended = next_player is None and (
             following <= self.current_player_index if self.turn_direction == 1
             else following >= self.current_player_index)
+        if skip_next:
+            skipped = automatic
+            ordered = active if self.turn_direction == 1 else list(reversed(active))
+            following = ordered[(ordered.index(skipped) + 1) % len(ordered)]
+            round_ended = round_ended or (
+                following <= skipped if self.turn_direction == 1 else following >= skipped)
+            self.log_action(self.players[self.current_player_index].name, "player_skipped",
+                            target=self.players[skipped].name)
         if next_player is not None:
             self.log_action(self.players[self.current_player_index].name, "turn_passed",
                             target=self.players[following].name)

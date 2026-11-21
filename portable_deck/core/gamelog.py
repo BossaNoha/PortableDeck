@@ -40,6 +40,7 @@ def format_game_event(event):
         "round_ended": "The round has ended.",
         "turn_started": f"{player}'s turn starts.",
         "turn_direction_changed": f"{player} changed the turn direction to {event.get('direction', 'forward')}.",
+        "player_skipped": f"{player} skipped {target} for the next turn.",
         "turn_passed": f"{player} passed the turn to {target}.",
         "all_players_left": "All players have left the session.",
         "left_session": f"{player} left the session.",

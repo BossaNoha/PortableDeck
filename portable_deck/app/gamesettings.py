@@ -24,6 +24,7 @@ class GameSettingsPanel:
         self.team_score_var = tk.BooleanVar(value=settings.get("enable_team_score", False))
         self.player_name = player_name
         self.settings = settings
+        self.skip_next_player_var = tk.BooleanVar(value=settings.get("allow_skip_next_player", False))
         self.reverse_turn_order_var = tk.BooleanVar(value=settings.get("allow_reverse_turn_order", False))
         self.choose_next_player_var = tk.BooleanVar(value=settings.get("allow_choose_next_player", False))
         self.players_var = players_var or tk.StringVar(value=str(settings.get("num_players", 3)))
@@ -273,6 +274,10 @@ class GameSettingsPanel:
         self.player_leaving = PlayerLeavingSettings(leaving, self.settings, self.score_var, self.chip_accounts_var, self.score_limits)
 
         turns = section("Turn order")
+        add_tooltip(tk.Checkbutton(turns, text="Allow skipping the next player",
+                                  variable=self.skip_next_player_var, wraplength=280, justify="left"),
+                    "End the current turn and skip one active player in the current direction. "
+                    "Requires at least two active players.").pack(anchor="w")
         add_tooltip(tk.Checkbutton(turns, text="Allow reversing turn direction",
                                   variable=self.reverse_turn_order_var, wraplength=280, justify="left"),
                     "Reverse the order for subsequent turns without ending the current turn.").pack(anchor="w")
@@ -290,7 +295,7 @@ class GameSettingsPanel:
         self.flipping.enabled.trace_add("write", self.update_feature_controls)
 
         self.section_states = {
-            "Turn order": (self.choose_next_player_var, self.reverse_turn_order_var),
+            "Turn order": (self.choose_next_player_var, self.reverse_turn_order_var, self.skip_next_player_var),
             "Flipping cards": (self.flipping.enabled,),
             "Special actions": (self.special_actions.enabled,),
             "Scoring": (self.score_var,),
@@ -399,6 +404,7 @@ class GameSettingsPanel:
         return {
             "allow_choose_next_player": self.choose_next_player_var.get(),
             "allow_reverse_turn_order": self.reverse_turn_order_var.get(),
+            "allow_skip_next_player": self.skip_next_player_var.get(),
             "limit_table_rows": self.limit_rows_var.get(),
             "limit_table_columns": self.limit_columns_var.get(),
             "enable_table_limits": self.table_limits_var.get(),

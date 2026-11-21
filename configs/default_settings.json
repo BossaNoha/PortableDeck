@@ -33,6 +33,7 @@
   "confirm_next_turn": false,
   "allow_choose_next_player": false,
   "allow_reverse_turn_order": false,
+  "allow_skip_next_player": false,
   "enable_table": true,
   "enable_discard_pile": true,
   "enable_personal_piles": false,

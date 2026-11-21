@@ -43,6 +43,8 @@ def build_rules_overview(game):
         return [RuleEntry(attribute, label) for attribute, label in pairs if getattr(g, attribute, False)]
 
     turn_rules = []
+    if g.allow_skip_next_player:
+        turn_rules.append(RuleEntry("allow_skip_next_player", "End the turn and skip the next active player"))
     if g.allow_choose_next_player:
         turn_rules.extend([
             RuleEntry("allow_choose_next_player", "Choose any active player for the next turn"),

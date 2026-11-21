@@ -1,5 +1,15 @@
 # UI/core boundary audit
 
+Optional skip: allow_skip_next_player defaults to False under Turn order. Core
+end_turn accepts skip_next=True, mutually exclusive with a manual destination.
+Availability requires at least two active players and the usual turn checks.
+Both clients defer the same command behind the optional hotseat curtain and
+revalidate on ready. Traversal follows current direction and ignores departed
+players. Crossing the seat boundary on either step ends the round exactly once.
+Skip logs the affected player and shares one Undo/checkpoint with end turn.
+Presets, saves, legacy defaults and restart preserve the configurable rule.
+Native Tk checks cover setting, both layouts, cancellation, ready and Undo.
+
 Optional reverse turns: allow_reverse_turn_order defaults to False under Turn
 order. The core reverse_turn_order action validates availability and changes
 turn_direction (1/-1) without advancing the player. Automatic turns skip departed
@@ -63,7 +73,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 417 tests; native Tk probes for session, deck and preset
+latest full suite passed 425 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

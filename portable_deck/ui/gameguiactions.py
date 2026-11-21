@@ -7,16 +7,16 @@ from ..core.playersessionview import build_player_session_view
 from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
-    def next_turn(self, next_player=None):
+    def next_turn(self, next_player=None, skip_next=False):
         from ..app.turnhandoff import TurnHandoffController
         def advance():
             return self.run_action(end_turn, self.game, self.hand_frame, self.render_log,
-                                   self.status_panel, self.handle_turn_start, next_player)
-        if not self.session.end_turn_availability(next_player).allowed:
+                                   self.status_panel, self.handle_turn_start, next_player, skip_next)
+        if not self.session.end_turn_availability(next_player, skip_next=skip_next).allowed:
             return advance()
         if not hasattr(self, "turn_flow"):
             self.turn_flow = TurnHandoffController(self.session, enabled=getattr(self, "confirm_next_turn", False))
-        result = self.turn_flow.request(advance, next_player=next_player)
+        result = self.turn_flow.request(advance, next_player=next_player, skip_next=skip_next)
         if result.code == "handoff_required":
             self.turn_handoff.show()
             return None
@@ -264,6 +264,8 @@ class GameGUIActions:
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
+        if hasattr(self, "skip_next_button"):
+            buttons.append(self.skip_next_button)
         if hasattr(self, "reverse_turn_button"):
             buttons.append(self.reverse_turn_button)
         if hasattr(self, "choose_next_button"):

@@ -23,6 +23,16 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Turn order → Allow skipping the next player** to add
+**Skip next player** in the GUI. This optional rule defaults to off. It ends the
+current turn and skips one active player in the current direction; departed
+players are ignored. With two active players, the current player takes another
+turn. With fewer than two, skipping is unavailable. Crossing the seat boundary
+on either step ends the round and performs any configured automatic cleanup once.
+Skipping supports Undo and the optional hotseat handoff confirmation. The rule
+is stored in presets and saves and preserved by restart. In the CLI, enable
+`--skip-next-player` for new games and use `skip`.
+
 Enable **Game Settings → Turn order → Allow reversing turn direction** to add
 **Reverse turn direction** in the GUI. This optional rule defaults to off. It
 changes subsequent automatic turns without ending the current turn, skips

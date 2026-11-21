@@ -343,9 +343,12 @@ def clear_table(game, table_frame, render_log, status_panel):
     return result
 
 
-def end_turn(game, hand_frame, render_log, status_panel, on_turn_start=None, next_player=None):
+def end_turn(game, hand_frame, render_log, status_panel, on_turn_start=None, next_player=None, skip_next=False):
     """End current player's turn and move to next."""
-    result = game.session.execute("end_turn", next_player=next_player)
+    parameters = {"next_player": next_player}
+    if skip_next:
+        parameters["skip_next"] = True
+    result = game.session.execute("end_turn", **parameters)
     if not result.success:
         messagebox.showwarning("Cannot end turn", result.message)
         return result
