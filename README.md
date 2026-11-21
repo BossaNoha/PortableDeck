@@ -63,9 +63,10 @@ python -m portable_deck.cli --players 2 --hand 3
 python -m portable_deck.cli --confirmations
 python -m portable_deck.cli --load saves/session1.json
 python -m portable_deck.cli --json --confirmations
+python -m portable_deck.cli --confirm-next-turn
 ```
 
-Commands are `show`, `draw`, `play CARD`, `end`, `undo`, `pending`, `approve`,
+Commands are `show`, `draw`, `play CARD`, `end`, `ready`, `cancel`, `undo`, `pending`, `approve`,
 `reject`, `point`, `bet AMOUNT`, `pot PLAYER`, `help` and `quit`. Card and player
 numbers start at 1. `show` prints the current player's combined view as JSON;
 action output prints public messages without internal events or private draw
@@ -74,6 +75,14 @@ are acknowledged after display. `--confirmations` enables score/chip approvals
 for a new game; loaded sessions retain their saved rules. EOF also exits.
 This development client has no save command or autosave and does not overwrite
 a loaded session file. The regular `python main.py` GUI entry point is unchanged.
+
+With `--confirm-next-turn` (also usable with `--load`), `end` requests a handoff
+without advancing; `ready` commits the turn and `cancel` leaves it unchanged.
+While pending, game commands and `show` are blocked; help/quit remain available.
+`ready` is separate from `approve`/`reject` for score/pot votes. JSON results use
+`handoff_required`, `handoff_pending`, `handoff_cancelled` and `handoff_not_pending`.
+The CLI does not clear the terminal or its scrollback. Both clients share
+`app.turnhandoff.TurnHandoffController`, independent of Tkinter/terminal handling.
 
 `--json` switches command-stream output to JSON Lines. Each line has a `type`:
 `message`, `result`, `error`, `view`, `notification`, `confirmation` or

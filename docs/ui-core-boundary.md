@@ -6,11 +6,21 @@ availability, then the client hides the entire game/options area before any
 turn mutation. A ready button executes the existing end-turn transaction with
 turn-start decisions while still covered, then reveals the refreshed screen.
 Cancellation does not advance or checkpoint. Execution revalidates; refusal
-keeps the curtain and valid selection until retry/cancel. This is transient UI
+keeps the curtain and valid selection until retry/cancel. This is transient client
 state, not a new core confirmation or saved-session rule. Tests cover privacy
 sequencing, cancel/reentry, changed availability, grouped score/pot approvals,
 Undo/checkpoint counts and preference handling. A temporary native Tk probe
 verified hidden pack managers and normal restore, plus the disabled-option path.
+
+Handoff orchestration now lives in app.turnhandoff.TurnHandoffController, reused
+by the GUI curtain and CLI. It owns pending/completing state, request/confirm/
+cancel results and deferred execution; the callback retains each client's
+existing transaction/turn-start behavior. CLI --confirm-next-turn adds end →
+ready/cancel, suppresses new state/commands while pending and reports stable
+handoff codes in JSON. It does not clear terminal history. Tests cover both
+client flows, changed availability, cancellation, duplicate requests/ready,
+score-vote ordering and CLI subprocesses without Tkinter. A native Tk probe
+verified shared-state synchronization with the actual curtain and Undo/checkpoint.
 
 Settings failure recovery (2026-11-21): application settings now serialize before
 an atomic temporary-file replacement; partial-write/replacement failures preserve
@@ -29,7 +39,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 396 tests; native Tk probes for session, deck and preset
+latest full suite passed 401 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
@@ -241,7 +251,7 @@ and GUI modules, including function-local ordinary imports.
 
 ## Implementation evidence and earlier audits
 
-`tests/test_appboundary.py` protects the 16 explicitly extracted application
+`tests/test_appboundary.py` protects the 17 explicitly extracted application
 service modules. AST inspection checks ordinary absolute/relative imports,
 including function-local imports, against Tkinter, `portable_deck.ui` and app
 modules outside the service set. A separate clean process imports every service

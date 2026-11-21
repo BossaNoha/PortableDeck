@@ -8,14 +8,17 @@ from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
     def next_turn(self):
+        from ..app.turnhandoff import TurnHandoffController
         def advance():
             return self.run_action(end_turn, self.game, self.hand_frame, self.render_log,
                                    self.status_panel, self.handle_turn_start)
-        if (getattr(self, "confirm_next_turn", False)
-                and self.session.end_turn_availability().allowed):
-            self.turn_handoff.show(advance)
+        if not hasattr(self, "turn_flow"):
+            self.turn_flow = TurnHandoffController(self.session, enabled=getattr(self, "confirm_next_turn", False))
+        result = self.turn_flow.request(advance)
+        if result.code == "handoff_required":
+            self.turn_handoff.show()
             return None
-        return advance()
+        return result
 
 
     def refresh_session_panels(self):

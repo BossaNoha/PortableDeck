@@ -9,19 +9,22 @@ from pathlib import Path
 from .core.game import Game
 from .app.newgame import create_game
 from .app.sessionstorage import load_session
+from .app.turnhandoff import TurnHandoffController
+from .core.session import ActionResult
 from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
 
-HELP = "Commands: show, draw, play CARD, end, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: show, draw, play CARD, end, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
-    def __init__(self, game, output, structured=False):
+    def __init__(self, game, output, structured=False, confirm_next_turn=False):
         self.game = game
         self.session = game.session
         self.output = output
         self.structured = structured
+        self.turn_flow = TurnHandoffController(self.session, enabled=confirm_next_turn)
 
     def emit(self, kind, **values):
         print(json.dumps({"type": kind, **values}, ensure_ascii=False), file=self.output)
@@ -33,6 +36,8 @@ class CLIClient:
             print(text, file=self.output)
 
     def turn_work(self):
+        if self.turn_flow.pending:
+            return
         work = build_turn_start_view(self.game)
         for notice in work.notifications:
             if self.structured:
@@ -60,6 +65,22 @@ class CLIClient:
             raise ValueError("Use a positive whole number.")
         return number
 
+    def report_result(self, action, result):
+        # Internal values/events may contain private cards: never print them.
+        if self.structured:
+            self.emit("result", action=action, success=result.success, changed=result.changed,
+                      code=result.code, message=result.message, messages=result.messages,
+                      checkpoint_error=result.checkpoint_error)
+        elif result.success:
+            for message in result.messages or (result.message,):
+                self.write(message)
+        else:
+            self.write(f"Unavailable: {result.message}")
+        if result.success and result.code not in {"handoff_required", "handoff_cancelled"}:
+            self.turn_work()
+        if result.checkpoint_error and not self.structured:
+            self.write(f"Checkpoint failed: {result.checkpoint_error}")
+
     def command(self, line):
         """Return False only for quit; command errors keep the client running."""
         try:
@@ -69,13 +90,21 @@ class CLIClient:
             command, args = parts[0].lower(), parts[1:]
             arity = {"show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
                      "pending": 0, "approve": 0, "reject": 0, "point": 0,
-                     "bet": 1, "pot": 1, "help": 0, "quit": 0}
+                     "bet": 1, "pot": 1, "help": 0, "quit": 0, "ready": 0, "cancel": 0}
             if command not in arity or len(args) != arity[command]:
                 raise ValueError("Unknown command or incorrect arguments. Use help.")
             if command == "quit":
                 return False
             if command == "help":
                 self.write(HELP)
+                return True
+            if command in {"ready", "cancel"}:
+                result = self.turn_flow.confirm() if command == "ready" else self.turn_flow.cancel()
+                self.report_result("end_turn" if command == "ready" else "cancel_handoff", result)
+                return True
+            if self.turn_flow.pending:
+                self.report_result(command, ActionResult(False, code="handoff_pending",
+                    message="Confirm with ready or cancel the pending handoff first."))
                 return True
             if command == "show":
                 viewer = build_turn_start_view(self.game).player
@@ -119,24 +148,11 @@ class CLIClient:
                     parameters["amount"] = self.positive(args[0])
                 elif command == "pot":
                     parameters["player_index"] = self.positive(args[0]) - 1
-            result = self.session.execute(action, **parameters)
-            # Internal events/values may contain private cards: never print them.
-            if self.structured:
-                self.emit("result", action=action, success=result.success, changed=result.changed,
-                          code=result.code, message=result.message, messages=result.messages,
-                          checkpoint_error=result.checkpoint_error)
-                if result.success:
-                    self.turn_work()
-            elif result.success:
-                for message in result.messages:
-                    self.write(message)
-                if not result.messages:
-                    self.write(result.message)
-                self.turn_work()
+            if action == "end_turn":
+                result = self.turn_flow.request(lambda: self.session.execute(action, **parameters))
             else:
-                self.write(f"Unavailable: {result.message}")
-            if result.checkpoint_error and not self.structured:
-                self.write(f"Checkpoint failed: {result.checkpoint_error}")
+                result = self.session.execute(action, **parameters)
+            self.report_result(action, result)
         except ValueError as error:
             if self.structured:
                 self.emit("error", code="invalid_command", message=str(error))
@@ -145,8 +161,8 @@ class CLIClient:
         return True
 
 
-def run_cli(game, source, output, structured=False):
-    client = CLIClient(game, output, structured=structured)
+def run_cli(game, source, output, structured=False, confirm_next_turn=False):
+    client = CLIClient(game, output, structured=structured, confirm_next_turn=confirm_next_turn)
     client.write(HELP)
     client.turn_work()
     for line in source:
@@ -163,6 +179,7 @@ def main(argv=None):
     parser.add_argument("--players", type=int, default=2)
     parser.add_argument("--hand", type=int, default=3)
     parser.add_argument("--confirmations", action="store_true", help="Enable score/chip accounts and approval requests")
+    parser.add_argument("--confirm-next-turn", action="store_true", help="Require ready after end before advancing the turn")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -182,7 +199,7 @@ def main(argv=None):
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     try:
-        return run_cli(game, sys.stdin, sys.stdout, structured=args.json)
+        return run_cli(game, sys.stdin, sys.stdout, structured=args.json, confirm_next_turn=args.confirm_next_turn)
     except KeyboardInterrupt:
         return 0
 

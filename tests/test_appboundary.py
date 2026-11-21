@@ -17,6 +17,7 @@ SERVICES = frozenset((
     "deckstorage", "discardstorage", "namedsaves", "newgame", "sessioncatalog",
     "sessionfiles", "sessionstorage", "sessionview", "settings",
     "settingsapplication", "settingspresets",
+    "turnhandoff",
 ))
 ROOT = Path(__file__).resolve().parents[1]
 
