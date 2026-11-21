@@ -19,6 +19,9 @@ class GameGUIActions:
     def take_multiple_cards(self):
         return self._choose_multiple_cards("take_table_cards", "Take")
 
+    def discard_multiple_table_cards(self):
+        return self._choose_multiple_cards("discard_table_cards", "Discard")
+
     def _choose_multiple_cards(self, action, verb, target=None):
         from ..core.actionavailability import action_availability
         from ..core.pileoptions import discard_destinations
@@ -28,14 +31,15 @@ class GameGUIActions:
             return
         snapshot = build_selection_snapshot(self.game)
         view = build_player_session_view(self.game, snapshot.owner)
-        from_table = action == "take_table_cards"
+        from_table = action in {"take_table_cards", "discard_table_cards"}
         dialog = tk.Toplevel(self.root)
         dialog.title(f"{verb} multiple cards")
         dialog.transient(self.root)
         instruction = {"play_cards": "Cards play face up in hand order.",
                        "discard_cards": "Cards are discarded in hand order; the last selected card becomes the top card.",
                        "give_cards": "Cards are appended to the recipient's hand in hand order.",
-                       "take_table_cards": "Cards are appended to your hand in table order."}[action]
+                       "take_table_cards": "Cards are appended to your hand in table order.",
+                       "discard_table_cards": "Cards are discarded in table order and become visible in the discard pile."}[action]
         if action == "give_cards":
             from ..core.interactions import build_interaction_options
             options = build_interaction_options(self.game, action)
@@ -53,7 +57,7 @@ class GameGUIActions:
         for slot in slots:
             position = f" at {slot.position}" if from_table else ""
             choices.insert("end", f"{slot.index + 1}. {slot.card if slot.card is not None else 'Hidden card'}{position}")
-        destinations = discard_destinations(self.game, snapshot.owner) if action == "discard_cards" else ()
+        destinations = discard_destinations(self.game, snapshot.owner) if action in {"discard_cards", "discard_table_cards"} else ()
         if destinations:
             tk.Label(dialog, text="Destination:").pack(padx=12, anchor="w")
             pile_choices = tk.Listbox(dialog, exportselection=False, width=48, height=min(5, len(destinations)))

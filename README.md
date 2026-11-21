@@ -23,6 +23,18 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Table → Table actions → Allow discarding multiple table
+cards at once**, together with discarding individual table cards, to add
+**Discard multiple table cards…**. Select at least two shared table cards with
+Ctrl/Shift and one shared or your own personal discard destination. Cards move
+in table order; the last selected card becomes the top card. Face-down cards
+are unnamed in the selector and become public when discarded, like individual
+table discards. The whole batch is validated before removal and creates one
+Undo step and one autosave. The rule defaults to off, is stored in presets/saves
+and survives restart. CLI: `--discard-multiple-table-cards` enables both table
+discard rules for new games; use `discard-table-many shared 1 1 3` or
+`discard-table-many personal 1 1 3` (pile/card numbers start at 1).
+
 Enable **Game Settings → Table → Table actions → Allow taking multiple table
 cards at once**, together with taking individual table cards, to add
 **Take multiple table cards…**. Select at least two shared table cards with

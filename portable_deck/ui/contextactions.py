@@ -65,6 +65,7 @@ class ContextActions:
                 shown.append(button)
         include("play_multiple_button")
         include("take_multiple_button")
+        include("discard_multiple_table_button")
         include("discard_multiple_button")
         hand = gui.selection.hand_index is not None
         table = gui.selection.table_index is not None

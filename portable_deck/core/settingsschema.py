@@ -52,6 +52,7 @@ DEFAULT_SETTINGS = {
     "allow_play_multiple_cards": False,
     "allow_discard_multiple_cards": False,
     "allow_take_multiple_cards": False,
+    "allow_discard_multiple_table_cards": False,
     "num_players": 3,
     "cards_per_player": 5,
     "deck_path": os.path.join("decks", "demodeck.json"),

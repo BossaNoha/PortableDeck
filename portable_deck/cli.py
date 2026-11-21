@@ -15,7 +15,7 @@ from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
 
-HELP = "Commands: show, draw, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: show, draw, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], discard-table-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
@@ -94,9 +94,9 @@ class CLIClient:
             if command == "give-many":
                 if len(args) < 3:
                     raise ValueError("Use give-many PLAYER CARD CARD [...].")
-            elif command == "discard-many":
+            elif command in {"discard-many", "discard-table-many"}:
                 if len(args) < 4 or args[0] not in {"shared", "personal"}:
-                    raise ValueError("Use discard-many shared|personal PILE CARD CARD [...].")
+                    raise ValueError(f"Use {command} shared|personal PILE CARD CARD [...].")
             elif command in {"play-many", "take-many"}:
                 if len(args) < 2:
                     raise ValueError(f"Use {command} with at least two card numbers.")
@@ -140,7 +140,7 @@ class CLIClient:
                 self.turn_work()
                 return True
             parameters = {}
-            actions = {"take-many": "take_table_cards", "give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
+            actions = {"discard-table-many": "discard_table_cards", "take-many": "take_table_cards", "give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
                        "point": "request_point", "bet": "play_chips", "pot": "take_pot"}
             if command in {"approve", "reject"}:
                 prompt = build_turn_start_view(self.game).next_confirmation
@@ -156,7 +156,7 @@ class CLIClient:
                 if command == "give-many":
                     parameters = {"target": self.positive(args[0]) - 1,
                                   "card_indices": [self.positive(arg) - 1 for arg in args[1:]]}
-                elif command == "discard-many":
+                elif command in {"discard-many", "discard-table-many"}:
                     parameters = {"personal": args[0] == "personal", "pile_index": self.positive(args[1]) - 1,
                                   "card_indices": [self.positive(arg) - 1 for arg in args[2:]]}
                 elif command in {"play-many", "take-many"}:
@@ -213,6 +213,7 @@ def main(argv=None):
     parser.add_argument("--discard-multiple-cards", action="store_true", help="Allow discard-many for new games")
     parser.add_argument("--give-multiple-cards", action="store_true", help="Allow give-many for new games")
     parser.add_argument("--take-multiple-cards", action="store_true", help="Allow take-many for new games")
+    parser.add_argument("--discard-multiple-table-cards", action="store_true", help="Allow discard-table-many for new games")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -229,6 +230,8 @@ def main(argv=None):
                 "allow_skip_next_player": args.skip_next_player,
                 "allow_play_multiple_cards": args.play_multiple_cards,
                 "allow_discard_multiple_cards": args.discard_multiple_cards,
+                "allow_discard_multiple_table_cards": args.discard_multiple_table_cards,
+                "allow_move_table_card_to_discard": args.discard_multiple_table_cards,
                 "allow_take_multiple_cards": args.take_multiple_cards,
                 "allow_take_from_table": args.take_multiple_cards,
                 "enable_interactions": args.give_multiple_cards,

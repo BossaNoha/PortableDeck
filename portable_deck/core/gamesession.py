@@ -55,6 +55,7 @@ def export_session(game):
         "allow_play_multiple_cards": game.allow_play_multiple_cards,
         "allow_discard_multiple_cards": game.allow_discard_multiple_cards,
         "allow_take_multiple_cards": game.allow_take_multiple_cards,
+        "allow_discard_multiple_table_cards": game.allow_discard_multiple_table_cards,
         "turn_direction": game.turn_direction,
         "enable_discard_pile": game.enable_discard_pile,
         "deck_path": game.deck.path,
@@ -125,6 +126,9 @@ def restore_session(game_class, state):
     game.allow_take_multiple_cards = state.get("allow_take_multiple_cards", False)
     if not isinstance(game.allow_take_multiple_cards, bool):
         raise ValueError("Saved allow_take_multiple_cards must be true or false")
+    game.allow_discard_multiple_table_cards = state.get("allow_discard_multiple_table_cards", False)
+    if not isinstance(game.allow_discard_multiple_table_cards, bool):
+        raise ValueError("Saved allow_discard_multiple_table_cards must be true or false")
     game.turn_direction = state.get("turn_direction", 1)
     if type(game.turn_direction) is not int or game.turn_direction not in (-1, 1):
         raise ValueError("Saved turn_direction must be 1 or -1")

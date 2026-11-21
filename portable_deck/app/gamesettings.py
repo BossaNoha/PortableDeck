@@ -25,6 +25,7 @@ class GameSettingsPanel:
         self.player_name = player_name
         self.settings = settings
         self.discard_multiple_var = tk.BooleanVar(value=settings.get("allow_discard_multiple_cards", False))
+        self.discard_multiple_table_var = tk.BooleanVar(value=settings.get("allow_discard_multiple_table_cards", False))
         self.take_multiple_var = tk.BooleanVar(value=settings.get("allow_take_multiple_cards", False))
         self.play_multiple_var = tk.BooleanVar(value=settings.get("allow_play_multiple_cards", False))
         self.skip_next_player_var = tk.BooleanVar(value=settings.get("allow_skip_next_player", False))
@@ -189,6 +190,8 @@ class GameSettingsPanel:
         table_options.pack(fill="x")
         table_options.columnconfigure(0, weight=1)
         self.take_multiple_check = self._add_check(table_options, "Allow taking multiple table cards at once", self.take_multiple_var, "Choose multiple shared table cards and take them into your hand as one action. Requires taking cards from the table.", row=10, column=0)
+        self.discard_multiple_table_check = self._add_check(table_options, "Allow discarding multiple table cards at once", self.discard_multiple_table_var, "Choose multiple shared table cards and one discard pile. Requires discarding individual table cards.", row=11, column=0)
+        self.table_to_discard_var.trace_add("write", self.update_feature_controls)
         self.take_table_var.trace_add("write", self.update_feature_controls)
         self._add_check(table_options, "Allow playing multiple hand cards at once", self.play_multiple_var, "Choose multiple hand cards and play them face up in hand order at automatic positions. The entire group must fit.", row=9, column=0)
         self._add_check(table_options, "Take a selected table card into the current hand", self.take_table_var, "Move a selected table card into the current player's hand.", row=0, column=0)
@@ -360,6 +363,7 @@ class GameSettingsPanel:
         for entry, enabled in self.dimension_inputs:
             entry.configure(state="normal" if self.table_enabled_var.get() and self.table_limits_var.get() and enabled.get() else "disabled")
         self.update_discard_draw_controls()
+        self.discard_multiple_table_check.configure(state="normal" if self.table_enabled_var.get() and self.discard_enabled_var.get() and self.table_to_discard_var.get() else "disabled")
         self.take_multiple_check.configure(state="normal" if self.table_enabled_var.get() and self.take_table_var.get() else "disabled")
         self.face_down_check.configure(state="normal" if self.table_enabled_var.get() and self.flipping.enabled.get() else "disabled")
         self.table_to_discard_check.configure(
@@ -419,6 +423,7 @@ class GameSettingsPanel:
             "allow_play_multiple_cards": self.play_multiple_var.get(),
             "allow_discard_multiple_cards": self.discard_multiple_var.get(),
             "allow_take_multiple_cards": self.take_multiple_var.get(),
+            "allow_discard_multiple_table_cards": self.discard_multiple_table_var.get(),
             "limit_table_rows": self.limit_rows_var.get(),
             "limit_table_columns": self.limit_columns_var.get(),
             "enable_table_limits": self.table_limits_var.get(),

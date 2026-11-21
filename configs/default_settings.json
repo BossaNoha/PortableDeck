@@ -38,6 +38,7 @@
   "allow_play_multiple_cards": false,
   "allow_discard_multiple_cards": false,
   "allow_take_multiple_cards": false,
+  "allow_discard_multiple_table_cards": false,
   "enable_table": true,
   "enable_discard_pile": true,
   "enable_personal_piles": false,
