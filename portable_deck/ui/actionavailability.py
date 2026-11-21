@@ -3,6 +3,7 @@ from ..core.actionavailability import ActionContext, action_availability
 
 BUTTON_ACTIONS = {'draw_button': 'draw_card',
  'next_button': 'end_turn',
+ 'choose_next_button': 'choose_next_player',
  'return_player_button': 'return_player',
  'discard_button': 'discard_card',
  'play_button': 'play_card',
@@ -42,6 +43,8 @@ def action_reason(gui, button):
         return ""
     if action == "end_turn":
         return gui.session.end_turn_availability().reason
+    if action == "choose_next_player":
+        return gui.session.next_player_options().reason
     if action == "return_player":
         return gui.session.return_player_options().reason
     if (action == "play_at_position" and gui.selection.target_position is None
@@ -56,6 +59,8 @@ def action_reason(gui, button):
 def selected_action_available(gui, action):
     if action == "end_turn":
         return gui.session.end_turn_availability().allowed
+    if action == "choose_next_player":
+        return gui.session.next_player_options().allowed
     if action == "return_player":
         return gui.session.return_player_options().allowed
     return action_availability(gui.game, action, ActionContext(

@@ -24,6 +24,7 @@ class GameSettingsPanel:
         self.team_score_var = tk.BooleanVar(value=settings.get("enable_team_score", False))
         self.player_name = player_name
         self.settings = settings
+        self.choose_next_player_var = tk.BooleanVar(value=settings.get("allow_choose_next_player", False))
         self.players_var = players_var or tk.StringVar(value=str(settings.get("num_players", 3)))
         self.table_limits_var = tk.BooleanVar(value=settings.get("enable_table_limits", False))
         self.limit_rows_var = tk.BooleanVar(value=settings.get("limit_table_rows", True))
@@ -270,6 +271,12 @@ class GameSettingsPanel:
         leaving = section("Leaving session")
         self.player_leaving = PlayerLeavingSettings(leaving, self.settings, self.score_var, self.chip_accounts_var, self.score_limits)
 
+        turns = section("Turn order")
+        add_tooltip(tk.Checkbutton(turns, text="Allow choosing the next player",
+                                  variable=self.choose_next_player_var, wraplength=280, justify="left"),
+                    "Allow handing the turn to any active player, including the current player. "
+                    "Manual handoff does not end a round or clear the table.").pack(anchor="w")
+
         special = section("Special actions")
         self.special_actions = SpecialActionsSettings(special, self.settings, self.discard_enabled_var)
 
@@ -279,6 +286,7 @@ class GameSettingsPanel:
         self.flipping.enabled.trace_add("write", self.update_feature_controls)
 
         self.section_states = {
+            "Turn order": (self.choose_next_player_var,),
             "Flipping cards": (self.flipping.enabled,),
             "Special actions": (self.special_actions.enabled,),
             "Scoring": (self.score_var,),
@@ -385,6 +393,7 @@ class GameSettingsPanel:
         shared_discard_count = int(self.shared_discard_count_var.get())
         rows, columns = int(self.table_rows_var.get()), int(self.table_columns_var.get())
         return {
+            "allow_choose_next_player": self.choose_next_player_var.get(),
             "limit_table_rows": self.limit_rows_var.get(),
             "limit_table_columns": self.limit_columns_var.get(),
             "enable_table_limits": self.table_limits_var.get(),

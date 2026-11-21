@@ -39,6 +39,7 @@ def format_game_event(event):
         "recycle_discard": f"The discard pile was recycled into the draw deck ({event.get('count', 0)} cards).",
         "round_ended": "The round has ended.",
         "turn_started": f"{player}'s turn starts.",
+        "turn_passed": f"{player} passed the turn to {target}.",
         "all_players_left": "All players have left the session.",
         "left_session": f"{player} left the session.",
         "returned_to_session": f"{player} returned to the session.",

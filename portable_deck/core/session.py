@@ -116,7 +116,7 @@ class SessionController:
             context = ActionContext(hand_index=card, table_index=parameters.get("table_index"))
         lifecycle = {"confirm_point", "confirm_pot", "return_player"}
         if action == "end_turn":
-            available = self.end_turn_availability()
+            available = self.end_turn_availability(parameters.get("next_player"))
             if not available.allowed:
                 return ActionResult(False, message=available.reason, code=available.code)
         elif action in lifecycle:
@@ -143,7 +143,7 @@ class SessionController:
         handlers = {
             "draw_card": lambda: g.deal_card_to_current(),
             "draw_from_discard": lambda: self.draw_from_discard(parameters),
-            "end_turn": lambda: g.finish_turn(),
+            "end_turn": lambda: g.finish_turn(parameters.get("next_player")),
             "confirm_point": lambda: g.confirm_point_request(parameters.get("approved")),
             "confirm_pot": lambda: g.confirm_pot_withdrawal(parameters.get("approved")),
             "return_player": lambda: g.return_player(parameters["player_index"]),
@@ -227,14 +227,23 @@ class SessionController:
         g.log_action(player.name, "draw_from_discard", card, destination=name)
         return card
 
-    def end_turn_availability(self):
+    def end_turn_availability(self, next_player=None):
         """Describe whether this player can advance the turn right now."""
         from .actionavailability import ActionAvailability
         if not self.game.active_player_indices():
             return ActionAvailability(False, "No active players remain.", "no_active_players")
         if self.game.current_player_must_confirm_point() or self.game.current_player_must_confirm_pot_withdrawal():
             return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
+        if next_player is not None:
+            from .turnorder import next_player_error
+            error = next_player_error(self.game, next_player)
+            if error:
+                return ActionAvailability(False, str(error), error.code)
         return ActionAvailability(True)
+
+    def next_player_options(self):
+        from .turnorder import build_next_player_options
+        return build_next_player_options(self.game)
 
     def return_player_options(self):
         """Prepare immutable return choices and availability for clients."""

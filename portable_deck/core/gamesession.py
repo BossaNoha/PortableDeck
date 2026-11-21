@@ -49,6 +49,7 @@ def export_session(game):
         "personal_pile_settings": game.personal_pile_settings,
         "personal_piles": game.personal_piles,
         "enable_table": game.enable_table,
+        "allow_choose_next_player": game.allow_choose_next_player,
         "enable_discard_pile": game.enable_discard_pile,
         "deck_path": game.deck.path,
         "deck_types": game.deck.types,
@@ -100,6 +101,9 @@ def restore_session(game_class, state):
     """Restore independent game state without accessing session or deck files."""
     state = copy.deepcopy(state)
     game = game_class.__new__(game_class)
+    game.allow_choose_next_player = state.get("allow_choose_next_player", False)
+    if not isinstance(game.allow_choose_next_player, bool):
+        raise ValueError("Saved allow_choose_next_player must be true or false")
     game.enable_table = state.get("enable_table", True)
     game.enable_discard_pile = state.get("enable_discard_pile", True)
     original_deck = {"types": state.get("deck_types"), "cards": state.get("deck_cards")}

@@ -23,6 +23,14 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Turn order → Allow choosing the next player** to add
+**Pass turn to…** beside Next Turn. Choose any active player, including the
+current player for another turn. Ordinary Next Turn keeps its normal ordering.
+A manual pass never ends a round or triggers automatic table cleanup; automatic
+Next Turn retains the existing seat-wrap round behavior. The rule is off by
+default, belongs to presets/saved sessions, supports Undo and uses the same
+optional hotseat handoff. Older sessions default to disabled.
+
 ## Development CLI
 
 New games from application settings can be created without Tkinter using
@@ -64,6 +72,7 @@ python -m portable_deck.cli --confirmations
 python -m portable_deck.cli --load saves/session1.json
 python -m portable_deck.cli --json --confirmations
 python -m portable_deck.cli --confirm-next-turn
+python -m portable_deck.cli --choose-next-player --confirm-next-turn
 ```
 
 Commands are `show`, `draw`, `play CARD`, `end`, `ready`, `cancel`, `undo`, `pending`, `approve`,
@@ -83,6 +92,10 @@ While pending, game commands and `show` are blocked; help/quit remain available.
 `handoff_required`, `handoff_pending`, `handoff_cancelled` and `handoff_not_pending`.
 The CLI does not clear the terminal or its scrollback. Both clients share
 `app.turnhandoff.TurnHandoffController`, independent of Tkinter/terminal handling.
+With the manual-turn rule enabled, `end PLAYER` chooses a one-based player
+(for example `end 3`); `end` remains automatic. `--choose-next-player` enables
+the rule for new CLI games; loaded games retain their saved rule. With handoff
+confirmation enabled, the choice is executed only on `ready` and revalidated.
 
 `--json` switches command-stream output to JSON Lines. Each line has a `type`:
 `message`, `result`, `error`, `view`, `notification`, `confirmation` or

@@ -7,18 +7,44 @@ from ..core.playersessionview import build_player_session_view
 from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
-    def next_turn(self):
+    def next_turn(self, next_player=None):
         from ..app.turnhandoff import TurnHandoffController
         def advance():
             return self.run_action(end_turn, self.game, self.hand_frame, self.render_log,
-                                   self.status_panel, self.handle_turn_start)
+                                   self.status_panel, self.handle_turn_start, next_player)
+        if not self.session.end_turn_availability(next_player).allowed:
+            return advance()
         if not hasattr(self, "turn_flow"):
             self.turn_flow = TurnHandoffController(self.session, enabled=getattr(self, "confirm_next_turn", False))
-        result = self.turn_flow.request(advance)
+        result = self.turn_flow.request(advance, next_player=next_player)
         if result.code == "handoff_required":
             self.turn_handoff.show()
             return None
         return result
+
+    def choose_next_player(self):
+        options = self.session.next_player_options()
+        if not options.allowed:
+            messagebox.showinfo("Choose next player", options.reason, parent=self.root)
+            return
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Choose next player")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        choices = tk.Listbox(dialog, height=min(10, len(options.players)), width=36, exportselection=False)
+        choices.pack(fill="both", expand=True, padx=10, pady=10)
+        for player in options.players:
+            choices.insert("end", player.name)
+        choices.selection_set(0)
+        def hand_over():
+            selected = choices.curselection()
+            if not selected:
+                return
+            player = options.players[selected[0]].index
+            dialog.destroy()
+            return self.next_turn(player)
+        tk.Button(dialog, text="Pass turn", command=hand_over).pack(side="right", padx=10, pady=(0, 10))
+        tk.Button(dialog, text="Cancel", command=dialog.destroy).pack(side="right", pady=(0, 10))
 
 
     def refresh_session_panels(self):
@@ -137,7 +163,7 @@ class GameGUIActions:
 
     def update_leave_button(self):
         from .actionavailability import refresh_action_availability
-        refresh_action_availability(self, {"leave_session", "end_turn", "return_player"})
+        refresh_action_availability(self, {"leave_session", "end_turn", "return_player", "choose_next_player"})
         if not self.game.active_player_indices():
             for button in self._turn_action_buttons():
                 button.configure(state="disabled")
@@ -232,6 +258,8 @@ class GameGUIActions:
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
+        if hasattr(self, "choose_next_button"):
+            buttons.append(self.choose_next_button)
         if self.discard_draw_button is not None:
             buttons.append(self.discard_draw_button)
         buttons.extend(self.chip_bank_ui.buttons)

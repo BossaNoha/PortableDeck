@@ -1,5 +1,19 @@
 # UI/core boundary audit
 
+Optional manual turns: allow_choose_next_player is a game rule under Turn order
+(default False), persisted in presets/saves and preserved by restart. Core
+turnorder validates active targets and supplies immutable choices. Session
+end_turn accepts a zero-based next_player; ordinary calls keep automatic order.
+Explicit targets, including the current player, never end a round or clear the
+table. Normal automatic seat-wrap cleanup is unchanged. GUI Pass turn to… and
+CLI end PLAYER use the same command, log and Undo/checkpoint transaction.
+The shared hotseat controller checks the target before deferring and execution
+revalidates it when ready. Tests cover malformed/disabled/departed targets,
+pending decisions, same-player/lower-index handoff, cleanup semantics, snapshots,
+preset/save/legacy/restart, CLI and deferred target changes. A temporary native
+Tk probe verified the setting/category, cancellation, optional curtain and
+one successful Undo/checkpoint. The enabled rule appears in the rules overview.
+
 Hotseat handoff: confirm_next_turn is an application preference (default False),
 offered in Basic Settings and preserved across preset loads. Next Turn checks
 availability, then the client hides the entire game/options area before any
@@ -39,7 +53,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 401 tests; native Tk probes for session, deck and preset
+latest full suite passed 408 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

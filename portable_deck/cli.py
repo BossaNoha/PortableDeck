@@ -15,7 +15,7 @@ from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
 
-HELP = "Commands: show, draw, play CARD, end, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: show, draw, play CARD, end [PLAYER], ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
@@ -91,7 +91,7 @@ class CLIClient:
             arity = {"show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
                      "pending": 0, "approve": 0, "reject": 0, "point": 0,
                      "bet": 1, "pot": 1, "help": 0, "quit": 0, "ready": 0, "cancel": 0}
-            if command not in arity or len(args) != arity[command]:
+            if command not in arity or (len(args) != arity[command] and not (command == "end" and len(args) == 1)):
                 raise ValueError("Unknown command or incorrect arguments. Use help.")
             if command == "quit":
                 return False
@@ -148,8 +148,11 @@ class CLIClient:
                     parameters["amount"] = self.positive(args[0])
                 elif command == "pot":
                     parameters["player_index"] = self.positive(args[0]) - 1
+                elif command == "end" and args:
+                    parameters["next_player"] = self.positive(args[0]) - 1
             if action == "end_turn":
-                result = self.turn_flow.request(lambda: self.session.execute(action, **parameters))
+                result = self.turn_flow.request(lambda: self.session.execute(action, **parameters),
+                                                next_player=parameters.get("next_player"))
             else:
                 result = self.session.execute(action, **parameters)
             self.report_result(action, result)
@@ -180,6 +183,7 @@ def main(argv=None):
     parser.add_argument("--hand", type=int, default=3)
     parser.add_argument("--confirmations", action="store_true", help="Enable score/chip accounts and approval requests")
     parser.add_argument("--confirm-next-turn", action="store_true", help="Require ready after end before advancing the turn")
+    parser.add_argument("--choose-next-player", action="store_true", help="Allow end PLAYER for new games")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -191,6 +195,7 @@ def main(argv=None):
                 # CLI-relative paths keep their existing working-directory meaning.
                 "deck_path": str(Path(args.deck).absolute()),
                 "enable_undo": True,
+                "allow_choose_next_player": args.choose_next_player,
                 "enable_score_counter": args.confirmations,
                 "enable_chip_accounts": args.confirmations,
                 "require_point_confirmation": args.confirmations,

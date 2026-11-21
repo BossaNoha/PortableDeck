@@ -42,6 +42,11 @@ def build_rules_overview(game):
     def flags(pairs):
         return [RuleEntry(attribute, label) for attribute, label in pairs if getattr(g, attribute, False)]
 
+    add("turn_order", "Turn order", g.allow_choose_next_player, [
+        RuleEntry("allow_choose_next_player", "Choose any active player for the next turn"),
+        RuleEntry("manual_handoff", "Manual handoff does not end the round or clear the table"),
+    ])
+
     scoring = flags((("allow_reduce_score", "Reduce score"),
         ("require_point_confirmation", "Other players approve score changes"),
         ("share_team_score", "Shared score within team"), ("enable_team_score", "Separate team score")))
