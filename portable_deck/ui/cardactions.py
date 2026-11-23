@@ -217,8 +217,9 @@ def flip_selected_table_card(game, table_frame, render_log, status_panel):
     return result
 
 
-def recycle_discard_into_deck(game, render_log, status_panel, root):
-    result = game.session.execute("recycle_discard")
+def recycle_discard_into_deck(game, render_log, status_panel, root, draw_pile_id="main"):
+    parameters = {} if draw_pile_id == "main" else {"draw_pile_id": draw_pile_id}
+    result = game.session.execute("recycle_discard", **parameters)
     if not result.success:
         messagebox.showinfo("Cannot recycle", result.message, parent=root)
     return result

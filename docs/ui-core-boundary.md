@@ -1,5 +1,16 @@
 # UI/core boundary audit
 
+Linked recycling: enable_linked_recycling defaults False with draw_pile_recycling
+mapping draw IDs to typed shared/personal discard indices. Validation checks
+configured IDs, counts and ownership; personal sources require an owned target.
+Core recycle_discard resolves the selected draw pile, requires it empty, moves
+only its linked discard and shuffles within one Undo/checkpoint. Linked mode
+blocks unmapped targets; disabled mode retains legacy main/all-discard behavior
+and rejects named targets. GUI Draw piles edits links, Discard pile exposes the
+manual action and personal discard counts; CLI recycle/--recycle-from shares the
+same path. Presets, saves, legacy defaults, restart, rollback, access and both
+native Tk shared/personal flows are covered. Automatic refill is not introduced.
+
 Selected draw destinations: insert_draw_deck accepts draw_pile_id and validates
 ownership/ranges against the selected pile before removing the hand card.
 InsertionOption includes the selected pile ID; GUI prompts/execution capture
@@ -28,7 +39,7 @@ Owned sources are owner-only, shared sources available to active players. Public
 events record source IDs. GUI DrawSourceSelector is local, hidden for a single
 choice, and refreshes/falls back on Undo or turn changes; count prompts use source
 capacity. CLI sources/source use the same core options. Initial setup and selected
-insertion destinations are described above; discard recycling remains subsequent.
+insertion destinations and linked recycling are described above.
 Tests cover source actions, private access, rollback, disk load, CLI and both Tk layouts.
 
 Named draw-pile state: DrawPiles registers stable IDs/names/optional owners and
@@ -261,7 +272,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 568 tests; native Tk probes for session, deck and preset
+latest full suite passed 576 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

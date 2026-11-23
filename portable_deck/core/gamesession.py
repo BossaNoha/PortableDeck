@@ -69,6 +69,8 @@ def export_session(game):
         "deck_path": game.deck.path,
         "draw_piles": game.draw_piles.snapshot(),
         "enable_draw_pile_setup": game.enable_draw_pile_setup,
+        "enable_linked_recycling": game.enable_linked_recycling,
+        "draw_pile_recycling": game.draw_pile_recycling,
         "draw_pile_setup": game.draw_pile_setup,
         "deck_types": game.deck.types,
         "deck_cards": game.deck.cards,
@@ -298,6 +300,11 @@ def restore_session(game_class, state):
     game.configuration_info = state.get("configuration_info", {"name": "Unknown", "modified": None})
     from .sharedoffer import restore_shared_offer
     game.pending_shared_offer = restore_shared_offer(game, state.get("pending_shared_offer"))
+    from .drawrecycling import normalize_recycling
+    game.enable_linked_recycling = state.get("enable_linked_recycling", False)
+    if type(game.enable_linked_recycling) is not bool:
+        raise ValueError("Saved enable_linked_recycling must be true or false")
+    game.draw_pile_recycling = normalize_recycling(state.get("draw_pile_recycling", {}), game.draw_pile_setup, game.shared_discard_pile_count, game.personal_discard_pile_count)
     game.apply_feature_settings()
     game.ensure_initial_log()
     return game

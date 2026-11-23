@@ -14,19 +14,21 @@ class GameTableActions(TablePlacementActions):
         self.log_action(self.players[self.current_player_index].name, "flip_table_card", entry["card"] if entry["face_up"] else None, face_up=entry["face_up"])
         return entry["card"]
 
-    def recycle_discard_into_deck(self):
-        if (
-            not self.allow_recycle_discard_to_deck
-            or self.deck.flat_deck
-            or not any(pile for _, pile in self.all_discard_piles())
-        ):
+    def recycle_discard_into_deck(self, draw_pile_id="main"):
+        from .actionavailability import ActionContext, action_availability
+        from .drawpiles import resolve_draw_pile
+        from .drawrecycling import recycling_sources
+        if not action_availability(self, "recycle_discard", ActionContext(draw_pile_id=draw_pile_id)).allowed:
             return 0
-        count = sum(len(pile) for _, pile in self.all_discard_piles())
-        for _, pile in self.all_discard_piles():
-            self.deck.flat_deck.extend(pile)
+        target = resolve_draw_pile(self, draw_pile_id)
+        sources = recycling_sources(self, draw_pile_id)
+        count = sum(len(pile) for _, pile in sources)
+        for _, pile in sources:
+            target.cards.extend(pile)
             pile.clear()
-        random.shuffle(self.deck.flat_deck)
-        self.log_action(self.players[self.current_player_index].name, "recycle_discard", count=count)
+        random.shuffle(target.cards)
+        self.log_action(self.players[self.current_player_index].name, "recycle_discard", count=count,
+                        **({"draw_pile_id": draw_pile_id, "source": sources[0][0]} if self.enable_linked_recycling else {}))
         return count
 
     def swap_with_table(self, hand_index, table_index):

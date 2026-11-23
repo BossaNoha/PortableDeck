@@ -81,6 +81,8 @@ def validate_settings_and_game(values):
                            ("shared_discard_pile_count", 1, 20), ("personal_pile_count", 1, 20)):
         if not low <= settings[key] <= high:
             invalid(f"{key} must be between {low} and {high}.", key)
+    if not 0 <= settings["personal_discard_pile_count"] <= 20:
+        invalid("Personal discard count must be between 0 and 20.", "personal_discard_pile_count")
     if settings["minimum_bet"] < 1:
         invalid("Minimum bet must be positive and starting balance non-negative.", "minimum_bet")
     if settings["starting_balance"] < 0:
@@ -135,6 +137,11 @@ def validate_settings_and_game(values):
         settings["draw_pile_setup"] = normalize_draw_pile_setup(settings["draw_pile_setup"], settings["num_players"])
     except ValueError as error:
         invalid(str(error), "draw_pile_setup")
+    from .drawrecycling import normalize_recycling
+    try:
+        settings["draw_pile_recycling"] = normalize_recycling(settings["draw_pile_recycling"], settings["draw_pile_setup"], settings["shared_discard_pile_count"], settings["personal_discard_pile_count"])
+    except ValueError as error:
+        invalid(str(error), "draw_pile_recycling")
     args = {key: value for key, value in settings.items() if key in params}
     args.update(deck_path=resolve_deck_path(settings["deck_path"]),
                 player_names=settings["player_names"] if settings["use_custom_player_names"] else None,

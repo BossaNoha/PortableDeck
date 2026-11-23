@@ -87,6 +87,7 @@ class GameSettingsPanel:
         self.face_down_var = tk.BooleanVar(value=bool(settings.get("allow_face_down_table_cards", False)))
         self.move_sequences_var = tk.BooleanVar(value=bool(settings.get("allow_move_table_sequences", False)))
         self.recycle_discard_var = tk.BooleanVar(value=bool(settings.get("allow_recycle_discard_to_deck", False)))
+        self.personal_discard_count_var = tk.StringVar(value=str(settings.get("personal_discard_pile_count", 0)))
         self.shared_discard_count_var = tk.StringVar(value=str(settings.get("shared_discard_pile_count", 1)))
         self.expanded_var = tk.BooleanVar(value=False)
 
@@ -207,17 +208,19 @@ class GameSettingsPanel:
 
         deck_recycle = tk.Checkbutton(
             discard_pile,
-            text="Recycle discard pile when draw deck is empty",
+            text="Allow manual recycling into an empty draw pile",
             variable=self.recycle_discard_var,
             wraplength=280,
             justify="left",
             anchor="w",
         )
-        add_tooltip(deck_recycle, "Add an action that returns the whole discard pile to the draw deck when it runs out.").pack(anchor="w", pady=(5, 0))
+        add_tooltip(deck_recycle, "Add a manual recycle action. Linked recycling in Draw piles restricts its discard source.").pack(anchor="w", pady=(5, 0))
         discard_counts = tk.Frame(discard_pile)
         discard_counts.pack(anchor="w", fill="x", pady=(5, 0))
         add_tooltip(tk.Label(discard_counts, text="Shared discard piles:"), "Number of discard piles accessible to all players.").grid(row=0, column=0, sticky="w")
         tk.Spinbox(discard_counts, from_=1, to=20, width=5, textvariable=self.shared_discard_count_var).grid(row=0, column=1, padx=(6, 12))
+        tk.Label(discard_counts, text="Personal discards per player:").grid(row=1, column=0, sticky="w")
+        tk.Spinbox(discard_counts, from_=0, to=20, width=5, textvariable=self.personal_discard_count_var).grid(row=1, column=1, padx=(6, 12))
 
 
         occupied_row = tk.Frame(placement_options)
@@ -312,7 +315,7 @@ class GameSettingsPanel:
         self.flipping.enabled.trace_add("write", self.update_feature_controls)
 
         self.section_states = {
-            "Draw piles": (self.draw_pile_settings.enabled,),
+            "Draw piles": (self.draw_pile_settings.enabled, self.draw_pile_settings.linked),
             "Turn order": (self.choose_next_player_var, self.reverse_turn_order_var, self.skip_next_player_var),
             "Flipping cards": (self.flipping.enabled,),
             "Special actions": (self.special_actions.enabled,),
@@ -457,7 +460,7 @@ class GameSettingsPanel:
             "allow_face_down_table_cards": self.face_down_var.get(),
             "allow_recycle_discard_to_deck": self.recycle_discard_var.get(),
             "shared_discard_pile_count": shared_discard_count,
-            "personal_discard_pile_count": 0,
+            "personal_discard_pile_count": int(self.personal_discard_count_var.get()),
             **self.personal_piles.values(),
             **self.roles_teams.values(),
             **self.interactions.values(),

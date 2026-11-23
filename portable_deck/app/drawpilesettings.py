@@ -8,7 +8,15 @@ class DrawPileSettings:
     def __init__(self, parent, settings, players_var=None):
         self.players_var = players_var if players_var is not None else tk.IntVar(value=settings.get("num_players", 3))
         self.enabled = tk.BooleanVar(value=settings.get("enable_draw_pile_setup", False))
+        self.linked = tk.BooleanVar(value=settings.get("enable_linked_recycling", False))
+        self.saved_links = settings.get("draw_pile_recycling", {})
         self.rows = []
+        tk.Checkbutton(parent, text="Enable linked recycling (assigned discard only)", variable=self.linked, command=self.update).pack(anchor="w")
+        self.main_frame = tk.LabelFrame(parent, text="Main draw pile recycling", padx=4, pady=4)
+        self.main_link = self.link_controls(self.main_frame, self.saved_links.get("main"), shared_only=True)
+        self.main_link["frame"].pack(fill="x")
+        tk.Label(self.main_frame, text="Enable manual recycling in Discard pile. Personal links require an owned draw pile and use that owner's discard.",
+                 wraplength=300, justify="left").pack(anchor="w", pady=4)
         tk.Checkbutton(parent, text="Enable additional draw piles", variable=self.enabled, command=self.update).pack(anchor="w")
         self.body = tk.Frame(parent)
         tk.Label(self.body, text="One card set: starting hands are dealt first, then these piles receive their cards. The remainder stays in main.",
@@ -23,8 +31,23 @@ class DrawPileSettings:
         self.update()
 
     def update(self):
+        if self.linked.get(): self.main_frame.pack(fill="x", pady=4)
+        else: self.main_frame.pack_forget()
+        for row in self.rows:
+            if self.linked.get(): row["link"]["frame"].grid()
+            else: row["link"]["frame"].grid_remove()
         if self.enabled.get(): self.body.pack(fill="x")
         else: self.body.pack_forget()
+
+    def link_controls(self, parent, link=None, shared_only=False):
+        frame = tk.Frame(parent)
+        kind = tk.StringVar(value="None" if link is None else "Personal discard" if link["personal"] else "Shared discard")
+        index = tk.StringVar(value=str(link["pile_index"] + 1 if link else 1))
+        tk.Label(frame, text="Recycle from:").pack(anchor="w")
+        ttk.Combobox(frame, state="readonly", textvariable=kind, width=20,
+                     values=["None", "Shared discard"] + ([] if shared_only else ["Personal discard"])).pack(side="left")
+        tk.Spinbox(frame, from_=1, to=20, textvariable=index, width=4).pack(side="left", padx=4)
+        return {"frame": frame, "kind": kind, "index": index}
 
     def update_owners(self, *_):
         try: count = int(self.players_var.get())
@@ -56,16 +79,27 @@ class DrawPileSettings:
             self.rows.remove(row)
             frame.destroy()
             self.scroll_area.schedule_resize()
-        tk.Button(frame, text="Remove", command=remove).grid(row=4, column=1, sticky="e", pady=3)
+        row["link"] = self.link_controls(frame, self.saved_links.get(entry["id"]))
+        row["link"]["frame"].grid(row=4, column=0, columnspan=2, sticky="ew", pady=3)
+        tk.Button(frame, text="Remove", command=remove).grid(row=5, column=1, sticky="e", pady=3)
         self.rows.append(row)
         self.update_owners()
+        self.update()
         self.scroll_area.schedule_resize()
 
     def values(self):
         entries = []
+        links = {}
+        def add_link(pile_id, controls):
+            kind = controls["kind"].get()
+            if kind != "None":
+                links[pile_id] = {"personal": kind == "Personal discard", "pile_index": int(controls["index"].get()) - 1}
+        add_link("main", self.main_link)
         for row in self.rows:
+            add_link(row["id"].get(), row["link"])
             owner = row["owner"].get()
             entries.append({"id": row["id"].get(), "name": row["name"].get(),
                             "owner": None if owner == "Shared" else int(owner.removeprefix("Player ")) - 1,
                             "count": int(row["count"].get())})
-        return {"enable_draw_pile_setup": self.enabled.get(), "draw_pile_setup": entries}
+        return {"enable_draw_pile_setup": self.enabled.get(), "draw_pile_setup": entries,
+                "enable_linked_recycling": self.linked.get(), "draw_pile_recycling": links}

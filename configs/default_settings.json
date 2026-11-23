@@ -1,4 +1,6 @@
 {
+  "enable_linked_recycling": false,
+  "draw_pile_recycling": {},
   "enable_draw_pile_setup": false,
   "draw_pile_setup": [],
   "num_players": 5,

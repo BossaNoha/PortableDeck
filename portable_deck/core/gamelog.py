@@ -24,6 +24,8 @@ def format_game_event(event):
         return f"{player} placed {card} at position {event['position']} in the {destination}."
     if action == "play_back_to_draw_pile" and event.get("draw_pile_id", "main") != "main":
         return f"{player} played {card}; it was shuffled into draw pile {event['draw_pile_id']}."
+    if action == "recycle_discard" and "draw_pile_id" in event:
+        return f"{player} recycled {event.get('count', 0)} cards from {event.get('source', 'discard')} into draw pile {event['draw_pile_id']}."
     if action == "point_requested":
         return f"{player} requested a score change of {event.get('delta', 1):+d}."
     if action in {"point_awarded", "score_reduced"}:

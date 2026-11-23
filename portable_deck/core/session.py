@@ -175,7 +175,7 @@ class SessionController:
             "flip_hand_card": lambda: g.flip_hand_card(card),
             "flip_table_card": lambda: g.flip_table_card(card),
             "clear_table": lambda: g.clear_table(),
-            "recycle_discard": lambda: g.recycle_discard_into_deck(),
+            "recycle_discard": lambda: g.recycle_discard_into_deck(context.draw_pile_id),
             "buy_chips": lambda: g.buy_chips(parameters["player_index"], parameters["amount"]),
             "play_chips": lambda: g.play_chips(parameters["amount"]),
             "take_pot": lambda: g.request_pot_withdrawal(parameters["player_index"]),

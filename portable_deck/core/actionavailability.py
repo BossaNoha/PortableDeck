@@ -153,9 +153,14 @@ def _evaluate_availability(g, action, context):
     if action == "draw_from_discard" and not any(discard_piles):
         return ActionAvailability(False, "All discard piles are empty.", "empty_discard")
     if action == "recycle_discard":
-        if g.deck.flat_deck:
+        if draw_pile.cards:
             return ActionAvailability(False, "The draw deck must be empty before recycling.", "deck_not_empty")
-        if not any(discard_piles):
+        from .drawrecycling import recycling_sources
+        try:
+            sources = recycling_sources(g, context.draw_pile_id)
+        except ActionValidationError as error:
+            return ActionAvailability(False, str(error), error.code)
+        if not any(pile for _, pile in sources):
             return ActionAvailability(False, "There are no discarded cards to recycle.", "empty_discard")
     if action == "clear_table" and not g.table_cards:
         return ActionAvailability(False, "The table is empty.", "empty_table")

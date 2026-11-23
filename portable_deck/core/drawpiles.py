@@ -4,7 +4,7 @@ from .drawpile import DrawPile
 from .actionerrors import ActionValidationError
 
 
-DRAW_SOURCE_ACTIONS = frozenset({"draw_card", "draw_cards", "shuffle_draw_deck", "deal_cards", "start_shared_offer", "insert_draw_deck"})
+DRAW_SOURCE_ACTIONS = frozenset({"draw_card", "draw_cards", "shuffle_draw_deck", "deal_cards", "start_shared_offer", "insert_draw_deck", "recycle_discard"})
 
 
 def uses_draw_source(game, action):

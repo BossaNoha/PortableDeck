@@ -89,7 +89,7 @@ class GameGUIBuilder:
                 text="Recycle Discard into Deck",
                 command=lambda: self.run_action(
                     recycle_discard_into_deck, self.game, self.render_log,
-                    self.status_panel, self.root,
+                    self.status_panel, self.root, getattr(self, "draw_pile_id", "main"),
                 ),
             )
             self.recycle_discard_button.pack(side="left", padx=5)

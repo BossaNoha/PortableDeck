@@ -4,7 +4,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from portable_deck.cli import CLIClient
 from portable_deck.core.game import Game

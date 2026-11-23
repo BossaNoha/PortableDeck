@@ -2,6 +2,8 @@
 import os
 
 DEFAULT_SETTINGS = {
+    "enable_linked_recycling": False,
+    "draw_pile_recycling": {},
     "enable_draw_pile_setup": False,
     "draw_pile_setup": [],
     "contextual_session_actions": False,

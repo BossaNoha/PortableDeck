@@ -47,6 +47,11 @@ def build_rules_overview(game):
                   " initial cards; " + ("shared" if entry["owner"] is None else g.players[entry["owner"]].name))
         for entry in g.draw_pile_setup
     ])
+    add("draw_pile_recycling", "Linked recycling", g.enable_linked_recycling, [
+        RuleEntry(f"recycle_{pile_id}", pile_id,
+                  ("Owner's personal discard " if link["personal"] else "Shared discard ") + str(link["pile_index"] + 1))
+        for pile_id, link in g.draw_pile_recycling.items()
+    ])
     turn_rules = []
     if g.allow_skip_next_player:
         turn_rules.append(RuleEntry("allow_skip_next_player", "End the turn and skip the next active player"))

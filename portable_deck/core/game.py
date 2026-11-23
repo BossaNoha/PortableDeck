@@ -93,6 +93,8 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         allow_shared_offer=False,
         enable_draw_pile_setup=False,
         draw_pile_setup=None,
+        enable_linked_recycling=False,
+        draw_pile_recycling=None,
         allow_transfer_personal_piles=False,
         allow_take_whole_personal_pile=False,
         allow_discard_whole_personal_pile=False,
@@ -159,6 +161,11 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
             raise ValueError("enable_draw_pile_setup must be true or false")
         self.enable_draw_pile_setup = enable_draw_pile_setup
         self.draw_pile_setup = normalize_draw_pile_setup([] if draw_pile_setup is None else draw_pile_setup, len(self.players))
+        from .drawrecycling import normalize_recycling
+        if type(enable_linked_recycling) is not bool:
+            raise ValueError("enable_linked_recycling must be true or false")
+        self.enable_linked_recycling = enable_linked_recycling
+        self.draw_pile_recycling = normalize_recycling({} if draw_pile_recycling is None else draw_pile_recycling, self.draw_pile_setup, shared_discard_pile_count, personal_discard_pile_count)
         self.shared_discard_pile_count = shared_discard_pile_count
         self.personal_discard_pile_count = personal_discard_pile_count
         self.discard_piles = [[] for _ in range(shared_discard_pile_count)]

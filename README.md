@@ -246,8 +246,25 @@ at `main` on load. Enable `--insert-draw-deck` for new CLI games and use
 `insert-draw 1 1` to insert hand card 1 on top of the selected pile; `-1` selects
 the bottom, `X` a valid random middle position. Position ranges use the selected
 pile's actual size. With table/discard/interactions disabled, `play CARD` returns
-and shuffles into that selected pile. Discard recycling still targets `main`;
-explicit discard-to-deck associations will be added separately.
+and shuffles into that selected pile. Explicit discard-to-deck associations for
+recycling are described below.
+
+**Game Settings → Draw piles → Enable linked recycling** enables explicit
+associations. Set **Recycle from** and the discard pile number for `main` or each
+configured draw pile. Enable **Discard pile → Allow manual recycling into an
+empty draw pile** as well. Personal discards per player can be configured there.
+Personal links require an owned draw pile and use that owner's discard; shared
+draw piles can link shared discards. Choose a draw source, then **Recycle Discard
+into Deck**. Only its assigned discard is moved and shuffled, and the target must
+be empty. Other piles stay untouched. An unmapped target is unavailable in linked
+mode. This is a manual action, with one Undo/autosave and no automatic refill.
+Links persist in presets/saves and survive restart. With linked mode off, the
+legacy `main` action still recycles all discards; named targets require linked mode.
+
+CLI example: `--draw-pile mine "My deck" 1 0 --personal-discards 1 --recycle-from mine personal 1`.
+Then `source mine` and `recycle`.
+Use `--recycle-from main shared 1` for a shared association;
+`--shared-discards N` configures the available shared piles.
 
 Saves contain the session's deck definition as well as its remaining draw order.
 Loading and restarting use this embedded definition without opening the original
