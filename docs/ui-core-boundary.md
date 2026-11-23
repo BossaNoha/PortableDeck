@@ -1,5 +1,16 @@
 # UI/core boundary audit
 
+Initial draw-pile setup: enable_draw_pile_setup defaults False; draw_pile_setup
+holds validated id/name/owner/count entries. One existing card set is shuffled,
+starting hands dealt, then extra piles filled in configuration order from main.
+Core validation checks ownership/unique IDs and full capacity before mutation.
+No cards are duplicated. Presets/saves preserve configuration and current state;
+restart repopulates configured piles while retaining runtime-only piles empty.
+GUI Draw piles has editable rows and a scrollable list; CLI repeated --draw-pile
+flags use the same new-game validation. Rule overview includes initial counts.
+Tests cover card conservation, order, disabled/empty setup, capacity failure,
+presets, disk saves/Undo/restart, CLI and both native Tk setup-to-play flows.
+
 Draw source selection: ActionContext/Session commands accept draw_pile_id for
 single/batch draw, shuffle, all-player deal and Shared offer, default main.
 Core draw_pile_options exposes accessible metadata only; resolve_draw_pile checks
@@ -18,8 +29,8 @@ identities/order. Save/Undo draw_piles stores metadata for main and contents for
 extras; main contents remain solely in remaining_deck. Strict registry restore
 validates duplicates, IDs, ownership, contents and required main before replacing
 state. Legacy saves/snapshots create main only. Restart preserves metadata and
-empties extras pending initial-distribution design. Source selection is described
-above; initial setup remains a future step. Tests cover isolation,
+empties runtime-only extras while configured piles use the setup above. Source
+selection is described below. Tests cover isolation,
 atomic restore, transactions/Undo, legacy/current disk saves and both Tk layouts.
 
 Draw-pile preparation: immutable DeckDefinition owns validated card-set data and
@@ -241,7 +252,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 553 tests; native Tk probes for session, deck and preset
+latest full suite passed 561 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

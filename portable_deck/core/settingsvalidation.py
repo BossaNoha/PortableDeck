@@ -130,6 +130,11 @@ def validate_settings_and_game(values):
     if any(any(i >= count for i in rule["players"]) for rule in settings["cards_visibility"]):
         invalid("Invalid hand visibility permissions.", "cards_visibility")
     params = inspect.signature(Game).parameters
+    from .drawpilesetup import normalize_draw_pile_setup
+    try:
+        settings["draw_pile_setup"] = normalize_draw_pile_setup(settings["draw_pile_setup"], settings["num_players"])
+    except ValueError as error:
+        invalid(str(error), "draw_pile_setup")
     args = {key: value for key, value in settings.items() if key in params}
     args.update(deck_path=resolve_deck_path(settings["deck_path"]),
                 player_names=settings["player_names"] if settings["use_custom_player_names"] else None,
@@ -144,6 +149,11 @@ def validate_settings_and_game(values):
         raise SettingsValidationError(str(error), "deck_path") from error
     if not deck_capacity(game.deck, settings["num_players"], settings["cards_per_player"]).sufficient:
         invalid("The deck is too small for these settings.", "cards_per_player")
+    required = settings["num_players"] * settings["cards_per_player"]
+    if settings["enable_draw_pile_setup"]:
+        required += sum(entry["count"] for entry in settings["draw_pile_setup"])
+    if required > len(game.deck.flat_deck):
+        invalid("Not enough cards for starting hands and draw pile setup.", "draw_pile_setup", "cards_per_player")
     return settings, game
 
 

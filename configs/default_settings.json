@@ -1,4 +1,6 @@
 {
+  "enable_draw_pile_setup": false,
+  "draw_pile_setup": [],
   "num_players": 5,
   "cards_per_player": 3,
   "deck_path": "decks/demodeck.json",

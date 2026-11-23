@@ -2,6 +2,8 @@
 import os
 
 DEFAULT_SETTINGS = {
+    "enable_draw_pile_setup": False,
+    "draw_pile_setup": [],
     "contextual_session_actions": False,
     "enable_team_pile_access": False, "enable_dealer_pile_access": False,
     "enable_flipping": False, "allow_flip_hand": False,

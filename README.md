@@ -218,9 +218,20 @@ object as `game.deck.draw_pile`; it remains the default source.
 Public status exposes pile metadata/counts without card identities or order.
 Saves and Undo include named piles. The default order remains in `remaining_deck`
 and is not duplicated in `draw_piles`; old saves load with only `main`.
-Restart preserves named-pile metadata and empties extra piles while rebuilding
-the default from the definition. Initial distribution and user-facing creation
-of additional piles are later steps.
+**Game Settings → Draw piles → Enable additional draw piles** configures initial
+distribution from the current card set. Add entries with a stable ID (other than
+`main`), name, Shared/player owner and nonnegative initial count. The set is
+shuffled once, starting hands are dealt first, then piles receive cards in listed
+order; the rest stays in `main`. The complete setup must fit before any shuffle
+or dealing occurs. Cards are moved, not copied. The setting defaults to off.
+Presets/saves retain the configuration; loading preserves live pile contents,
+and restart refills configured piles. Extra runtime-only piles keep their
+metadata but restart empty.
+
+CLI supports repeated setup flags, for example:
+`--draw-pile reserve "Reserve" shared 10 --draw-pile mine "My deck" 1 5`.
+Owner numbers start at 1; zero-card entries create empty piles. This stage splits
+one definition; copies of definitions and different card sets are later options.
 
 When several accessible piles exist, GUI **Draw source** selects the source for
 single/batch draws, shuffle, dealing to active players and Shared offer. CLI:

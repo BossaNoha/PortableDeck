@@ -42,6 +42,11 @@ def build_rules_overview(game):
     def flags(pairs):
         return [RuleEntry(attribute, label) for attribute, label in pairs if getattr(g, attribute, False)]
 
+    add("draw_pile_setup", "Draw piles", g.enable_draw_pile_setup, [
+        RuleEntry(f"draw_pile_{entry['id']}", entry["name"], entry["count"],
+                  " initial cards; " + ("shared" if entry["owner"] is None else g.players[entry["owner"]].name))
+        for entry in g.draw_pile_setup
+    ])
     turn_rules = []
     if g.allow_skip_next_player:
         turn_rules.append(RuleEntry("allow_skip_next_player", "End the turn and skip the next active player"))

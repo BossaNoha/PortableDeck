@@ -11,6 +11,7 @@ from .scorelimitssettings import ScoreLimitsSettings
 from .playerleavingsettings import PlayerLeavingSettings
 from .specialactionssettings import SpecialActionsSettings
 from .flippingsettings import FlippingSettings
+from .drawpilesettings import DrawPileSettings
 
 
 class GameSettingsPanel:
@@ -299,6 +300,9 @@ class GameSettingsPanel:
                     "Allow handing the turn to any active player, including the current player. "
                     "Manual handoff does not end a round or clear the table.").pack(anchor="w")
 
+        draw_piles = section("Draw piles")
+        self.draw_pile_settings = DrawPileSettings(draw_piles, self.settings, self.players_var)
+
         special = section("Special actions")
         self.special_actions = SpecialActionsSettings(special, self.settings, self.discard_enabled_var)
 
@@ -308,6 +312,7 @@ class GameSettingsPanel:
         self.flipping.enabled.trace_add("write", self.update_feature_controls)
 
         self.section_states = {
+            "Draw piles": (self.draw_pile_settings.enabled,),
             "Turn order": (self.choose_next_player_var, self.reverse_turn_order_var, self.skip_next_player_var),
             "Flipping cards": (self.flipping.enabled,),
             "Special actions": (self.special_actions.enabled,),
@@ -431,6 +436,7 @@ class GameSettingsPanel:
             **self.score_limits.values(),
             **self.player_leaving.values(),
             **self.special_actions.values(),
+            **self.draw_pile_settings.values(),
             **self.flipping.values(),
             "allow_reduce_score": self.reduce_score_var.get(),
             "share_team_chips": self.shared_chips_var.get(),

@@ -68,6 +68,8 @@ def export_session(game):
         "enable_discard_pile": game.enable_discard_pile,
         "deck_path": game.deck.path,
         "draw_piles": game.draw_piles.snapshot(),
+        "enable_draw_pile_setup": game.enable_draw_pile_setup,
+        "draw_pile_setup": game.draw_pile_setup,
         "deck_types": game.deck.types,
         "deck_cards": game.deck.cards,
         "remaining_deck": game.deck.flat_deck,
@@ -165,6 +167,11 @@ def restore_session(game_class, state):
         game.players.append(player)
     if not game.players:
         raise ValueError("Saved game has no players")
+    from .drawpilesetup import normalize_draw_pile_setup
+    game.enable_draw_pile_setup = state.get("enable_draw_pile_setup", False)
+    if type(game.enable_draw_pile_setup) is not bool:
+        raise ValueError("Saved enable_draw_pile_setup must be true or false")
+    game.draw_pile_setup = normalize_draw_pile_setup(state.get("draw_pile_setup", []), len(game.players))
     from .drawpiles import DrawPiles
     game.draw_piles = DrawPiles(game.deck.draw_pile, len(game.players))
     if "draw_piles" in state:

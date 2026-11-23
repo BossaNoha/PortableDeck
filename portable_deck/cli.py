@@ -280,6 +280,9 @@ def main(argv=None):
     parser.add_argument("--discard-whole-personal-pile", action="store_true", help="Enable discard-pile and personal piles for new games")
     parser.add_argument("--deal-cards", action="store_true", help="Allow deal COUNT for new games")
     parser.add_argument("--shared-offer", action="store_true", help="Enable offer and choose-offer for new games")
+    parser.add_argument("--draw-pile", nargs=4, action="append", default=[],
+                        metavar=("ID", "NAME", "OWNER", "COUNT"),
+                        help="Split remaining cards into a pile; OWNER is shared or a player number. Repeat for more piles.")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -287,6 +290,10 @@ def main(argv=None):
         else:
             game = create_game({
                 "num_players": args.players,
+                "enable_draw_pile_setup": bool(args.draw_pile),
+                "draw_pile_setup": [{"id": pile_id, "name": name,
+                                     "owner": None if owner == "shared" else CLIClient.positive(owner) - 1,
+                                     "count": int(count)} for pile_id, name, owner, count in args.draw_pile],
                 "cards_per_player": args.hand,
                 # CLI-relative paths keep their existing working-directory meaning.
                 "deck_path": str(Path(args.deck).absolute()),

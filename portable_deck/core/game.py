@@ -91,6 +91,8 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         allow_draw_multiple_cards=False,
         allow_deal_cards=False,
         allow_shared_offer=False,
+        enable_draw_pile_setup=False,
+        draw_pile_setup=None,
         allow_transfer_personal_piles=False,
         allow_take_whole_personal_pile=False,
         allow_discard_whole_personal_pile=False,
@@ -152,6 +154,11 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         ) if isinstance(deck_path, Deck) else Deck(deck_path))
         from .drawpiles import DrawPiles
         self.draw_piles = DrawPiles(self.deck.draw_pile, len(self.players))
+        from .drawpilesetup import normalize_draw_pile_setup
+        if not isinstance(enable_draw_pile_setup, bool):
+            raise ValueError("enable_draw_pile_setup must be true or false")
+        self.enable_draw_pile_setup = enable_draw_pile_setup
+        self.draw_pile_setup = normalize_draw_pile_setup([] if draw_pile_setup is None else draw_pile_setup, len(self.players))
         self.shared_discard_pile_count = shared_discard_pile_count
         self.personal_discard_pile_count = personal_discard_pile_count
         self.discard_piles = [[] for _ in range(shared_discard_pile_count)]
@@ -241,8 +248,16 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
             raise ValueError("cards_per_player must be a non-negative integer")
 
         required_cards = len(self.players) * cards_per_player
+        if self.enable_draw_pile_setup:
+            from .drawpilesetup import normalize_draw_pile_setup
+            self.draw_pile_setup = normalize_draw_pile_setup(self.draw_pile_setup, len(self.players))
+            if any(entry["id"] in {pile.id for pile in self.draw_piles.view()} for entry in self.draw_pile_setup):
+                raise ValueError("Initial draw pile IDs already exist in this session.")
+            required_cards += sum(entry["count"] for entry in self.draw_pile_setup)
         available_cards = len(self.deck.flat_deck)
         if required_cards > available_cards:
+            if self.enable_draw_pile_setup:
+                raise ValueError(f"Starting hands and draw piles require {required_cards} cards; the deck has {available_cards}.")
             raise ValueError(
                 f"Cannot deal {cards_per_player} cards to {len(self.players)} players: "
                 f"the deck has {available_cards} cards, but {required_cards} are required."
@@ -253,6 +268,8 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         for _ in range(cards_per_player):
             for player in self.players:
                 player.draw_card(self.deck.draw_card())
+        from .drawpilesetup import populate_draw_piles
+        populate_draw_piles(self)
         self.ensure_initial_log()
 
     def restart(self, keep_scores=False):
