@@ -77,7 +77,7 @@ class GameGUIBuilder:
             self.card_actions_frame,
             text="Draw Card",
             command=lambda: self.run_action(
-                draw_card, self.game, self.hand_frame, self.render_log, self.status_panel
+                draw_card, self.game, self.hand_frame, self.render_log, self.status_panel, getattr(self, "draw_pile_id", "main")
             ),
         )
         self.draw_button.pack(side="left", padx=5)

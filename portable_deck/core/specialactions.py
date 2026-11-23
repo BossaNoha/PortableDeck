@@ -20,12 +20,14 @@ class SpecialActions:
             raise ValueError("allow_shared_offer must be true or false")
         self.allow_shared_offer = offer
 
-    def deal_cards(self, count):
-        from .actionavailability import action_availability
+    def deal_cards(self, count, draw_pile_id="main"):
+        from .actionavailability import ActionContext, action_availability
         from .actionerrors import ActionValidationError
-        available = action_availability(self, "deal_cards")
+        available = action_availability(self, "deal_cards", ActionContext(draw_pile_id=draw_pile_id))
         if not available.allowed:
             raise ActionValidationError(available.code, available.reason)
+        from .drawpiles import resolve_draw_pile
+        pile = resolve_draw_pile(self, draw_pile_id)
         if type(count) is not int or count < 1:
             raise ActionValidationError("invalid_count", "Choose a positive whole number of cards per player.")
         players = self.active_player_indices()
@@ -34,45 +36,49 @@ class SpecialActions:
         start = players.index(self.current_player_index)
         players = players[start:] + players[:start]
         total = count * len(players)
-        if total > len(self.deck.flat_deck):
+        if total > len(pile.cards):
             raise ActionValidationError("insufficient_cards", "The draw deck has too few cards for the entire deal.")
         for _ in range(count):
             for player in players:
-                card = self.deck.draw_card()
+                card = (self.deck if draw_pile_id == "main" else pile).draw_card()
                 if card is None:
                     raise ActionValidationError("action_rejected", "The cards could not be dealt.")
                 self.players[player].draw_card(card)
         self.log_action(self.players[self.current_player_index].name, "deal_cards", count=count,
-                        recipients=tuple(self.players[player].name for player in players))
+                        recipients=tuple(self.players[player].name for player in players), draw_pile_id=draw_pile_id)
         return total
 
-    def draw_cards(self, count):
-        from .actionavailability import action_availability
+    def draw_cards(self, count, draw_pile_id="main"):
+        from .actionavailability import ActionContext, action_availability
         from .actionerrors import ActionValidationError
-        available = action_availability(self, "draw_cards")
+        available = action_availability(self, "draw_cards", ActionContext(draw_pile_id=draw_pile_id))
         if not available.allowed:
             raise ActionValidationError(available.code, available.reason)
+        from .drawpiles import resolve_draw_pile
+        pile = resolve_draw_pile(self, draw_pile_id)
         if type(count) is not int or count < 1:
             raise ActionValidationError("invalid_count", "Choose a positive whole number of cards.")
-        if count > len(self.deck.flat_deck):
+        if count > len(pile.cards):
             raise ActionValidationError("insufficient_cards", "The draw deck has too few cards for this draw.")
         cards = []
         for _ in range(count):
-            card = self.deal_card_to_current()
+            card = self.deal_card_to_current() if draw_pile_id == "main" else self.deal_card_to_current(draw_pile_id)
             if card is None:
                 raise ActionValidationError("action_rejected", "The cards could not be drawn.")
             cards.append(card)
         return tuple(cards)
 
-    def shuffle_draw_deck(self):
-        from .actionavailability import action_availability
+    def shuffle_draw_deck(self, draw_pile_id="main"):
+        from .actionavailability import ActionContext, action_availability
         from .actionerrors import ActionValidationError
-        available = action_availability(self, "shuffle_draw_deck")
+        available = action_availability(self, "shuffle_draw_deck", ActionContext(draw_pile_id=draw_pile_id))
         if not available.allowed:
             raise ActionValidationError(available.code, available.reason)
-        random.shuffle(self.deck.flat_deck)
-        self.log_action(self.players[self.current_player_index].name, "shuffle_draw_deck")
-        return len(self.deck.flat_deck)
+        from .drawpiles import resolve_draw_pile
+        pile = resolve_draw_pile(self, draw_pile_id)
+        random.shuffle(pile.cards)
+        self.log_action(self.players[self.current_player_index].name, "shuffle_draw_deck", draw_pile_id=draw_pile_id)
+        return len(pile.cards)
 
     def insert_hand_card(self, hand_index, destination, position, pile_index=0):
         if not self.enable_special_actions:

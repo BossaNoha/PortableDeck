@@ -37,9 +37,10 @@ def restore_shared_offer(game, offer):
     return copy.deepcopy(offer)
 
 
-def start_shared_offer(game):
+def start_shared_offer(game, draw_pile_id="main"):
     from .actionavailability import action_availability
-    available = action_availability(game, "start_shared_offer")
+    from .actionavailability import ActionContext
+    available = action_availability(game, "start_shared_offer", ActionContext(draw_pile_id=draw_pile_id))
     if not available.allowed:
         raise ActionValidationError(available.code, available.reason)
     players = game.active_player_indices()
@@ -47,11 +48,14 @@ def start_shared_offer(game):
         players = list(reversed(players))
     start = players.index(game.current_player_index)
     players = players[start:] + players[:start]
-    cards = [game.deck.draw_card() for _ in players]
+    from .drawpiles import resolve_draw_pile
+    pile = resolve_draw_pile(game, draw_pile_id)
+    source = game.deck if draw_pile_id == "main" else pile
+    cards = [source.draw_card() for _ in players]
     if any(card is None for card in cards):
         raise ActionValidationError("action_rejected", "The shared offer could not be drawn.")
     game.pending_shared_offer = {"cards": cards, "players": players}
-    game.log_action(game.players[game.current_player_index].name, "shared_offer_started", count=len(cards))
+    game.log_action(game.players[game.current_player_index].name, "shared_offer_started", count=len(cards), draw_pile_id=draw_pile_id)
     return len(cards)
 
 

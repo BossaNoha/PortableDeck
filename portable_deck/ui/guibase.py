@@ -17,6 +17,7 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         self.show_game_log = bool(show_game_log)
         self.root = root
         self.game = game
+        self.draw_pile_id = "main"
         from ..app.sessionview import TableViewState
         self.table_view = table_view if table_view is not None else TableViewState()
         from ..core.selection import SelectionState
@@ -46,6 +47,8 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         from .sharedofferui import SharedOfferUI
         self.offer_ui = SharedOfferUI(self)
         self.offer_ui.refresh()
+        from .drawsourceselector import DrawSourceSelector
+        self.draw_source_selector = DrawSourceSelector(self)
 
     def save_checkpoint(self, game):
         if hasattr(self, "table_frame"):
@@ -53,6 +56,8 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
         return self.on_checkpoint(game) if self.on_checkpoint else None
 
     def refresh_action_availability(self):
+        if hasattr(self, "draw_source_selector"):
+            self.draw_source_selector.refresh()
         from .actionavailability import refresh_action_availability
         refresh_action_availability(self)
 

@@ -214,13 +214,23 @@ from the same immutable definition.
 
 The core session registry `draw_piles` now stores stable IDs, names, optional
 player ownership and independent mutable contents. Its `main` pile is the same
-object as `game.deck.draw_pile`; existing gameplay still targets this default.
+object as `game.deck.draw_pile`; it remains the default source.
 Public status exposes pile metadata/counts without card identities or order.
 Saves and Undo include named piles. The default order remains in `remaining_deck`
 and is not duplicated in `draw_piles`; old saves load with only `main`.
 Restart preserves named-pile metadata and empties extra piles while rebuilding
-the default from the definition. Initial distribution and GUI/CLI source
-selection are later steps; this preparation adds no user-facing multi-pile setup.
+the default from the definition. Initial distribution and user-facing creation
+of additional piles are later steps.
+
+When several accessible piles exist, GUI **Draw source** selects the source for
+single/batch draws, shuffle, dealing to active players and Shared offer. CLI:
+`sources` lists available IDs and counts; `source reserve` selects one. Shared
+piles are accessible to all active players; owned piles only to their owner.
+The core validates source ID, ownership and capacity on every execution.
+If the selected pile disappears on Undo or becomes inaccessible after a turn
+change, clients fall back to `main`. Selection is local to the client and starts
+at `main` on load. Existing card insertion, return-to-draw and discard recycling
+still target `main`; their destination selection will be extended separately.
 
 Saves contain the session's deck definition as well as its remaining draw order.
 Loading and restarting use this embedded definition without opening the original

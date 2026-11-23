@@ -113,7 +113,8 @@ class SessionController:
         card = parameters.get("card_index")
         position = parameters.get("target_position")
         context = ActionContext(hand_index=card, table_index=card, target_position=position,
-                                owner=parameters.get("owner"), pile_index=parameters.get("pile_index"))
+                                owner=parameters.get("owner"), pile_index=parameters.get("pile_index"),
+                                draw_pile_id=parameters.get("draw_pile_id", "main"))
         if action == "swap_table_card":
             context = ActionContext(hand_index=card, table_index=parameters.get("table_index"))
         lifecycle = {"confirm_point", "confirm_pot", "return_player"}
@@ -144,20 +145,20 @@ class SessionController:
                 return ActionResult(False, message=available.reason, code=available.code or "action_unavailable")
         from .sharedoffer import start_shared_offer, choose_shared_offer
         handlers = {
-            "start_shared_offer": lambda: start_shared_offer(g),
+            "start_shared_offer": lambda: start_shared_offer(g, context.draw_pile_id),
             "choose_shared_offer": lambda: choose_shared_offer(g, card),
-            "deal_cards": lambda: g.deal_cards(parameters.get("count")),
+            "deal_cards": lambda: g.deal_cards(parameters.get("count"), context.draw_pile_id),
             "discard_whole_personal_pile": lambda: g.discard_whole_personal_pile(parameters.get("owner"), parameters.get("pile_index"), parameters.get("discard_pile_index", 0), parameters.get("personal", False)),
             "take_whole_personal_pile": lambda: g.take_whole_personal_pile(parameters.get("owner"), parameters.get("pile_index")),
             "transfer_personal_pile": lambda: self.transfer_personal_pile(parameters),
-            "draw_cards": lambda: g.draw_cards(parameters.get("count")),
-            "shuffle_draw_deck": lambda: g.shuffle_draw_deck(),
+            "draw_cards": lambda: g.draw_cards(parameters.get("count"), context.draw_pile_id),
+            "shuffle_draw_deck": lambda: g.shuffle_draw_deck(context.draw_pile_id),
             "play_cards": lambda: self.play_cards(parameters.get("card_indices")),
             "take_table_cards": lambda: self.take_table_cards(parameters.get("card_indices")),
             "discard_cards": lambda: self.discard_cards(parameters),
             "discard_table_cards": lambda: self.discard_table_cards(parameters),
             "reverse_turn_order": lambda: g.reverse_turn_order(),
-            "draw_card": lambda: g.deal_card_to_current(),
+            "draw_card": lambda: (g.deal_card_to_current() if context.draw_pile_id == "main" else g.deal_card_to_current(context.draw_pile_id)),
             "draw_from_discard": lambda: self.draw_from_discard(parameters),
             "end_turn": lambda: g.finish_turn(parameters.get("next_player"), parameters.get("skip_next", False)),
             "confirm_point": lambda: g.confirm_point_request(parameters.get("approved")),

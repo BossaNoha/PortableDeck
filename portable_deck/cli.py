@@ -14,15 +14,17 @@ from .core.session import ActionResult
 from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 from .core.sharedoffer import shared_offer_view
+from .core.drawpiles import DRAW_SOURCE_ACTIONS, draw_pile_options, resolve_draw_pile
 
 
-HELP = "Commands: offer, choose-offer CARD, discard-pile PLAYER PILE shared|personal DISCARD_PILE, take-pile PLAYER PILE, transfer-pile SOURCE_PLAYER SOURCE_PILE TARGET_PLAYER TARGET_PILE, show, draw, draw-many COUNT, deal COUNT, shuffle, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], discard-table-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: sources, source ID, offer, choose-offer CARD, discard-pile PLAYER PILE shared|personal DISCARD_PILE, take-pile PLAYER PILE, transfer-pile SOURCE_PLAYER SOURCE_PILE TARGET_PLAYER TARGET_PILE, show, draw, draw-many COUNT, deal COUNT, shuffle, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], discard-table-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
     def __init__(self, game, output, structured=False, confirm_next_turn=False, confirm_skip=False):
         self.game = game
         self.session = game.session
+        self.draw_pile_id = "main"
         self.output = output
         self.structured = structured
         self.turn_flow = TurnHandoffController(self.session, enabled=confirm_next_turn, confirm_skip=confirm_skip)
@@ -36,7 +38,12 @@ class CLIClient:
         else:
             print(text, file=self.output)
 
+    def sync_draw_source(self):
+        if not any(pile.id == self.draw_pile_id for pile in draw_pile_options(self.game)):
+            self.draw_pile_id = "main"
+
     def turn_work(self):
+        self.sync_draw_source()
         if self.turn_flow.pending:
             return
         if self.game.pending_shared_offer is not None:
@@ -104,7 +111,7 @@ class CLIClient:
             if not parts:
                 return True
             command, args = parts[0].lower(), parts[1:]
-            arity = {"offer": 0, "choose-offer": 1, "deal": 1, "discard-pile": 4, "take-pile": 2, "transfer-pile": 4, "draw-many": 1, "shuffle": 0, "confirm-skip": 0, "skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
+            arity = {"sources": 0, "source": 1, "offer": 0, "choose-offer": 1, "deal": 1, "discard-pile": 4, "take-pile": 2, "transfer-pile": 4, "draw-many": 1, "shuffle": 0, "confirm-skip": 0, "skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
                      "pending": 0, "approve": 0, "reject": 0, "point": 0,
                      "bet": 1, "pot": 1, "help": 0, "quit": 0, "ready": 0, "cancel": 0}
             if command == "give-many":
@@ -138,6 +145,20 @@ class CLIClient:
                 self.report_result(command, ActionResult(False, code="handoff_pending",
                     message="Use confirm-skip or cancel first." if self.turn_flow.awaiting_skip else
                             "Confirm with ready or cancel the pending handoff first."))
+                return True
+            self.sync_draw_source()
+            if command == "sources":
+                options = draw_pile_options(self.game)
+                if self.structured:
+                    self.emit("draw_sources", selected=self.draw_pile_id, piles=[asdict(pile) for pile in options])
+                else:
+                    for pile in options:
+                        self.write(f"{pile.id}: {pile.name} ({pile.card_count} cards)" + (" [selected]" if pile.id == self.draw_pile_id else ""))
+                return True
+            if command == "source":
+                resolve_draw_pile(self.game, args[0])
+                self.draw_pile_id = args[0]
+                self.write(f"Draw source: {self.draw_pile_id}")
                 return True
             if command == "show":
                 viewer = build_turn_start_view(self.game).player
@@ -207,6 +228,8 @@ class CLIClient:
                     parameters["player_index"] = self.positive(args[0]) - 1
                 elif command == "end" and args:
                     parameters["next_player"] = self.positive(args[0]) - 1
+            if action in DRAW_SOURCE_ACTIONS and self.draw_pile_id != "main":
+                parameters["draw_pile_id"] = self.draw_pile_id
             if action == "end_turn":
                 result = self.turn_flow.request(lambda: self.session.execute(action, **parameters),
                                                 next_player=parameters.get("next_player"),

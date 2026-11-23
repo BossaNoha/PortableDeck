@@ -8,7 +8,7 @@ from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
     def start_shared_offer(self):
-        result = self.run_action(lambda: self.session.execute("start_shared_offer"))
+        result = self.run_action(lambda: self.session.execute("start_shared_offer", **self.draw_source_parameters()))
         if not result.success:
             messagebox.showwarning("Cannot open shared offer", result.message, parent=self.root)
         return result
@@ -134,31 +134,39 @@ class GameGUIActions:
 
     def _choose_draw_count(self, action):
         from tkinter import simpledialog
-        from ..core.actionavailability import action_availability
+        from ..core.actionavailability import ActionContext, action_availability
+        from ..core.drawpiles import draw_pile_options
         from ..core.sessionstatus import build_session_status
         dealing = action == "deal_cards"
         failure_title = "Cannot deal cards" if dealing else "Cannot draw cards"
-        available = action_availability(self.game, action)
+        parameters = self.draw_source_parameters()
+        source_id = parameters.get("draw_pile_id", "main")
+        available = action_availability(self.game, action, ActionContext(draw_pile_id=source_id))
         if not available.allowed:
             messagebox.showwarning(failure_title, available.reason, parent=self.root)
             return
         status = build_session_status(self.game)
-        maximum = status.draw_count // sum(player.active for player in status.players) if dealing else status.draw_count
+        count_available = next(pile.card_count for pile in draw_pile_options(self.game) if pile.id == source_id)
+        maximum = count_available // sum(player.active for player in status.players) if dealing else count_available
         count = simpledialog.askinteger("Deal to active players" if dealing else "Draw multiple cards",
                                         "How many cards per active player?" if dealing else "How many cards?",
                                         parent=self.root, minvalue=1, maxvalue=maximum)
         if count is None:
             return
-        result = self.run_action(lambda: self.session.execute(action, count=count))
+        result = self.run_action(lambda: self.session.execute(action, count=count, **parameters))
         if not result.success:
             messagebox.showwarning(failure_title, result.message, parent=self.root)
         return result
 
     def shuffle_draw_deck(self):
-        result = self.run_action(lambda: self.session.execute("shuffle_draw_deck"))
+        result = self.run_action(lambda: self.session.execute("shuffle_draw_deck", **self.draw_source_parameters()))
         if not result.success:
             messagebox.showwarning("Cannot shuffle draw deck", result.message, parent=self.root)
         return result
+
+    def draw_source_parameters(self):
+        pile_id = getattr(self, "draw_pile_id", "main")
+        return {} if pile_id == "main" else {"draw_pile_id": pile_id}
 
     def play_multiple_cards(self):
         return self._choose_multiple_cards("play_cards", "Play")

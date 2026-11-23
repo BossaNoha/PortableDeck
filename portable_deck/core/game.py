@@ -267,13 +267,15 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
             self.record_event(entry)
             self.cards_drawn_this_turn = 0
 
-    def deal_card_to_current(self):
-        card = self.deck.draw_card()
+    def deal_card_to_current(self, draw_pile_id="main"):
+        from .drawpiles import resolve_draw_pile
+        pile = resolve_draw_pile(self, draw_pile_id)
+        card = (self.deck if draw_pile_id == "main" else pile).draw_card()
         player = self.players[self.current_player_index]
         if card:
             player.draw_card(card)
             self.cards_drawn_this_turn += 1
-            self.log_action(player.name, "draw_card")
+            self.log_action(player.name, "draw_card", draw_pile_id=draw_pile_id)
         return card
 
     @property

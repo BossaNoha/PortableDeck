@@ -4,9 +4,10 @@ from ..core.pileoptions import discard_destinations
 import tkinter as tk
 from tkinter import messagebox
 
-def draw_card(game, hand_frame, render_log, status_panel):
+def draw_card(game, hand_frame, render_log, status_panel, draw_pile_id="main"):
     """Current player draws a card."""
-    result = game.session.execute("draw_card")
+    parameters = {} if draw_pile_id == "main" else {"draw_pile_id": draw_pile_id}
+    result = game.session.execute("draw_card", **parameters)
     if not result.success:
         messagebox.showwarning("Cannot draw", result.message)
     return result

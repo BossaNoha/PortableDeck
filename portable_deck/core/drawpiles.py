@@ -1,6 +1,24 @@
 """Named session draw piles, with one canonical default draw order."""
 from dataclasses import dataclass
 from .drawpile import DrawPile
+from .actionerrors import ActionValidationError
+
+
+DRAW_SOURCE_ACTIONS = frozenset({"draw_card", "draw_cards", "shuffle_draw_deck", "deal_cards", "start_shared_offer"})
+
+
+def draw_pile_options(game):
+    if game.current_player_index not in game.active_player_indices():
+        return ()
+    return tuple(pile for pile in game.draw_piles.view() if pile.owner in (None, game.current_player_index))
+
+
+def resolve_draw_pile(game, pile_id="main"):
+    if not isinstance(pile_id, str) or not any(pile.id == pile_id for pile in game.draw_piles.view()):
+        raise ActionValidationError("invalid_draw_pile", "Choose an existing draw pile.")
+    if not any(pile.id == pile_id for pile in draw_pile_options(game)):
+        raise ActionValidationError("access_denied", "This draw pile belongs to another player.")
+    return game.draw_piles.get(pile_id)
 
 
 @dataclass(frozen=True)
