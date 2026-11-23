@@ -2,6 +2,33 @@
 
 
 class PersonalPileActions:
+    def discard_whole_personal_pile(self, owner, pile, discard_pile_index=0, personal=False):
+        from .actionavailability import action_availability
+        from .actionerrors import ActionValidationError
+        from .discardvalidation import discard_destination
+        available = action_availability(self, "discard_whole_personal_pile")
+        if not available.allowed:
+            raise ActionValidationError(available.code, available.reason)
+        if (type(owner) is not int or type(pile) is not int or not 0 <= owner < len(self.players)
+                or not 0 <= pile < len(self.personal_piles[owner])):
+            raise ActionValidationError("invalid_pile", "Choose a valid personal pile.")
+        if not self.can_access_personal_pile(owner, pile):
+            raise ActionValidationError("access_denied", "You do not have access to this pile.")
+        source = self.personal_piles[owner][pile]
+        if not source:
+            raise ActionValidationError("empty_pile", "The source pile is empty.")
+        target = discard_destination(self, discard_pile_index, personal)
+        if target is None:
+            raise ActionValidationError("invalid_pile", "Choose a valid discard destination.")
+        count = len(source)
+        target.extend(source)
+        source.clear()
+        destination = (f"{self.players[self.current_player_index].name}'s discard {discard_pile_index + 1}"
+                       if personal else f"Shared discard {discard_pile_index + 1}")
+        self.log_action(self.players[self.current_player_index].name, "discard_whole_personal_pile",
+                        count=count, source=self.players[owner].name, source_pile=pile + 1, destination=destination)
+        return count
+
     def take_whole_personal_pile(self, owner, pile):
         from .actionavailability import action_availability
         from .actionerrors import ActionValidationError

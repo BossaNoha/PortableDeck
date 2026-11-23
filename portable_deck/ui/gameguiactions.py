@@ -8,43 +8,67 @@ from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
     def take_whole_personal_pile(self):
+        return self._choose_whole_personal_pile("take_whole_personal_pile", "Take")
+
+    def discard_whole_personal_pile(self):
+        return self._choose_whole_personal_pile("discard_whole_personal_pile", "Discard")
+
+    def _choose_whole_personal_pile(self, action, verb):
         from ..core.actionavailability import action_availability
         from ..core.piletransfer import accessible_pile_options
-        available = action_availability(self.game, "take_whole_personal_pile")
+        from ..core.pileoptions import discard_destinations
+        available = action_availability(self.game, action)
         if not available.allowed:
-            messagebox.showwarning("Cannot take pile", available.reason, parent=self.root)
+            messagebox.showwarning(f"Cannot {verb.lower()} pile", available.reason, parent=self.root)
             return
         options = tuple(pile for pile in accessible_pile_options(self.game) if pile.card_count)
         snapshot = build_selection_snapshot(self.game)
         dialog = tk.Toplevel(self.root)
-        dialog.title("Take whole personal pile")
+        dialog.title(f"{verb} whole personal pile")
         dialog.transient(self.root)
-        tk.Label(dialog, text="Cards are appended to your hand in pile order.").pack(padx=12, pady=8)
+        instruction = ("Cards are appended to your hand in pile order." if action == "take_whole_personal_pile"
+                       else "Cards are discarded in pile order; the original top card remains on top.")
+        tk.Label(dialog, text=instruction).pack(padx=12, pady=8)
         choices = tk.Listbox(dialog, exportselection=False, width=50, height=min(10, len(options)))
         choices.pack(fill="both", expand=True, padx=12)
         for pile in options:
             choices.insert("end", f"{pile.name} ({pile.card_count} cards)")
         choices.selection_set(0)
+        destinations = discard_destinations(self.game, snapshot.owner) if action == "discard_whole_personal_pile" else ()
+        if destinations:
+            tk.Label(dialog, text="Destination:").pack(anchor="w", padx=12, pady=(8, 0))
+            piles = tk.Listbox(dialog, exportselection=False, width=50, height=min(6, len(destinations)))
+            piles.pack(fill="x", padx=12)
+            for destination in destinations:
+                piles.insert("end", destination.name)
+            piles.selection_set(0)
 
         def take():
             current = build_selection_snapshot(self.game)
             if (current.session, current.owner) != (snapshot.session, snapshot.owner):
-                messagebox.showwarning("Turn changed", "Reopen the pile selector before taking cards.", parent=dialog)
+                messagebox.showwarning("Turn changed", "Reopen the pile selector before moving cards.", parent=dialog)
                 return
             selected = choices.curselection()
             if not selected:
                 messagebox.showwarning("Choose a pile", "Select a personal pile.", parent=dialog)
                 return
             pile = options[selected[0]]
-            result = self.run_action(lambda: self.session.execute("take_whole_personal_pile",
-                                                                  owner=pile.owner, pile_index=pile.pile_index))
+            parameters = {"owner": pile.owner, "pile_index": pile.pile_index}
+            if destinations:
+                selected_destination = piles.curselection()
+                if not selected_destination:
+                    messagebox.showwarning("Choose a pile", "Select a discard destination.", parent=dialog)
+                    return
+                destination = destinations[selected_destination[0]]
+                parameters.update(discard_pile_index=destination.pile_index, personal=destination.personal)
+            result = self.run_action(lambda: self.session.execute(action, **parameters))
             if result.success:
                 dialog.destroy()
             else:
-                messagebox.showwarning("Cannot take pile", result.message, parent=dialog)
+                messagebox.showwarning(f"Cannot {verb.lower()} pile", result.message, parent=dialog)
             return result
 
-        tk.Button(dialog, text="Take whole pile", command=take).pack(pady=6)
+        tk.Button(dialog, text=f"{verb} whole pile", command=take).pack(pady=6)
         tk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=(0, 8))
         dialog.grab_set()
 

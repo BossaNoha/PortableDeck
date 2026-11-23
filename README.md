@@ -23,6 +23,18 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Personal piles → Allow discarding whole personal
+piles**, together with the table, personal piles and discard piles, for
+**Discard whole personal pile…** (in the contextual **Table** menu). Select an
+accessible nonempty personal pile and one shared or your own personal discard
+destination. The group is appended in stored order, retaining its top card on
+top. All input is validated before moving cards. The action has one Undo step
+and one autosave, with source/destination/count only in public logs. This rule
+defaults to off, is stored in presets/saves and survives restart. CLI:
+`--discard-whole-personal-pile`, then `discard-pile 2 1 shared 1` or
+`discard-pile 2 1 personal 1` (source player, source pile, destination type/index;
+all numbers start at 1). Personal discard destinations belong to the current player.
+
 Enable **Game Settings → Personal piles → Allow taking whole personal piles
 into hand**, together with personal piles and the table, for **Take whole
 personal pile…** (in the contextual **Table** menu). Choose an accessible,

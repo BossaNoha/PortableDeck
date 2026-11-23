@@ -1,5 +1,15 @@
 # UI/core boundary audit
 
+Optional whole-pile discard: allow_discard_whole_personal_pile defaults to False
+under Personal piles, requiring table, personal piles and discards. Session
+discard_whole_personal_pile validates owner/pile_index access/nonempty source and
+discard_pile_index/personal destination before mutation, then appends the entire
+group in stored order in one Undo/checkpoint transaction. Personal discard targets
+belong to the actor. GUI shares the whole-pile selector and core destination DTOs,
+guards turn changes and revalidates on execution; CLI discard-pile uses the same
+action. Logs contain source/destination/count only. Preset/save/legacy/restart,
+rollback, access and both native Tk destination flows are covered.
+
 Optional whole-pile take: allow_take_whole_personal_pile defaults to False under
 Personal piles, requiring table/personal piles. Session take_whole_personal_pile
 accepts owner/pile_index and validates access and nonempty source before moving
@@ -173,7 +183,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 505 tests; native Tk probes for session, deck and preset
+latest full suite passed 513 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

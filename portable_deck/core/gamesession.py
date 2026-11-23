@@ -47,6 +47,7 @@ def export_session(game):
         "enable_personal_piles": game.enable_personal_piles,
         "allow_transfer_personal_piles": game.allow_transfer_personal_piles,
         "allow_take_whole_personal_pile": game.allow_take_whole_personal_pile,
+        "allow_discard_whole_personal_pile": game.allow_discard_whole_personal_pile,
         "personal_pile_count": game.personal_pile_count,
         "unequal_personal_piles": game.unequal_personal_piles,
         "personal_pile_counts": game.personal_pile_counts,
@@ -139,6 +140,9 @@ def restore_session(game_class, state):
     game.allow_take_whole_personal_pile = state.get("allow_take_whole_personal_pile", False)
     if not isinstance(game.allow_take_whole_personal_pile, bool):
         raise ValueError("Saved allow_take_whole_personal_pile must be true or false")
+    game.allow_discard_whole_personal_pile = state.get("allow_discard_whole_personal_pile", False)
+    if not isinstance(game.allow_discard_whole_personal_pile, bool):
+        raise ValueError("Saved allow_discard_whole_personal_pile must be true or false")
     game.turn_direction = state.get("turn_direction", 1)
     if type(game.turn_direction) is not int or game.turn_direction not in (-1, 1):
         raise ValueError("Saved turn_direction must be 1 or -1")

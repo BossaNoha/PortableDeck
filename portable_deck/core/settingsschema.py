@@ -11,6 +11,7 @@ DEFAULT_SETTINGS = {
     "show_game_log": True,
     "allow_transfer_personal_piles": False,
     "allow_take_whole_personal_pile": False,
+    "allow_discard_whole_personal_pile": False,
     "enable_special_actions": False,
     "allow_shuffle_draw_deck": False,
     "allow_draw_multiple_cards": False,

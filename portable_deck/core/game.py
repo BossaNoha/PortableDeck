@@ -91,6 +91,7 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         allow_draw_multiple_cards=False,
         allow_transfer_personal_piles=False,
         allow_take_whole_personal_pile=False,
+        allow_discard_whole_personal_pile=False,
     ):
         if not isinstance(allow_choose_next_player, bool):
             raise ValueError("allow_choose_next_player must be true or false")
@@ -104,6 +105,9 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         if not isinstance(allow_take_whole_personal_pile, bool):
             raise ValueError("allow_take_whole_personal_pile must be true or false")
         self.allow_take_whole_personal_pile = allow_take_whole_personal_pile
+        if not isinstance(allow_discard_whole_personal_pile, bool):
+            raise ValueError("allow_discard_whole_personal_pile must be true or false")
+        self.allow_discard_whole_personal_pile = allow_discard_whole_personal_pile
         self.turn_direction = 1
         if not isinstance(allow_skip_next_player, bool):
             raise ValueError("allow_skip_next_player must be true or false")

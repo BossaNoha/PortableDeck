@@ -141,6 +141,7 @@ class SessionController:
             if not available.allowed:
                 return ActionResult(False, message=available.reason, code=available.code or "action_unavailable")
         handlers = {
+            "discard_whole_personal_pile": lambda: g.discard_whole_personal_pile(parameters.get("owner"), parameters.get("pile_index"), parameters.get("discard_pile_index", 0), parameters.get("personal", False)),
             "take_whole_personal_pile": lambda: g.take_whole_personal_pile(parameters.get("owner"), parameters.get("pile_index")),
             "transfer_personal_pile": lambda: self.transfer_personal_pile(parameters),
             "draw_cards": lambda: g.draw_cards(parameters.get("count")),

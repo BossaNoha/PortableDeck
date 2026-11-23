@@ -27,7 +27,7 @@ ACTIONS = frozenset((
     "flip_hand_card", "play_at_position", "take_table_card", "discard_table_card",
     "flip_table_card", "move_table_card", "request_point", "reduce_score",
     "draw_from_discard", "recycle_discard", "clear_table", "leave_session",
-    "take_whole_personal_pile", "transfer_personal_pile", "draw_cards", "shuffle_draw_deck", "buy_chips", "play_chips", "take_pot", "insert_draw_deck", "insert_discard_pile",
+    "discard_whole_personal_pile", "take_whole_personal_pile", "transfer_personal_pile", "draw_cards", "shuffle_draw_deck", "buy_chips", "play_chips", "take_pot", "insert_draw_deck", "insert_discard_pile",
 )) | frozenset(INTERACTIONS)
 
 
@@ -48,6 +48,7 @@ def _evaluate_availability(g, action, context):
         "draw_cards": g.enable_special_actions and g.allow_draw_multiple_cards,
         "transfer_personal_pile": g.enable_table and g.enable_personal_piles and g.allow_transfer_personal_piles,
         "take_whole_personal_pile": g.enable_table and g.enable_personal_piles and g.allow_take_whole_personal_pile,
+        "discard_whole_personal_pile": g.enable_table and g.enable_personal_piles and g.enable_discard_pile and g.allow_discard_whole_personal_pile,
         "draw_card": True,
         "discard_card": g.enable_discard_pile,
         "play_card": g.enable_table or (not g.enable_discard_pile and not g.enable_interactions),
@@ -87,7 +88,7 @@ def _evaluate_availability(g, action, context):
                 return ActionAvailability(False, message, "invalid_selection")
     if g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal():
         return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
-    if action == "take_whole_personal_pile":
+    if action in {"take_whole_personal_pile", "discard_whole_personal_pile"}:
         from .piletransfer import accessible_pile_options
         if not any(pile.card_count for pile in accessible_pile_options(g)):
             return ActionAvailability(False, "No accessible nonempty personal pile is available.", "no_eligible_piles")
