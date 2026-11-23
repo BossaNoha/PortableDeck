@@ -23,6 +23,15 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Special actions → Enable special actions** and
+**Allow shuffling the remaining draw deck** for manual shuffling. Use **Shuffle
+draw deck** (in the **Special actions** menu in contextual layout); no hand
+selection is needed. Only remaining draw cards are shuffled. Public history and
+logs never show their identities or order. At least two cards and no pending
+approval are required. One shuffle creates one Undo step and one autosave;
+Undo restores the previous order. The rule defaults to off, is stored in presets
+and saves and survives restart. CLI: `--shuffle-draw-deck`, then `shuffle`.
+
 Enable **Game Settings → Table → Table actions → Allow discarding multiple table
 cards at once**, together with discarding individual table cards, to add
 **Discard multiple table cards…**. Select at least two shared table cards with

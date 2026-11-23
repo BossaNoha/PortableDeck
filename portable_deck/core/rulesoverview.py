@@ -119,6 +119,8 @@ def build_rules_overview(game):
     add("interactions", "Player interactions", g.enable_interactions,
         [RuleEntry(key, label) for key, label in INTERACTIONS.items() if g.interaction_allowed(key)])
     special = []
+    if g.allow_shuffle_draw_deck:
+        special.append(RuleEntry("shuffle_draw_deck", "Shuffle remaining draw deck"))
     if g.allow_insert_draw_deck:
         special.append(RuleEntry("insert_draw", "Place selected card in draw deck"))
     if g.allow_insert_discard_pile and g.enable_discard_pile:

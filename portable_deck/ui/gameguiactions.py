@@ -7,6 +7,12 @@ from ..core.playersessionview import build_player_session_view
 from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
+    def shuffle_draw_deck(self):
+        result = self.run_action(lambda: self.session.execute("shuffle_draw_deck"))
+        if not result.success:
+            messagebox.showwarning("Cannot shuffle draw deck", result.message, parent=self.root)
+        return result
+
     def play_multiple_cards(self):
         return self._choose_multiple_cards("play_cards", "Play")
 
@@ -361,6 +367,8 @@ class GameGUIActions:
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
+        if hasattr(self, "shuffle_draw_button"):
+            buttons.append(self.shuffle_draw_button)
         if hasattr(self, "discard_multiple_button"):
             buttons.append(self.discard_multiple_button)
         if hasattr(self, "play_multiple_button"):

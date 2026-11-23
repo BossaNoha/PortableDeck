@@ -1,5 +1,15 @@
 # UI/core boundary audit
 
+Optional draw shuffle: allow_shuffle_draw_deck defaults to False under Special
+actions and requires the parent feature. Core shuffle_draw_deck checks shared
+availability, requires at least two remaining draw cards and no pending approval,
+then shuffles only that list. Public event/log data contains no card identities
+or order. Session execution provides one Undo/checkpoint, including when the
+random permutation happens to match the previous order. GUI has a normal button
+and a contextual Special actions menu independent of hand selection. CLI shuffle
+shares the command; presets, saves, legacy defaults and restart retain the rule.
+Native Tk checks cover setting, both layouts, Undo and one-card availability.
+
 Optional batch table discard: allow_discard_multiple_table_cards defaults to
 False under Table / Table actions, requiring table, discard and single-table
 discard rules. Session discard_table_cards validates distinct zero-based
@@ -132,7 +142,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 474 tests; native Tk probes for session, deck and preset
+latest full suite passed 481 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

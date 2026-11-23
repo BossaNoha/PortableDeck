@@ -296,6 +296,9 @@ class GameGUIBuilder:
 
         if self.game.enable_special_actions:
             self.special_actions_ui = SpecialActionsUI(self)
+            if self.game.allow_shuffle_draw_deck:
+                self.shuffle_draw_button = tk.Button(self.card_actions_frame, text="Shuffle draw deck", command=self.shuffle_draw_deck)
+                self.shuffle_draw_button.pack(side="left", padx=5)
 
         if self.contextual_session_actions:
             self.context_actions = ContextActions(self)

@@ -1,12 +1,25 @@
-"""Place a hand card at an explicit top-based deck position."""
+"""Optional deck placement and manual draw-deck shuffling."""
 import random
 import re
 
 class SpecialActions:
-    def initialize_special_actions(self, enabled=False, draw=False, discard=False):
+    def initialize_special_actions(self, enabled=False, draw=False, discard=False, shuffle=False):
+        if not isinstance(shuffle, bool):
+            raise ValueError("allow_shuffle_draw_deck must be true or false")
         self.enable_special_actions = bool(enabled)
         self.allow_insert_draw_deck = bool(draw)
         self.allow_insert_discard_pile = bool(discard)
+        self.allow_shuffle_draw_deck = shuffle
+
+    def shuffle_draw_deck(self):
+        from .actionavailability import action_availability
+        from .actionerrors import ActionValidationError
+        available = action_availability(self, "shuffle_draw_deck")
+        if not available.allowed:
+            raise ActionValidationError(available.code, available.reason)
+        random.shuffle(self.deck.flat_deck)
+        self.log_action(self.players[self.current_player_index].name, "shuffle_draw_deck")
+        return len(self.deck.flat_deck)
 
     def insert_hand_card(self, hand_index, destination, position, pile_index=0):
         if not self.enable_special_actions:
