@@ -14,10 +14,10 @@ from .core.session import ActionResult
 from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 from .core.sharedoffer import shared_offer_view
-from .core.drawpiles import DRAW_SOURCE_ACTIONS, draw_pile_options, resolve_draw_pile
+from .core.drawpiles import uses_draw_source, draw_pile_options, resolve_draw_pile
 
 
-HELP = "Commands: sources, source ID, offer, choose-offer CARD, discard-pile PLAYER PILE shared|personal DISCARD_PILE, take-pile PLAYER PILE, transfer-pile SOURCE_PLAYER SOURCE_PILE TARGET_PLAYER TARGET_PILE, show, draw, draw-many COUNT, deal COUNT, shuffle, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], discard-table-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: sources, source ID, offer, choose-offer CARD, discard-pile PLAYER PILE shared|personal DISCARD_PILE, take-pile PLAYER PILE, transfer-pile SOURCE_PLAYER SOURCE_PILE TARGET_PLAYER TARGET_PILE, show, draw, insert-draw CARD POSITION, draw-many COUNT, deal COUNT, shuffle, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], discard-table-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
@@ -111,7 +111,7 @@ class CLIClient:
             if not parts:
                 return True
             command, args = parts[0].lower(), parts[1:]
-            arity = {"sources": 0, "source": 1, "offer": 0, "choose-offer": 1, "deal": 1, "discard-pile": 4, "take-pile": 2, "transfer-pile": 4, "draw-many": 1, "shuffle": 0, "confirm-skip": 0, "skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
+            arity = {"insert-draw": 2, "sources": 0, "source": 1, "offer": 0, "choose-offer": 1, "deal": 1, "discard-pile": 4, "take-pile": 2, "transfer-pile": 4, "draw-many": 1, "shuffle": 0, "confirm-skip": 0, "skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
                      "pending": 0, "approve": 0, "reject": 0, "point": 0,
                      "bet": 1, "pot": 1, "help": 0, "quit": 0, "ready": 0, "cancel": 0}
             if command == "give-many":
@@ -183,7 +183,7 @@ class CLIClient:
                 self.turn_work()
                 return True
             parameters = {}
-            actions = {"offer": "start_shared_offer", "choose-offer": "choose_shared_offer", "deal": "deal_cards", "discard-pile": "discard_whole_personal_pile", "take-pile": "take_whole_personal_pile", "transfer-pile": "transfer_personal_pile", "draw-many": "draw_cards", "shuffle": "shuffle_draw_deck", "discard-table-many": "discard_table_cards", "take-many": "take_table_cards", "give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
+            actions = {"insert-draw": "insert_draw_deck", "offer": "start_shared_offer", "choose-offer": "choose_shared_offer", "deal": "deal_cards", "discard-pile": "discard_whole_personal_pile", "take-pile": "take_whole_personal_pile", "transfer-pile": "transfer_personal_pile", "draw-many": "draw_cards", "shuffle": "shuffle_draw_deck", "discard-table-many": "discard_table_cards", "take-many": "take_table_cards", "give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
                        "point": "request_point", "bet": "play_chips", "pot": "take_pot"}
             if command in {"approve", "reject"}:
                 prompt = build_turn_start_view(self.game).next_confirmation
@@ -196,7 +196,9 @@ class CLIClient:
                 action, parameters = prompt.action, {"approved": command == "approve"}
             else:
                 action = actions[command]
-                if command == "discard-pile":
+                if command == "insert-draw":
+                    parameters = {"card_index": self.positive(args[0]) - 1, "position": args[1]}
+                elif command == "discard-pile":
                     if args[2] not in {"shared", "personal"}:
                         raise ValueError("Use discard-pile PLAYER PILE shared|personal DISCARD_PILE.")
                     parameters = {"owner": self.positive(args[0]) - 1, "pile_index": self.positive(args[1]) - 1,
@@ -228,7 +230,7 @@ class CLIClient:
                     parameters["player_index"] = self.positive(args[0]) - 1
                 elif command == "end" and args:
                     parameters["next_player"] = self.positive(args[0]) - 1
-            if action in DRAW_SOURCE_ACTIONS and self.draw_pile_id != "main":
+            if uses_draw_source(self.game, action) and self.draw_pile_id != "main":
                 parameters["draw_pile_id"] = self.draw_pile_id
             if action == "end_turn":
                 result = self.turn_flow.request(lambda: self.session.execute(action, **parameters),
@@ -283,6 +285,7 @@ def main(argv=None):
     parser.add_argument("--draw-pile", nargs=4, action="append", default=[],
                         metavar=("ID", "NAME", "OWNER", "COUNT"),
                         help="Split remaining cards into a pile; OWNER is shared or a player number. Repeat for more piles.")
+    parser.add_argument("--insert-draw-deck", action="store_true", help="Allow insert-draw CARD POSITION for new games")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -312,7 +315,8 @@ def main(argv=None):
                 "allow_discard_whole_personal_pile": args.discard_whole_personal_pile,
                 "allow_take_whole_personal_pile": args.take_whole_personal_pile,
                 "personal_pile_count": 2 if args.transfer_personal_piles else 1,
-                "enable_special_actions": args.shuffle_draw_deck or args.draw_multiple_cards or args.deal_cards or args.shared_offer,
+                "enable_special_actions": args.shuffle_draw_deck or args.draw_multiple_cards or args.deal_cards or args.shared_offer or args.insert_draw_deck,
+                "allow_insert_draw_deck": args.insert_draw_deck,
                 "allow_shared_offer": args.shared_offer,
                 "allow_deal_cards": args.deal_cards,
                 "allow_draw_multiple_cards": args.draw_multiple_cards,

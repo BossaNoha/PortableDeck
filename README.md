@@ -234,14 +234,20 @@ Owner numbers start at 1; zero-card entries create empty piles. This stage split
 one definition; copies of definitions and different card sets are later options.
 
 When several accessible piles exist, GUI **Draw source** selects the source for
-single/batch draws, shuffle, dealing to active players and Shared offer. CLI:
+single/batch draws, shuffle, dealing to active players and Shared offer. It also
+selects the destination for **Place in Draw Deck…** and the existing return-and-
+shuffle behavior when table/discard/interactions are disabled. CLI:
 `sources` lists available IDs and counts; `source reserve` selects one. Shared
 piles are accessible to all active players; owned piles only to their owner.
 The core validates source ID, ownership and capacity on every execution.
 If the selected pile disappears on Undo or becomes inaccessible after a turn
 change, clients fall back to `main`. Selection is local to the client and starts
-at `main` on load. Existing card insertion, return-to-draw and discard recycling
-still target `main`; their destination selection will be extended separately.
+at `main` on load. Enable `--insert-draw-deck` for new CLI games and use
+`insert-draw 1 1` to insert hand card 1 on top of the selected pile; `-1` selects
+the bottom, `X` a valid random middle position. Position ranges use the selected
+pile's actual size. With table/discard/interactions disabled, `play CARD` returns
+and shuffles into that selected pile. Discard recycling still targets `main`;
+explicit discard-to-deck associations will be added separately.
 
 Saves contain the session's deck definition as well as its remaining draw order.
 Loading and restarting use this embedded definition without opening the original

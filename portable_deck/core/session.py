@@ -165,7 +165,7 @@ class SessionController:
             "confirm_pot": lambda: g.confirm_pot_withdrawal(parameters.get("approved")),
             "return_player": lambda: g.return_player(parameters["player_index"]),
             "move_table_card": lambda: g.move_table_card(card, position),
-            "play_card": lambda: (g.play_to_table(card + 1) if g.enable_table else g.play_back_to_draw_pile(card + 1)),
+            "play_card": lambda: (g.play_to_table(card + 1) if g.enable_table else g.play_back_to_draw_pile(card + 1, context.draw_pile_id)),
             "play_at_position": lambda: g.play_to_table(card + 1, position),
             "play_face_down": lambda: g.play_to_table(card + 1, position, face_up=False),
             "discard_card": lambda: g.discard_from_current(card + 1, parameters.get("pile_index", 0), parameters.get("personal", False)),
@@ -184,7 +184,7 @@ class SessionController:
             "leave_session": lambda: g.leave_session(),
             "play_personal_pile": lambda: g.play_to_personal_pile(card + 1, parameters["owner"], parameters["pile_index"]),
             "take_personal_pile": lambda: g.take_from_personal_pile(parameters["owner"], parameters["pile_index"]),
-            "insert_draw_deck": lambda: g.insert_hand_card(card + 1, "draw", parameters["position"]),
+            "insert_draw_deck": lambda: g.insert_hand_card(card + 1, "draw", parameters["position"], draw_pile_id=context.draw_pile_id),
             "insert_discard_pile": lambda: g.insert_hand_card(card + 1, "discard", parameters["position"], parameters.get("pile_index", 0)),
         }
         if action in INTERACTIONS:

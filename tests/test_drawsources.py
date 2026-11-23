@@ -18,6 +18,7 @@ class DrawSourceTests(unittest.TestCase):
         game = Game(2, str(Path(__file__).resolve().parents[1] / "decks/demodeck.json"), enable_undo=True,
                     enable_special_actions=True, allow_draw_multiple_cards=True,
                     allow_shuffle_draw_deck=True, allow_deal_cards=True, allow_shared_offer=True)
+        game.allow_insert_draw_deck = True
         game.start(0)
         game.draw_piles.add("reserve", "Reserve", [f"SECRET_{i}" for i in range(6)])
         game.draw_piles.add("mine", "My deck", ["OWN_A", "OWN_B"], owner=0)

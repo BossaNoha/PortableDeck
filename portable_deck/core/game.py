@@ -343,17 +343,19 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
             piles.extend((f"{name}'s discard {index + 1}", pile) for index, pile in enumerate(player_piles))
         return piles
 
-    def play_back_to_draw_pile(self, index):
+    def play_back_to_draw_pile(self, index, draw_pile_id="main"):
         """Play publicly and shuffle back when both destination areas are disabled."""
         if self.enable_table or self.enable_discard_pile or self.enable_interactions:
             return None
+        from .drawpiles import resolve_draw_pile
+        pile = resolve_draw_pile(self, draw_pile_id)
         player = self.players[self.current_player_index]
         card = player.play_card(index)
         if card is None:
             return None
-        self.deck.flat_deck.append(card)
-        self.deck.shuffle()
-        self.log_action(player.name, "play_back_to_draw_pile", card)
+        pile.cards.append(card)
+        (self.deck if draw_pile_id == "main" else pile).shuffle()
+        self.log_action(player.name, "play_back_to_draw_pile", card, draw_pile_id=draw_pile_id)
         return card
 
     def discard_from_current(self, index, pile_index=0, personal=False):

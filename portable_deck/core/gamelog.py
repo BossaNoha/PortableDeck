@@ -19,7 +19,11 @@ def format_game_event(event):
         return f"Table card revealed: {card}." if event.get("face_up") else "Table card hidden."
     if action == "insert_hand_card":
         destination = "draw deck" if event["destination"] == "draw" else f"discard pile {event['pile_index'] + 1}"
+        if event["destination"] == "draw" and event.get("draw_pile_id", "main") != "main":
+            destination = f"draw pile {event['draw_pile_id']}"
         return f"{player} placed {card} at position {event['position']} in the {destination}."
+    if action == "play_back_to_draw_pile" and event.get("draw_pile_id", "main") != "main":
+        return f"{player} played {card}; it was shuffled into draw pile {event['draw_pile_id']}."
     if action == "point_requested":
         return f"{player} requested a score change of {event.get('delta', 1):+d}."
     if action in {"point_awarded", "score_reduced"}:

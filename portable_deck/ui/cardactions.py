@@ -179,7 +179,9 @@ def play_selected(game, hand_frame, table_frame, render_log, status_panel):
         if selected is None:
             messagebox.showwarning("No selection", "Select a card from your hand first!")
             return
-        result = game.session.execute("play_card", card_index=selected)
+        pile_id = getattr(hand_frame.game_gui, "draw_pile_id", "main")
+        parameters = {} if pile_id == "main" else {"draw_pile_id": pile_id}
+        result = game.session.execute("play_card", card_index=selected, **parameters)
         if not result.success:
             messagebox.showwarning("Invalid", result.message)
             return result

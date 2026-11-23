@@ -80,7 +80,7 @@ class SpecialActions:
         self.log_action(self.players[self.current_player_index].name, "shuffle_draw_deck", draw_pile_id=draw_pile_id)
         return len(pile.cards)
 
-    def insert_hand_card(self, hand_index, destination, position, pile_index=0):
+    def insert_hand_card(self, hand_index, destination, position, pile_index=0, draw_pile_id="main"):
         if not self.enable_special_actions:
             raise ValueError("Special actions are disabled.")
         if self.current_player_index in self.left_players:
@@ -88,7 +88,8 @@ class SpecialActions:
         if self.pending_point_request is not None or self.pending_pot_withdrawal is not None:
             raise ValueError("Complete the pending confirmation first.")
         if destination == "draw" and self.allow_insert_draw_deck:
-            pile = self.deck.flat_deck
+            from .drawpiles import resolve_draw_pile
+            pile = resolve_draw_pile(self, draw_pile_id).cards
         elif destination == "discard" and self.allow_insert_discard_pile and self.enable_discard_pile:
             if not isinstance(pile_index, int) or isinstance(pile_index, bool) or not 0 <= pile_index < len(self.discard_piles):
                 raise ValueError("Choose a valid discard pile.")
@@ -119,5 +120,6 @@ class SpecialActions:
         card = player.play_card(hand_index)
         pile.insert(offset, card)
         self.record_event({"player": player.name, "action": "insert_hand_card", "card": card,
-                             "destination": destination, "position": position, "pile_index": pile_index})
+                             "destination": destination, "position": position, "pile_index": pile_index,
+                             **({"draw_pile_id": draw_pile_id} if destination == "draw" else {})})
         return card

@@ -99,10 +99,10 @@ def _evaluate_availability(g, action, context):
                 return ActionAvailability(False, message, "invalid_selection")
     if g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal():
         return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
-    from .drawpiles import DRAW_SOURCE_ACTIONS, resolve_draw_pile
+    from .drawpiles import uses_draw_source, resolve_draw_pile
     from .actionerrors import ActionValidationError
     draw_pile = g.deck.draw_pile
-    if action in DRAW_SOURCE_ACTIONS:
+    if uses_draw_source(g, action):
         try:
             draw_pile = resolve_draw_pile(g, context.draw_pile_id)
         except ActionValidationError as error:

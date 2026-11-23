@@ -22,7 +22,8 @@ class SpecialActionsUI:
             messagebox.showwarning("No selection", "Select a card in your hand first.", parent=gui.root)
             return
         pile_index = 0
-        options = insertion_options(game, destination)
+        parameters = gui.draw_source_parameters() if destination == "draw" else {}
+        options = insertion_options(game, destination, **parameters)
         if not options:
             messagebox.showwarning("Cannot place card", "This placement is disabled.", parent=gui.root)
             return
@@ -42,7 +43,7 @@ class SpecialActionsUI:
         def action():
             action_id = "insert_draw_deck" if destination == "draw" else "insert_discard_pile"
             result = game.session.execute(
-                action_id, card_index=selected, position=position, pile_index=pile_index)
+                action_id, card_index=selected, position=position, pile_index=pile_index, **parameters)
             if not result.success:
                 messagebox.showwarning("Cannot place card", result.message, parent=gui.root)
                 return

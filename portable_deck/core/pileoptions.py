@@ -29,18 +29,27 @@ class InsertionOption:
     card_count: int
     positions_from_end: int
     random_middle_available: bool
+    draw_pile_id: str | None = None
 
 
-def insertion_options(game, destination):
+def insertion_options(game, destination, draw_pile_id="main"):
     """Describe enabled insertion targets; actual commands revalidate input."""
     if destination not in {"draw", "discard"}:
         raise ValueError("Choose draw or discard as the destination.")
     if not game.enable_special_actions:
         return ()
     if destination == "draw":
-        counts = [len(game.deck.flat_deck)] if game.allow_insert_draw_deck else []
+        from .drawpiles import resolve_draw_pile
+        from .actionerrors import ActionValidationError
+        if not game.allow_insert_draw_deck:
+            return ()
+        try:
+            counts = [len(resolve_draw_pile(game, draw_pile_id).cards)]
+        except ActionValidationError:
+            return ()
     else:
         counts = ([len(pile) for pile in game.discard_piles]
                   if game.allow_insert_discard_pile and game.enable_discard_pile else [])
-    return tuple(InsertionOption(destination, i, count, min(10, count + 1), count >= 20)
+    return tuple(InsertionOption(destination, i, count, min(10, count + 1), count >= 20,
+                                 draw_pile_id if destination == "draw" else None)
                  for i, count in enumerate(counts))
