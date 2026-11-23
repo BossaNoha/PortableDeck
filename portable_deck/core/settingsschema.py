@@ -11,6 +11,7 @@ DEFAULT_SETTINGS = {
     "show_game_log": True,
     "enable_special_actions": False,
     "allow_shuffle_draw_deck": False,
+    "allow_draw_multiple_cards": False,
     "allow_insert_draw_deck": False, "allow_insert_discard_pile": False,
     "color_game_settings_categories": False,
     "reset_chip_accounts_on_restart": True,

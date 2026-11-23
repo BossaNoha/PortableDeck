@@ -296,6 +296,9 @@ class GameGUIBuilder:
 
         if self.game.enable_special_actions:
             self.special_actions_ui = SpecialActionsUI(self)
+            if self.game.allow_draw_multiple_cards:
+                self.draw_multiple_button = tk.Button(self.card_actions_frame, text="Draw multiple cards…", command=self.draw_multiple_cards)
+                self.draw_multiple_button.pack(side="left", padx=5)
             if self.game.allow_shuffle_draw_deck:
                 self.shuffle_draw_button = tk.Button(self.card_actions_frame, text="Shuffle draw deck", command=self.shuffle_draw_deck)
                 self.shuffle_draw_button.pack(side="left", padx=5)

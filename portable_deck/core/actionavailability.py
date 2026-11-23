@@ -27,7 +27,7 @@ ACTIONS = frozenset((
     "flip_hand_card", "play_at_position", "take_table_card", "discard_table_card",
     "flip_table_card", "move_table_card", "request_point", "reduce_score",
     "draw_from_discard", "recycle_discard", "clear_table", "leave_session",
-    "shuffle_draw_deck", "buy_chips", "play_chips", "take_pot", "insert_draw_deck", "insert_discard_pile",
+    "draw_cards", "shuffle_draw_deck", "buy_chips", "play_chips", "take_pot", "insert_draw_deck", "insert_discard_pile",
 )) | frozenset(INTERACTIONS)
 
 
@@ -45,6 +45,7 @@ def _evaluate_availability(g, action, context):
         "discard_cards": g.enable_discard_pile and g.allow_discard_multiple_cards,
         "reverse_turn_order": g.allow_reverse_turn_order,
         "shuffle_draw_deck": g.enable_special_actions and g.allow_shuffle_draw_deck,
+        "draw_cards": g.enable_special_actions and g.allow_draw_multiple_cards,
         "draw_card": True,
         "discard_card": g.enable_discard_pile,
         "play_card": g.enable_table or (not g.enable_discard_pile and not g.enable_interactions),
@@ -84,10 +85,10 @@ def _evaluate_availability(g, action, context):
                 return ActionAvailability(False, message, "invalid_selection")
     if g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal():
         return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
-    if action == "shuffle_draw_deck":
+    if action in {"shuffle_draw_deck", "draw_cards"}:
         if g.pending_point_request is not None or g.pending_pot_withdrawal is not None:
             return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
-        if len(g.deck.flat_deck) < 2:
+        if action == "shuffle_draw_deck" and len(g.deck.flat_deck) < 2:
             return ActionAvailability(False, "At least two draw cards are needed to shuffle.", "not_enough_cards")
     if action in {"take_table_cards", "discard_table_cards"} and len(g.table_cards) < 2:
         return ActionAvailability(False, "At least two table cards are needed.", "not_enough_cards")
@@ -113,7 +114,7 @@ def _evaluate_availability(g, action, context):
         return ActionAvailability(False, f"Minimum bet: {g.minimum_bet} chips. Available: {g.chip_balance(g.current_player_index)}.", "insufficient_chips")
     if action == "take_pot" and g.chip_pot == 0:
         return ActionAvailability(False, "The pot is empty.", "empty_pot")
-    if action == "draw_card" and not g.deck.flat_deck:
+    if action in {"draw_card", "draw_cards"} and not g.deck.flat_deck:
         return ActionAvailability(False, "The draw deck is empty.", "empty_deck")
     discard_piles = list(g.discard_piles) + [pile for player_piles in g.personal_discard_piles for pile in player_piles]
     if action == "draw_from_discard" and not any(discard_piles):

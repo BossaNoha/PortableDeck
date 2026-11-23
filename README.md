@@ -24,6 +24,16 @@ The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
 Enable **Game Settings → Special actions → Enable special actions** and
+**Allow drawing multiple cards at once** for **Draw multiple cards…**, also
+available in the contextual **Special actions** menu. Enter a positive whole
+number; all requested cards must remain in the draw deck. The batch uses the
+same draw order and turn counter as individual draws, with one Undo step and
+one autosave. Cancellation or insufficient cards leaves the game unchanged.
+Public output never shows the drawn card identities. This rule defaults to off,
+is stored in presets/saves and survives restart. CLI: `--draw-multiple-cards`,
+then `draw-many 3`.
+
+Enable **Game Settings → Special actions → Enable special actions** and
 **Allow shuffling the remaining draw deck** for manual shuffling. Use **Shuffle
 draw deck** (in the **Special actions** menu in contextual layout); no hand
 selection is needed. Only remaining draw cards are shuffled. Public history and

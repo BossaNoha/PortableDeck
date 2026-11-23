@@ -1,5 +1,15 @@
 # UI/core boundary audit
 
+Optional batch draw: allow_draw_multiple_cards defaults to False under Special
+actions and requires the parent feature. Session draw_cards accepts a positive
+integer count, validates deck capacity before drawing and uses the single-card
+draw path for identical order, private logging and per-turn draw counts. One
+batch has one Undo/checkpoint; failures roll back the entire draw. GUI asks for
+a count from a core status snapshot, then executes through shared availability.
+Both layouts support it without hand selection; CLI draw-many shares the action.
+Preset/save/legacy/restart, privacy, cancellation, stale-rule revalidation and
+native Tk controls are covered.
+
 Optional draw shuffle: allow_shuffle_draw_deck defaults to False under Special
 actions and requires the parent feature. Core shuffle_draw_deck checks shared
 availability, requires at least two remaining draw cards and no pending approval,
@@ -142,7 +152,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 481 tests; native Tk probes for session, deck and preset
+latest full suite passed 489 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

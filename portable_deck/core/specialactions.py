@@ -3,13 +3,34 @@ import random
 import re
 
 class SpecialActions:
-    def initialize_special_actions(self, enabled=False, draw=False, discard=False, shuffle=False):
+    def initialize_special_actions(self, enabled=False, draw=False, discard=False, shuffle=False, draw_multiple=False):
         if not isinstance(shuffle, bool):
             raise ValueError("allow_shuffle_draw_deck must be true or false")
         self.enable_special_actions = bool(enabled)
         self.allow_insert_draw_deck = bool(draw)
         self.allow_insert_discard_pile = bool(discard)
         self.allow_shuffle_draw_deck = shuffle
+        if not isinstance(draw_multiple, bool):
+            raise ValueError("allow_draw_multiple_cards must be true or false")
+        self.allow_draw_multiple_cards = draw_multiple
+
+    def draw_cards(self, count):
+        from .actionavailability import action_availability
+        from .actionerrors import ActionValidationError
+        available = action_availability(self, "draw_cards")
+        if not available.allowed:
+            raise ActionValidationError(available.code, available.reason)
+        if type(count) is not int or count < 1:
+            raise ActionValidationError("invalid_count", "Choose a positive whole number of cards.")
+        if count > len(self.deck.flat_deck):
+            raise ActionValidationError("insufficient_cards", "The draw deck has too few cards for this draw.")
+        cards = []
+        for _ in range(count):
+            card = self.deal_card_to_current()
+            if card is None:
+                raise ActionValidationError("action_rejected", "The cards could not be drawn.")
+            cards.append(card)
+        return tuple(cards)
 
     def shuffle_draw_deck(self):
         from .actionavailability import action_availability

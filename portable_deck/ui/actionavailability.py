@@ -2,6 +2,7 @@
 from ..core.actionavailability import ActionContext, action_availability
 
 BUTTON_ACTIONS = {'draw_button': 'draw_card',
+ 'draw_multiple_button': 'draw_cards',
  'shuffle_draw_button': 'shuffle_draw_deck',
  'next_button': 'end_turn',
  'choose_next_button': 'choose_next_player',

@@ -141,6 +141,7 @@ class SessionController:
             if not available.allowed:
                 return ActionResult(False, message=available.reason, code=available.code or "action_unavailable")
         handlers = {
+            "draw_cards": lambda: g.draw_cards(parameters.get("count")),
             "shuffle_draw_deck": lambda: g.shuffle_draw_deck(),
             "play_cards": lambda: self.play_cards(parameters.get("card_indices")),
             "take_table_cards": lambda: self.take_table_cards(parameters.get("card_indices")),

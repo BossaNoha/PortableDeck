@@ -7,6 +7,23 @@ from ..core.playersessionview import build_player_session_view
 from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
+    def draw_multiple_cards(self):
+        from tkinter import simpledialog
+        from ..core.actionavailability import action_availability
+        from ..core.sessionstatus import build_session_status
+        available = action_availability(self.game, "draw_cards")
+        if not available.allowed:
+            messagebox.showwarning("Cannot draw cards", available.reason, parent=self.root)
+            return
+        count = simpledialog.askinteger("Draw multiple cards", "How many cards?", parent=self.root,
+                                        minvalue=1, maxvalue=build_session_status(self.game).draw_count)
+        if count is None:
+            return
+        result = self.run_action(lambda: self.session.execute("draw_cards", count=count))
+        if not result.success:
+            messagebox.showwarning("Cannot draw cards", result.message, parent=self.root)
+        return result
+
     def shuffle_draw_deck(self):
         result = self.run_action(lambda: self.session.execute("shuffle_draw_deck"))
         if not result.success:
@@ -367,6 +384,8 @@ class GameGUIActions:
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
+        if hasattr(self, "draw_multiple_button"):
+            buttons.append(self.draw_multiple_button)
         if hasattr(self, "shuffle_draw_button"):
             buttons.append(self.shuffle_draw_button)
         if hasattr(self, "discard_multiple_button"):
