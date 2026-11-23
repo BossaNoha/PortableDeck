@@ -20,6 +20,8 @@ def export_session(game):
         "allow_shuffle_draw_deck": game.allow_shuffle_draw_deck,
         "allow_draw_multiple_cards": game.allow_draw_multiple_cards,
         "allow_deal_cards": game.allow_deal_cards,
+        "allow_shared_offer": game.allow_shared_offer,
+        "pending_shared_offer": game.pending_shared_offer,
         "allow_insert_discard_pile": game.allow_insert_discard_pile,
         "reset_chip_accounts_on_restart": game.reset_chip_accounts_on_restart,
         "enable_player_return": game.enable_player_return,
@@ -273,7 +275,7 @@ def restore_session(game_class, state):
     game.initialize_table_limits(state.get("enable_table_limits", False), state.get("max_table_rows", 3), state.get("max_table_columns", 5), state.get("limit_table_rows", True), state.get("limit_table_columns", True))
     game.initialize_flipping(state.get("enable_flipping", False), state.get("allow_flip_hand", False),
                              state.get("allow_flip_table", False), state.get("allow_flip_player_cards", False))
-    game.initialize_special_actions(state.get("enable_special_actions", False), state.get("allow_insert_draw_deck", False), state.get("allow_insert_discard_pile", False), state.get("allow_shuffle_draw_deck", False), state.get("allow_draw_multiple_cards", False), state.get("allow_deal_cards", False))
+    game.initialize_special_actions(state.get("enable_special_actions", False), state.get("allow_insert_draw_deck", False), state.get("allow_insert_discard_pile", False), state.get("allow_shuffle_draw_deck", False), state.get("allow_draw_multiple_cards", False), state.get("allow_deal_cards", False), state.get("allow_shared_offer", False))
     game.initialize_leaving(state.get("enable_player_leaving", False), state.get("leave_conditions", {}), state.get("enable_player_return", False))
     game.left_players = state.get("left_players", [])
     if any(not isinstance(i, int) or isinstance(i, bool) or not 0 <= i < len(game.players) for i in game.left_players):
@@ -282,6 +284,8 @@ def restore_session(game_class, state):
                                  state.get("enable_score_warning", False), state.get("score_warning", 80))
     game.score_alerts_seen = state.get("score_alerts_seen", {})
     game.configuration_info = state.get("configuration_info", {"name": "Unknown", "modified": None})
+    from .sharedoffer import restore_shared_offer
+    game.pending_shared_offer = restore_shared_offer(game, state.get("pending_shared_offer"))
     game.apply_feature_settings()
     game.ensure_initial_log()
     return game

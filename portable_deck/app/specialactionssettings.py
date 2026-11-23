@@ -3,6 +3,7 @@ import tkinter as tk
 class SpecialActionsSettings:
     def __init__(self, parent, settings, discard_var):
         self.enabled = tk.BooleanVar(value=settings.get("enable_special_actions", False))
+        self.shared_offer = tk.BooleanVar(value=settings.get("allow_shared_offer", False))
         self.deal = tk.BooleanVar(value=settings.get("allow_deal_cards", False))
         self.draw_multiple = tk.BooleanVar(value=settings.get("allow_draw_multiple_cards", False))
         self.shuffle = tk.BooleanVar(value=settings.get("allow_shuffle_draw_deck", False))
@@ -20,13 +21,16 @@ class SpecialActionsSettings:
         self.draw_multiple_check.pack(anchor="w")
         self.deal_check = tk.Checkbutton(parent, text="Allow dealing cards to all active players", variable=self.deal, wraplength=300, justify="left")
         self.deal_check.pack(anchor="w")
+        self.shared_offer_check = tk.Checkbutton(parent, text="Allow shared offer (one public card per active player)", variable=self.shared_offer, wraplength=300, justify="left")
+        self.shared_offer_check.pack(anchor="w")
         discard_var.trace_add("write", self.update)
         self.update()
     def update(self, *_):
+        self.shared_offer_check.configure(state="normal" if self.enabled.get() else "disabled")
         self.deal_check.configure(state="normal" if self.enabled.get() else "disabled")
         self.draw_multiple_check.configure(state="normal" if self.enabled.get() else "disabled")
         self.shuffle_check.configure(state="normal" if self.enabled.get() else "disabled")
         self.draw_check.configure(state="normal" if self.enabled.get() else "disabled")
         self.discard_check.configure(state="normal" if self.enabled.get() and self.discard_var.get() else "disabled")
     def values(self):
-        return {"allow_deal_cards": self.deal.get(), "allow_draw_multiple_cards": self.draw_multiple.get(), "allow_shuffle_draw_deck": self.shuffle.get(), "enable_special_actions": self.enabled.get(), "allow_insert_draw_deck": self.draw.get(), "allow_insert_discard_pile": self.discard.get()}
+        return {"allow_shared_offer": self.shared_offer.get(), "allow_deal_cards": self.deal.get(), "allow_draw_multiple_cards": self.draw_multiple.get(), "allow_shuffle_draw_deck": self.shuffle.get(), "enable_special_actions": self.enabled.get(), "allow_insert_draw_deck": self.draw.get(), "allow_insert_discard_pile": self.discard.get()}

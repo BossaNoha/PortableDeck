@@ -3,7 +3,7 @@ import random
 import re
 
 class SpecialActions:
-    def initialize_special_actions(self, enabled=False, draw=False, discard=False, shuffle=False, draw_multiple=False, deal=False):
+    def initialize_special_actions(self, enabled=False, draw=False, discard=False, shuffle=False, draw_multiple=False, deal=False, offer=False):
         if not isinstance(shuffle, bool):
             raise ValueError("allow_shuffle_draw_deck must be true or false")
         self.enable_special_actions = bool(enabled)
@@ -16,6 +16,9 @@ class SpecialActions:
         if not isinstance(deal, bool):
             raise ValueError("allow_deal_cards must be true or false")
         self.allow_deal_cards = deal
+        if not isinstance(offer, bool):
+            raise ValueError("allow_shared_offer must be true or false")
+        self.allow_shared_offer = offer
 
     def deal_cards(self, count):
         from .actionavailability import action_availability

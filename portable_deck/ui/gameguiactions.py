@@ -7,6 +7,12 @@ from ..core.playersessionview import build_player_session_view
 from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
+    def start_shared_offer(self):
+        result = self.run_action(lambda: self.session.execute("start_shared_offer"))
+        if not result.success:
+            messagebox.showwarning("Cannot open shared offer", result.message, parent=self.root)
+        return result
+
     def take_whole_personal_pile(self):
         return self._choose_whole_personal_pile("take_whole_personal_pile", "Take")
 
@@ -327,6 +333,8 @@ class GameGUIActions:
         if hasattr(self, "context_actions"):
             self.context_actions.refresh()
         self.refresh_action_availability()
+        if hasattr(self, "offer_ui"):
+            self.offer_ui.refresh()
         return result
 
     def undo(self):
@@ -343,6 +351,8 @@ class GameGUIActions:
         self.update_point_button()
         self.update_undo_button()
         self.refresh_action_availability()
+        if hasattr(self, "offer_ui"):
+            self.offer_ui.refresh()
         return result
 
     def update_undo_button(self):
@@ -508,6 +518,8 @@ class GameGUIActions:
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
+        if hasattr(self, "shared_offer_button"):
+            buttons.append(self.shared_offer_button)
         if hasattr(self, "deal_cards_button"):
             buttons.append(self.deal_cards_button)
         if hasattr(self, "draw_multiple_button"):

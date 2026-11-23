@@ -22,6 +22,7 @@ class GameUndoActions:
             "table_cards": copy.deepcopy(self.table_cards),
             "current_player_index": self.current_player_index,
             "turn_direction": self.turn_direction,
+            "pending_shared_offer": copy.deepcopy(self.pending_shared_offer),
             "history": copy.deepcopy(self.history),
             "cards_drawn_this_turn": self.cards_drawn_this_turn,
             "scores": copy.deepcopy(self.scores),
@@ -58,6 +59,7 @@ class GameUndoActions:
         self.normalize_table_positions()
         self.current_player_index = state["current_player_index"]
         self.turn_direction = state.get("turn_direction", 1)
+        self.pending_shared_offer = copy.deepcopy(state.get("pending_shared_offer"))
         self.history = copy.deepcopy(state["history"])
         self.cards_drawn_this_turn = state["cards_drawn_this_turn"]
         self.scores = copy.deepcopy(state["scores"])

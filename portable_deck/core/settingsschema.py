@@ -16,6 +16,7 @@ DEFAULT_SETTINGS = {
     "allow_shuffle_draw_deck": False,
     "allow_draw_multiple_cards": False,
     "allow_deal_cards": False,
+    "allow_shared_offer": False,
     "allow_insert_draw_deck": False, "allow_insert_discard_pile": False,
     "color_game_settings_categories": False,
     "reset_chip_accounts_on_restart": True,

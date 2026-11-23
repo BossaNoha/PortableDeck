@@ -1,5 +1,6 @@
 """Combined, immutable presentation snapshot for an explicitly chosen player."""
 from dataclasses import dataclass
+from .sharedoffer import SharedOfferView, shared_offer_view
 from .sessionstatus import SessionStatus, build_session_status
 from .playerview import (
     PlayerHandsView, PlayerTableView, PlayerPersonalPilesView, PlayerDiscardView,
@@ -16,6 +17,7 @@ class PlayerSessionView:
     table: PlayerTableView
     personal_piles: PlayerPersonalPilesView
     discard: PlayerDiscardView
+    shared_offer: SharedOfferView = SharedOfferView(False)
 
 
 def build_player_session_view(game, viewer, hand_index=None):
@@ -32,4 +34,4 @@ def build_player_session_view(game, viewer, hand_index=None):
         viewer, build_session_status(game), hands,
         build_player_table_view(game, viewer),
         build_player_personal_piles_view(game, viewer, hand_index),
-        build_player_discard_view(game, viewer))
+        build_player_discard_view(game, viewer), shared_offer_view(game))

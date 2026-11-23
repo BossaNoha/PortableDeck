@@ -1,5 +1,20 @@
 # UI/core boundary audit
 
+Optional Shared offer: allow_shared_offer defaults to False under Special
+actions. Core start_shared_offer draws one public card per active player after
+checking capacity and confirmations. pending_shared_offer stores remaining cards
+and frozen participant order (current player first, current direction). Each
+choose_shared_offer validates an index and appends one card to the next chooser's
+hand. Ordinary turn/counters do not change; other gameplay/lifecycle commands are
+blocked while pending. Opening and individual picks each have Undo/checkpoint.
+The immutable SharedOfferView is included in the combined player projection.
+All hand identities are suppressed during the phase. GUI renders a public panel,
+keeps the private layout hidden until explicit resumption, restores pending offers
+on load and updates after Undo. CLI offers a public-only pending view and the same
+commands. Saves strictly validate offer data; legacy saves default to no offer.
+Rule presets, restart, duplicate cards, rollback, phase blocking, privacy, disk
+roundtrip and both native Tk layouts are covered.
+
 Optional all-player deal: allow_deal_cards defaults to False under Special
 actions and requires the parent feature. Session deal_cards accepts a positive
 integer count per active player and validates full capacity before drawing.
@@ -193,7 +208,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 521 tests; native Tk probes for session, deck and preset
+latest full suite passed 531 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

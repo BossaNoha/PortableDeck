@@ -90,6 +90,7 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         allow_shuffle_draw_deck=False,
         allow_draw_multiple_cards=False,
         allow_deal_cards=False,
+        allow_shared_offer=False,
         allow_transfer_personal_piles=False,
         allow_take_whole_personal_pile=False,
         allow_discard_whole_personal_pile=False,
@@ -109,6 +110,7 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         if not isinstance(allow_discard_whole_personal_pile, bool):
             raise ValueError("allow_discard_whole_personal_pile must be true or false")
         self.allow_discard_whole_personal_pile = allow_discard_whole_personal_pile
+        self.pending_shared_offer = None
         self.turn_direction = 1
         if not isinstance(allow_skip_next_player, bool):
             raise ValueError("allow_skip_next_player must be true or false")
@@ -200,7 +202,7 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         if self.enable_table and self.enable_table_limits:
             self.allow_positioned_play = True
         self.initialize_flipping(enable_flipping, allow_flip_hand, allow_flip_table, allow_flip_player_cards)
-        self.initialize_special_actions(enable_special_actions, allow_insert_draw_deck, allow_insert_discard_pile, allow_shuffle_draw_deck, allow_draw_multiple_cards, allow_deal_cards)
+        self.initialize_special_actions(enable_special_actions, allow_insert_draw_deck, allow_insert_discard_pile, allow_shuffle_draw_deck, allow_draw_multiple_cards, allow_deal_cards, allow_shared_offer)
         self.initialize_leaving(enable_player_leaving, leave_conditions, enable_player_return)
         self.initialize_score_limits(enable_target_score, target_score, enable_score_warning, score_warning)
         self.configuration_info = {"name": "Unknown", "modified": None}

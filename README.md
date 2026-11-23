@@ -24,6 +24,23 @@ The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
 Enable **Game Settings → Special actions → Enable special actions** and
+**Allow shared offer (one public card per active player)** for **Open shared
+offer**, also in the contextual **Special actions** menu. This reveals one draw
+card per active player. Starting with the current player and following the
+current direction, each active player chooses one card into their hand. The
+ordinary turn and draw counter do not advance. Enough cards for the whole offer
+are required. Other gameplay waits until all choices are complete.
+
+During this public phase, private hands are hidden. After the last pick, the
+original player confirms **Resume turn — show cards** before hands reappear.
+Opening and each pick have their own Undo step and autosave. An unfinished offer
+survives saving/loading; restart clears it while preserving the enabled rule.
+This rule defaults to off. CLI: `--shared-offer`, then `offer` and
+`choose-offer 2` (offer card numbers start at 1). While pending, `show`/`offer`
+displays only the public offer and the choosing player. The generic feature is
+called **Shared offer**, or **Veřejná nabídka** in Czech.
+
+Enable **Game Settings → Special actions → Enable special actions** and
 **Allow dealing cards to all active players** for **Deal to active players…**,
 also in the contextual **Special actions** menu. Enter the number per player.
 Cards are dealt one at a time, starting with the current player and following

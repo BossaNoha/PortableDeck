@@ -43,6 +43,9 @@ class GameGUI(GameGUIBuilder, GameGUIActions):
             "<Button-1>": self.root.bind("<Button-1>", self.cancel_selection_on_background, add="+"),
         }
         self.layout_frame.bind("<Destroy>", self.remove_selection_bindings, add="+")
+        from .sharedofferui import SharedOfferUI
+        self.offer_ui = SharedOfferUI(self)
+        self.offer_ui.refresh()
 
     def save_checkpoint(self, game):
         if hasattr(self, "table_frame"):

@@ -42,6 +42,7 @@
   "allow_shuffle_draw_deck": false,
   "allow_draw_multiple_cards": false,
   "allow_deal_cards": false,
+  "allow_shared_offer": false,
   "allow_transfer_personal_piles": false,
   "allow_take_whole_personal_pile": false,
   "allow_discard_whole_personal_pile": false,

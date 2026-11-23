@@ -13,9 +13,10 @@ from .app.turnhandoff import TurnHandoffController
 from .core.session import ActionResult
 from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
+from .core.sharedoffer import shared_offer_view
 
 
-HELP = "Commands: discard-pile PLAYER PILE shared|personal DISCARD_PILE, take-pile PLAYER PILE, transfer-pile SOURCE_PLAYER SOURCE_PILE TARGET_PLAYER TARGET_PILE, show, draw, draw-many COUNT, deal COUNT, shuffle, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], discard-table-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: offer, choose-offer CARD, discard-pile PLAYER PILE shared|personal DISCARD_PILE, take-pile PLAYER PILE, transfer-pile SOURCE_PLAYER SOURCE_PILE TARGET_PLAYER TARGET_PILE, show, draw, draw-many COUNT, deal COUNT, shuffle, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], discard-table-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
@@ -37,6 +38,9 @@ class CLIClient:
 
     def turn_work(self):
         if self.turn_flow.pending:
+            return
+        if self.game.pending_shared_offer is not None:
+            self.show_shared_offer()
             return
         work = build_turn_start_view(self.game)
         for notice in work.notifications:
@@ -65,6 +69,18 @@ class CLIClient:
             raise ValueError("Use a positive whole number.")
         return number
 
+    def show_shared_offer(self):
+        view = shared_offer_view(self.game)
+        if self.structured:
+            self.emit("shared_offer", offer=asdict(view))
+        elif view.active:
+            self.write(f"Shared offer — {view.player_name} chooses:")
+            for index, card in enumerate(view.cards, 1):
+                self.write(f"{index}. {card}")
+            self.write("Use choose-offer CARD.")
+        else:
+            self.write("No shared offer is pending.")
+
     def report_result(self, action, result):
         # Internal values/events may contain private cards: never print them.
         if self.structured:
@@ -88,7 +104,7 @@ class CLIClient:
             if not parts:
                 return True
             command, args = parts[0].lower(), parts[1:]
-            arity = {"deal": 1, "discard-pile": 4, "take-pile": 2, "transfer-pile": 4, "draw-many": 1, "shuffle": 0, "confirm-skip": 0, "skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
+            arity = {"offer": 0, "choose-offer": 1, "deal": 1, "discard-pile": 4, "take-pile": 2, "transfer-pile": 4, "draw-many": 1, "shuffle": 0, "confirm-skip": 0, "skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
                      "pending": 0, "approve": 0, "reject": 0, "point": 0,
                      "bet": 1, "pot": 1, "help": 0, "quit": 0, "ready": 0, "cancel": 0}
             if command == "give-many":
@@ -106,6 +122,12 @@ class CLIClient:
                 return False
             if command == "help":
                 self.write(HELP)
+                return True
+            if self.game.pending_shared_offer is not None and command not in {"show", "offer", "choose-offer", "undo"}:
+                self.report_result(command, ActionResult(False, message="Finish the shared offer first.", code="shared_offer_pending"))
+                return True
+            if self.game.pending_shared_offer is not None and command in {"show", "offer"}:
+                self.show_shared_offer()
                 return True
             if command in {"ready", "cancel", "confirm-skip"}:
                 result = (self.turn_flow.confirm_skip() if command == "confirm-skip" else
@@ -140,7 +162,7 @@ class CLIClient:
                 self.turn_work()
                 return True
             parameters = {}
-            actions = {"deal": "deal_cards", "discard-pile": "discard_whole_personal_pile", "take-pile": "take_whole_personal_pile", "transfer-pile": "transfer_personal_pile", "draw-many": "draw_cards", "shuffle": "shuffle_draw_deck", "discard-table-many": "discard_table_cards", "take-many": "take_table_cards", "give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
+            actions = {"offer": "start_shared_offer", "choose-offer": "choose_shared_offer", "deal": "deal_cards", "discard-pile": "discard_whole_personal_pile", "take-pile": "take_whole_personal_pile", "transfer-pile": "transfer_personal_pile", "draw-many": "draw_cards", "shuffle": "shuffle_draw_deck", "discard-table-many": "discard_table_cards", "take-many": "take_table_cards", "give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
                        "point": "request_point", "bet": "play_chips", "pot": "take_pot"}
             if command in {"approve", "reject"}:
                 prompt = build_turn_start_view(self.game).next_confirmation
@@ -163,6 +185,8 @@ class CLIClient:
                 elif command == "transfer-pile":
                     parameters = dict(zip(("source_owner", "source_pile", "target_owner", "target_pile"),
                                           [self.positive(arg) - 1 for arg in args]))
+                elif command == "choose-offer":
+                    parameters["card_index"] = self.positive(args[0]) - 1
                 elif command in {"draw-many", "deal"}:
                     parameters["count"] = self.positive(args[0])
                 elif command == "give-many":
@@ -232,6 +256,7 @@ def main(argv=None):
     parser.add_argument("--take-whole-personal-pile", action="store_true", help="Enable take-pile and personal piles for new games")
     parser.add_argument("--discard-whole-personal-pile", action="store_true", help="Enable discard-pile and personal piles for new games")
     parser.add_argument("--deal-cards", action="store_true", help="Allow deal COUNT for new games")
+    parser.add_argument("--shared-offer", action="store_true", help="Enable offer and choose-offer for new games")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -257,7 +282,8 @@ def main(argv=None):
                 "allow_discard_whole_personal_pile": args.discard_whole_personal_pile,
                 "allow_take_whole_personal_pile": args.take_whole_personal_pile,
                 "personal_pile_count": 2 if args.transfer_personal_piles else 1,
-                "enable_special_actions": args.shuffle_draw_deck or args.draw_multiple_cards or args.deal_cards,
+                "enable_special_actions": args.shuffle_draw_deck or args.draw_multiple_cards or args.deal_cards or args.shared_offer,
+                "allow_shared_offer": args.shared_offer,
                 "allow_deal_cards": args.deal_cards,
                 "allow_draw_multiple_cards": args.draw_multiple_cards,
                 "allow_shuffle_draw_deck": args.shuffle_draw_deck,

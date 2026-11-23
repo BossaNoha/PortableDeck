@@ -108,6 +108,8 @@ class SessionController:
         if not self.depth:
             self.last_checkpoint_error = None
         g = self.game
+        if g.pending_shared_offer is not None and action != "choose_shared_offer":
+            return ActionResult(False, message="Finish the shared offer first.", code="shared_offer_pending")
         card = parameters.get("card_index")
         position = parameters.get("target_position")
         context = ActionContext(hand_index=card, table_index=card, target_position=position,
@@ -140,7 +142,10 @@ class SessionController:
             available = action_availability(g, action, context)
             if not available.allowed:
                 return ActionResult(False, message=available.reason, code=available.code or "action_unavailable")
+        from .sharedoffer import start_shared_offer, choose_shared_offer
         handlers = {
+            "start_shared_offer": lambda: start_shared_offer(g),
+            "choose_shared_offer": lambda: choose_shared_offer(g, card),
             "deal_cards": lambda: g.deal_cards(parameters.get("count")),
             "discard_whole_personal_pile": lambda: g.discard_whole_personal_pile(parameters.get("owner"), parameters.get("pile_index"), parameters.get("discard_pile_index", 0), parameters.get("personal", False)),
             "take_whole_personal_pile": lambda: g.take_whole_personal_pile(parameters.get("owner"), parameters.get("pile_index")),
@@ -267,6 +272,8 @@ class SessionController:
     def end_turn_availability(self, next_player=None, skip_next=False):
         """Describe whether this player can advance the turn right now."""
         from .actionavailability import ActionAvailability
+        if self.game.pending_shared_offer is not None:
+            return ActionAvailability(False, "Finish the shared offer first.", "shared_offer_pending")
         if type(skip_next) is not bool:
             return ActionAvailability(False, "skip_next must be true or false.", "invalid_parameters")
         if skip_next:

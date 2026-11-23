@@ -43,8 +43,8 @@ def build_player_hands_view(game, viewer):
     _validate_viewer(game, viewer)
     hands = []
     for owner, player in enumerate(game.players):
-        full = game.can_view_hand(viewer, owner)
-        cards = tuple(CardView(i, card if full or i in player.revealed_indices else None,
+        full = game.pending_shared_offer is None and game.can_view_hand(viewer, owner)
+        cards = tuple(CardView(i, card if game.pending_shared_offer is None and (full or i in player.revealed_indices) else None,
                                i in player.revealed_indices)
                       for i, card in enumerate(player.hand))
         hands.append(HandView(owner, player.name, full, cards))

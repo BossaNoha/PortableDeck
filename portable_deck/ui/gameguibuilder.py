@@ -308,6 +308,9 @@ class GameGUIBuilder:
 
         if self.game.enable_special_actions:
             self.special_actions_ui = SpecialActionsUI(self)
+            if self.game.allow_shared_offer:
+                self.shared_offer_button = tk.Button(self.card_actions_frame, text="Open shared offer", command=self.start_shared_offer)
+                self.shared_offer_button.pack(side="left", padx=5)
             if self.game.allow_deal_cards:
                 self.deal_cards_button = tk.Button(self.card_actions_frame, text="Deal to active players…", command=self.deal_cards)
                 self.deal_cards_button.pack(side="left", padx=5)
