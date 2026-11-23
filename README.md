@@ -210,7 +210,17 @@ The core separates immutable `DeckDefinition` data (symbols and card groups)
 from mutable `DrawPile` order. `Deck` currently combines one of each for existing
 clients; `flat_deck` accesses that pile's live contents, while `types` and `cards`
 return independent definition lists. Multiple independent piles can be created
-from the same immutable definition. Sessions still use one draw pile.
+from the same immutable definition.
+
+The core session registry `draw_piles` now stores stable IDs, names, optional
+player ownership and independent mutable contents. Its `main` pile is the same
+object as `game.deck.draw_pile`; existing gameplay still targets this default.
+Public status exposes pile metadata/counts without card identities or order.
+Saves and Undo include named piles. The default order remains in `remaining_deck`
+and is not duplicated in `draw_piles`; old saves load with only `main`.
+Restart preserves named-pile metadata and empties extra piles while rebuilding
+the default from the definition. Initial distribution and GUI/CLI source
+selection are later steps; this preparation adds no user-facing multi-pile setup.
 
 Saves contain the session's deck definition as well as its remaining draw order.
 Loading and restarting use this embedded definition without opening the original

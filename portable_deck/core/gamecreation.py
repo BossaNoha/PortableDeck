@@ -26,6 +26,13 @@ def restart_game(game, keep_scores=False):
         restarted.chip_balances = game.chip_balances.copy()
         restarted.chip_pot = game.chip_pot
     start_prepared_game(restarted, game.cards_per_player, game.configuration_info)
+    # Distribution rules are a later step: reset extra piles to empty while
+    # keeping their stable identity and ownership available after restart.
+    piles = game.draw_piles.snapshot()
+    for pile in piles:
+        if "cards" in pile:
+            pile["cards"] = []
+    restarted.draw_piles.restore(piles)
     if keep_scores:
         restarted.scores = game.scores.copy()
         restarted.team_scores = game.team_scores.copy()

@@ -67,6 +67,7 @@ def export_session(game):
         "turn_direction": game.turn_direction,
         "enable_discard_pile": game.enable_discard_pile,
         "deck_path": game.deck.path,
+        "draw_piles": game.draw_piles.snapshot(),
         "deck_types": game.deck.types,
         "deck_cards": game.deck.cards,
         "remaining_deck": game.deck.flat_deck,
@@ -164,6 +165,10 @@ def restore_session(game_class, state):
         game.players.append(player)
     if not game.players:
         raise ValueError("Saved game has no players")
+    from .drawpiles import DrawPiles
+    game.draw_piles = DrawPiles(game.deck.draw_pile, len(game.players))
+    if "draw_piles" in state:
+        game.draw_piles.restore(state["draw_piles"])
     game.shared_discard_pile_count = state.get("shared_discard_pile_count", 1)
     game.personal_discard_pile_count = state.get("personal_discard_pile_count", 0)
     game.discard_piles = state.get("discard_piles", [state.get("discard_pile", [])])

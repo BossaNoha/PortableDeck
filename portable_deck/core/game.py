@@ -150,6 +150,8 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         self.deck = (Deck.from_definition(
             deck_path.definition, path=deck_path.path
         ) if isinstance(deck_path, Deck) else Deck(deck_path))
+        from .drawpiles import DrawPiles
+        self.draw_piles = DrawPiles(self.deck.draw_pile, len(self.players))
         self.shared_discard_pile_count = shared_discard_pile_count
         self.personal_discard_pile_count = personal_discard_pile_count
         self.discard_piles = [[] for _ in range(shared_discard_pile_count)]
