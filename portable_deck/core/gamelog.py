@@ -40,6 +40,7 @@ def format_game_event(event):
         "discard_whole_personal_pile": f"{player} discarded {event.get('count', 0)} cards from {event.get('source', '')} pile {event.get('source_pile', 0)} to {event.get('destination', 'a discard pile')}.",
         "take_whole_personal_pile": f"{player} took {event.get('count', 0)} cards from {event.get('source', '')} pile {event.get('source_pile', 0)}.",
         "transfer_personal_pile": f"{player} moved {event.get('count', 0)} cards from {event.get('source', '')} pile {event.get('source_pile', 0)} to {target} pile {event.get('target_pile', 0)}.",
+        "deal_cards": f"{player} dealt {event.get('count', 0)} cards to each active player.",
         "shuffle_draw_deck": f"{player} shuffled the draw deck.",
         "recycle_discard": f"The discard pile was recycled into the draw deck ({event.get('count', 0)} cards).",
         "round_ended": "The round has ended.",

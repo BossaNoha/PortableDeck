@@ -3,7 +3,7 @@ import random
 import re
 
 class SpecialActions:
-    def initialize_special_actions(self, enabled=False, draw=False, discard=False, shuffle=False, draw_multiple=False):
+    def initialize_special_actions(self, enabled=False, draw=False, discard=False, shuffle=False, draw_multiple=False, deal=False):
         if not isinstance(shuffle, bool):
             raise ValueError("allow_shuffle_draw_deck must be true or false")
         self.enable_special_actions = bool(enabled)
@@ -13,6 +13,35 @@ class SpecialActions:
         if not isinstance(draw_multiple, bool):
             raise ValueError("allow_draw_multiple_cards must be true or false")
         self.allow_draw_multiple_cards = draw_multiple
+        if not isinstance(deal, bool):
+            raise ValueError("allow_deal_cards must be true or false")
+        self.allow_deal_cards = deal
+
+    def deal_cards(self, count):
+        from .actionavailability import action_availability
+        from .actionerrors import ActionValidationError
+        available = action_availability(self, "deal_cards")
+        if not available.allowed:
+            raise ActionValidationError(available.code, available.reason)
+        if type(count) is not int or count < 1:
+            raise ActionValidationError("invalid_count", "Choose a positive whole number of cards per player.")
+        players = self.active_player_indices()
+        if self.turn_direction == -1:
+            players = list(reversed(players))
+        start = players.index(self.current_player_index)
+        players = players[start:] + players[:start]
+        total = count * len(players)
+        if total > len(self.deck.flat_deck):
+            raise ActionValidationError("insufficient_cards", "The draw deck has too few cards for the entire deal.")
+        for _ in range(count):
+            for player in players:
+                card = self.deck.draw_card()
+                if card is None:
+                    raise ActionValidationError("action_rejected", "The cards could not be dealt.")
+                self.players[player].draw_card(card)
+        self.log_action(self.players[self.current_player_index].name, "deal_cards", count=count,
+                        recipients=tuple(self.players[player].name for player in players))
+        return total
 
     def draw_cards(self, count):
         from .actionavailability import action_availability

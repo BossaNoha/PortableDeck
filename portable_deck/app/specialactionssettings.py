@@ -3,6 +3,7 @@ import tkinter as tk
 class SpecialActionsSettings:
     def __init__(self, parent, settings, discard_var):
         self.enabled = tk.BooleanVar(value=settings.get("enable_special_actions", False))
+        self.deal = tk.BooleanVar(value=settings.get("allow_deal_cards", False))
         self.draw_multiple = tk.BooleanVar(value=settings.get("allow_draw_multiple_cards", False))
         self.shuffle = tk.BooleanVar(value=settings.get("allow_shuffle_draw_deck", False))
         self.draw = tk.BooleanVar(value=settings.get("allow_insert_draw_deck", False))
@@ -17,12 +18,15 @@ class SpecialActionsSettings:
         self.shuffle_check.pack(anchor="w")
         self.draw_multiple_check = tk.Checkbutton(parent, text="Allow drawing multiple cards at once", variable=self.draw_multiple, wraplength=300, justify="left")
         self.draw_multiple_check.pack(anchor="w")
+        self.deal_check = tk.Checkbutton(parent, text="Allow dealing cards to all active players", variable=self.deal, wraplength=300, justify="left")
+        self.deal_check.pack(anchor="w")
         discard_var.trace_add("write", self.update)
         self.update()
     def update(self, *_):
+        self.deal_check.configure(state="normal" if self.enabled.get() else "disabled")
         self.draw_multiple_check.configure(state="normal" if self.enabled.get() else "disabled")
         self.shuffle_check.configure(state="normal" if self.enabled.get() else "disabled")
         self.draw_check.configure(state="normal" if self.enabled.get() else "disabled")
         self.discard_check.configure(state="normal" if self.enabled.get() and self.discard_var.get() else "disabled")
     def values(self):
-        return {"allow_draw_multiple_cards": self.draw_multiple.get(), "allow_shuffle_draw_deck": self.shuffle.get(), "enable_special_actions": self.enabled.get(), "allow_insert_draw_deck": self.draw.get(), "allow_insert_discard_pile": self.discard.get()}
+        return {"allow_deal_cards": self.deal.get(), "allow_draw_multiple_cards": self.draw_multiple.get(), "allow_shuffle_draw_deck": self.shuffle.get(), "enable_special_actions": self.enabled.get(), "allow_insert_draw_deck": self.draw.get(), "allow_insert_discard_pile": self.discard.get()}

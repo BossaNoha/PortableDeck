@@ -27,7 +27,7 @@ ACTIONS = frozenset((
     "flip_hand_card", "play_at_position", "take_table_card", "discard_table_card",
     "flip_table_card", "move_table_card", "request_point", "reduce_score",
     "draw_from_discard", "recycle_discard", "clear_table", "leave_session",
-    "discard_whole_personal_pile", "take_whole_personal_pile", "transfer_personal_pile", "draw_cards", "shuffle_draw_deck", "buy_chips", "play_chips", "take_pot", "insert_draw_deck", "insert_discard_pile",
+    "discard_whole_personal_pile", "take_whole_personal_pile", "transfer_personal_pile", "deal_cards", "draw_cards", "shuffle_draw_deck", "buy_chips", "play_chips", "take_pot", "insert_draw_deck", "insert_discard_pile",
 )) | frozenset(INTERACTIONS)
 
 
@@ -49,6 +49,7 @@ def _evaluate_availability(g, action, context):
         "transfer_personal_pile": g.enable_table and g.enable_personal_piles and g.allow_transfer_personal_piles,
         "take_whole_personal_pile": g.enable_table and g.enable_personal_piles and g.allow_take_whole_personal_pile,
         "discard_whole_personal_pile": g.enable_table and g.enable_personal_piles and g.enable_discard_pile and g.allow_discard_whole_personal_pile,
+        "deal_cards": g.enable_special_actions and g.allow_deal_cards,
         "draw_card": True,
         "discard_card": g.enable_discard_pile,
         "play_card": g.enable_table or (not g.enable_discard_pile and not g.enable_interactions),
@@ -97,11 +98,13 @@ def _evaluate_availability(g, action, context):
         sources, targets = transfer_pile_options(g)
         if not any((s.owner, s.pile_index) != (t.owner, t.pile_index) for s in sources for t in targets):
             return ActionAvailability(False, "No accessible source and destination piles are available.", "no_eligible_piles")
-    if action in {"shuffle_draw_deck", "draw_cards"}:
+    if action in {"shuffle_draw_deck", "draw_cards", "deal_cards"}:
         if g.pending_point_request is not None or g.pending_pot_withdrawal is not None:
             return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
         if action == "shuffle_draw_deck" and len(g.deck.flat_deck) < 2:
             return ActionAvailability(False, "At least two draw cards are needed to shuffle.", "not_enough_cards")
+    if action == "deal_cards" and len(g.deck.flat_deck) < len(g.active_player_indices()):
+        return ActionAvailability(False, "Too few cards to deal one to each active player.", "insufficient_cards")
     if action in {"take_table_cards", "discard_table_cards"} and len(g.table_cards) < 2:
         return ActionAvailability(False, "At least two table cards are needed.", "not_enough_cards")
     if action in {"play_cards", "discard_cards", "give_cards"} and len(g.players[g.current_player_index].hand) < 2:

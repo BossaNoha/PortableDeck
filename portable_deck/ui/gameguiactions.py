@@ -121,20 +121,31 @@ class GameGUIActions:
         dialog.grab_set()
 
     def draw_multiple_cards(self):
+        return self._choose_draw_count("draw_cards")
+
+    def deal_cards(self):
+        return self._choose_draw_count("deal_cards")
+
+    def _choose_draw_count(self, action):
         from tkinter import simpledialog
         from ..core.actionavailability import action_availability
         from ..core.sessionstatus import build_session_status
-        available = action_availability(self.game, "draw_cards")
+        dealing = action == "deal_cards"
+        failure_title = "Cannot deal cards" if dealing else "Cannot draw cards"
+        available = action_availability(self.game, action)
         if not available.allowed:
-            messagebox.showwarning("Cannot draw cards", available.reason, parent=self.root)
+            messagebox.showwarning(failure_title, available.reason, parent=self.root)
             return
-        count = simpledialog.askinteger("Draw multiple cards", "How many cards?", parent=self.root,
-                                        minvalue=1, maxvalue=build_session_status(self.game).draw_count)
+        status = build_session_status(self.game)
+        maximum = status.draw_count // sum(player.active for player in status.players) if dealing else status.draw_count
+        count = simpledialog.askinteger("Deal to active players" if dealing else "Draw multiple cards",
+                                        "How many cards per active player?" if dealing else "How many cards?",
+                                        parent=self.root, minvalue=1, maxvalue=maximum)
         if count is None:
             return
-        result = self.run_action(lambda: self.session.execute("draw_cards", count=count))
+        result = self.run_action(lambda: self.session.execute(action, count=count))
         if not result.success:
-            messagebox.showwarning("Cannot draw cards", result.message, parent=self.root)
+            messagebox.showwarning(failure_title, result.message, parent=self.root)
         return result
 
     def shuffle_draw_deck(self):
@@ -497,6 +508,8 @@ class GameGUIActions:
 
     def _turn_action_buttons(self):
         buttons = [self.draw_button, self.discard_button, self.play_button, self.next_button]
+        if hasattr(self, "deal_cards_button"):
+            buttons.append(self.deal_cards_button)
         if hasattr(self, "draw_multiple_button"):
             buttons.append(self.draw_multiple_button)
         if hasattr(self, "shuffle_draw_button"):

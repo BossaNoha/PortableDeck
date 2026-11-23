@@ -23,6 +23,16 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Special actions → Enable special actions** and
+**Allow dealing cards to all active players** for **Deal to active players…**,
+also in the contextual **Special actions** menu. Enter the number per player.
+Cards are dealt one at a time, starting with the current player and following
+the current turn direction, skipping departed players. The entire deal must
+fit in the draw deck or nothing moves. The current turn and ordinary per-turn
+draw counter are unchanged. One deal has one Undo step and one autosave;
+public logs never reveal dealt card identities. The rule defaults to off,
+is stored in presets/saves and survives restart. CLI: `--deal-cards`, then `deal 2`.
+
 Enable **Game Settings → Personal piles → Allow discarding whole personal
 piles**, together with the table, personal piles and discard piles, for
 **Discard whole personal pile…** (in the contextual **Table** menu). Select an

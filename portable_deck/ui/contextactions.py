@@ -23,7 +23,7 @@ class ContextActions:
         self.add_menu("Chips", gui.chip_bank_ui.buttons)
         self.add_menu("Score", [getattr(gui, "point_button", None), getattr(gui, "reduce_score_button", None)])
         self.add_menu("Table", [getattr(gui, "discard_whole_pile_button", None), getattr(gui, "take_whole_pile_button", None), getattr(gui, "transfer_pile_button", None), getattr(gui, "clear_table_button", None), getattr(gui, "recycle_discard_button", None)])
-        self.add_menu("Special actions", [getattr(gui, "shuffle_draw_button", None), getattr(gui, "draw_multiple_button", None)])
+        self.add_menu("Special actions", [getattr(gui, "shuffle_draw_button", None), getattr(gui, "draw_multiple_button", None), getattr(gui, "deal_cards_button", None)])
         self.add_menu("View", [gui.view_deck_button, getattr(gui, "visible_hands_button", None)])
         if hasattr(gui, "interactions_ui") and gui.game.interaction_allowed("give_card"):
             self.give_button = tk.Button(gui.card_actions_frame, text="Give to player…",

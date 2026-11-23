@@ -2,6 +2,7 @@
 from ..core.actionavailability import ActionContext, action_availability
 
 BUTTON_ACTIONS = {'draw_button': 'draw_card',
+ 'deal_cards_button': 'deal_cards',
  'discard_whole_pile_button': 'discard_whole_personal_pile',
  'take_whole_pile_button': 'take_whole_personal_pile',
  'transfer_pile_button': 'transfer_personal_pile',

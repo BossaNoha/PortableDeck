@@ -125,6 +125,8 @@ def build_rules_overview(game):
     add("interactions", "Player interactions", g.enable_interactions,
         [RuleEntry(key, label) for key, label in INTERACTIONS.items() if g.interaction_allowed(key)])
     special = []
+    if g.allow_deal_cards:
+        special.append(RuleEntry("deal_cards", "Deal cards to all active players"))
     if g.allow_draw_multiple_cards:
         special.append(RuleEntry("draw_cards", "Draw multiple cards at once"))
     if g.allow_shuffle_draw_deck:

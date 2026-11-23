@@ -1,5 +1,15 @@
 # UI/core boundary audit
 
+Optional all-player deal: allow_deal_cards defaults to False under Special
+actions and requires the parent feature. Session deal_cards accepts a positive
+integer count per active player and validates full capacity before drawing.
+Core deals round-robin from the current player in current direction, skipping
+departed players. The turn and ordinary draw counter remain unchanged. One
+transaction owns Undo/checkpoint and rolls back every hand/deck on failure.
+Public output contains count/recipient names only. GUI uses core status to bound
+the count prompt in both layouts; CLI deal shares the action. Preset/save/legacy/
+restart, directions, access, exact capacity, privacy and native Tk controls are covered.
+
 Optional whole-pile discard: allow_discard_whole_personal_pile defaults to False
 under Personal piles, requiring table, personal piles and discards. Session
 discard_whole_personal_pile validates owner/pile_index access/nonempty source and
@@ -183,7 +193,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 513 tests; native Tk probes for session, deck and preset
+latest full suite passed 521 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 
