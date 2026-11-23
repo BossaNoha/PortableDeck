@@ -44,7 +44,7 @@ class SessionSerializationTests(unittest.TestCase):
         restored = restore_session(Game, state)
         self.assertEqual(state, before)
         restored.players[0].hand.append("restored only")
-        restored.deck.cards[0].append("restored only")
+        restored.deck.flat_deck.append("restored only")
         restored.undo_stack.clear()
         self.assertEqual(state, before)
         state["players"][0]["hand"].append("export only")

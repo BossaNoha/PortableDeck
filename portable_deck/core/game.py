@@ -148,7 +148,7 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         ]
         # Internal callers may supply the session's definition instead of a file.
         self.deck = (Deck.from_definition(
-            {"types": deck_path.types, "cards": deck_path.cards}, path=deck_path.path
+            deck_path.definition, path=deck_path.path
         ) if isinstance(deck_path, Deck) else Deck(deck_path))
         self.shared_discard_pile_count = shared_discard_pile_count
         self.personal_discard_pile_count = personal_discard_pile_count

@@ -1,5 +1,16 @@
 # UI/core boundary audit
 
+Draw-pile preparation: immutable DeckDefinition owns validated card-set data and
+JSON conversion; DrawPile owns only mutable card order, shuffle and draw. Deck
+remains the existing file-loading/facade API with one definition and one pile.
+Legacy flat_deck is the authoritative pile list, not a duplicate state. Definition
+types/cards reads return independent lists; editing requires a new definition.
+Game construction from an existing Deck reuses its immutable definition and
+creates a separate pile. Save fields, source-file fallback, restart and Undo
+formats are unchanged. No multi-pile session settings or behavior are added yet.
+Tests cover independent piles from one definition, duplicates, definition input/
+export isolation, facade access, disk save/load, restart and actual Tk previews.
+
 Optional Shared offer: allow_shared_offer defaults to False under Special
 actions. Core start_shared_offer draws one public card per active player after
 checking capacity and confirmations. pending_shared_offer stores remaining cards
@@ -208,7 +219,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 531 tests; native Tk probes for session, deck and preset
+latest full suite passed 537 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

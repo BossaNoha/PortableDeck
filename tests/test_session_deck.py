@@ -32,7 +32,8 @@ class SessionDeckTests(unittest.TestCase):
                     restarted = source.restart()
                     cards = restarted.deck.flat_deck + [card for player in restarted.players for card in player.hand]
                     self.assertCountEqual(cards, [f"{n} of Original" for n in range(1, 7)])
-                    restarted.deck.cards[0].append(7)
+                    restarted.deck.flat_deck.append("restart only")
+                    self.assertNotIn("restart only", source.deck.flat_deck)
                     self.assertEqual(source.deck.cards, definition["cards"])
                 self.assertTrue(loaded.session.undo())
                 self.assertEqual(loaded.capture_undo_state(), game.undo_stack[-1])

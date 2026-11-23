@@ -206,6 +206,12 @@ current session's effective rules, rather than current application settings.
 scores are optionally retained, while chip balances/pot follow the existing
 `reset_chip_accounts_on_restart` rule. The original session is not modified.
 
+The core separates immutable `DeckDefinition` data (symbols and card groups)
+from mutable `DrawPile` order. `Deck` currently combines one of each for existing
+clients; `flat_deck` accesses that pile's live contents, while `types` and `cards`
+return independent definition lists. Multiple independent piles can be created
+from the same immutable definition. Sessions still use one draw pile.
+
 Saves contain the session's deck definition as well as its remaining draw order.
 Loading and restarting use this embedded definition without opening the original
 deck file. Editing a deck file affects new games only. Older saves without an

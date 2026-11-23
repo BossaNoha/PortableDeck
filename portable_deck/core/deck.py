@@ -1,26 +1,41 @@
-#deck.py
+"""Compatibility facade combining a card definition with one draw pile."""
 import json
-import random
-import copy
+from .deckdefinition import DeckDefinition, validate_definition
+from .drawpile import DrawPile
+
 
 class Deck:
     @classmethod
     def from_definition(cls, data, *, path=None):
-        """Build an independent deck without opening its optional source path."""
-        cls.validate_data(data)
+        """Create an independent draw pile from a definition without file access."""
+        definition = data if isinstance(data, DeckDefinition) else DeckDefinition.from_data(data)
         deck = cls.__new__(cls)
         deck.path = path
-        deck.types = copy.deepcopy(data["types"])
-        deck.cards = copy.deepcopy(data["cards"])
-        deck.flatten()
+        deck.definition = definition
+        deck.draw_pile = DrawPile(definition.expanded_cards())
         return deck
 
     def __init__(self, path):
         self.path = path
-        self.types = []
-        self.cards = []
-        self.flat_deck = []
+        self.draw_pile = DrawPile()
         self.load()
+
+    @property
+    def types(self):
+        return list(self.definition.types)
+
+    @property
+    def cards(self):
+        return [list(group) for group in self.definition.cards]
+
+    @property
+    def flat_deck(self):
+        """Legacy live-list access to the authoritative draw-pile contents."""
+        return self.draw_pile.cards
+
+    @flat_deck.setter
+    def flat_deck(self, cards):
+        self.draw_pile.cards = list(cards)
 
     def load(self):
         try:
@@ -32,49 +47,16 @@ class Deck:
             ) from error
         except UnicodeDecodeError as error:
             raise ValueError("Deck file must use UTF-8 text encoding.") from error
-        self.validate_data(data)
-        self.types = data["types"]
-        self.cards = data["cards"]
+        self.definition = DeckDefinition.from_data(data)
         self.flatten()
 
-    @staticmethod
-    def validate_data(data):
-        """Validate the supported deck JSON shape and return its card count."""
-        if not isinstance(data, dict):
-            raise ValueError("Deck JSON must contain an object with 'types' and 'cards' lists.")
-        types = data.get("types")
-        groups = data.get("cards")
-        if not isinstance(types, list) or not types:
-            raise ValueError("Deck must define at least one card type in the 'types' list.")
-        if any(not isinstance(name, str) or not name.strip() for name in types):
-            raise ValueError("Every entry in 'types' must be a non-empty name.")
-        if not isinstance(groups, list) or len(groups) != len(types):
-            raise ValueError("The 'cards' list must contain one card list for every type.")
-        count = 0
-        for index, group in enumerate(groups):
-            if not isinstance(group, list):
-                raise ValueError(f"Cards for type '{types[index]}' must be a list.")
-            if any(
-                isinstance(value, bool)
-                or not isinstance(value, (str, int, float))
-                or not str(value).strip()
-                for value in group
-            ):
-                raise ValueError(f"Cards for type '{types[index]}' must be non-empty text or numbers.")
-            count += len(group)
-        if count == 0:
-            raise ValueError("Deck contains no cards.")
-        return count
+    validate_data = staticmethod(validate_definition)
 
     def flatten(self):
-        self.flat_deck = []
-        for type_index, group in enumerate(self.cards):
-            type_name = self.types[type_index]
-            for value in group:
-                self.flat_deck.append(f"{value} of {type_name}")
+        self.draw_pile.cards = list(self.definition.expanded_cards())
 
     def shuffle(self):
-        random.shuffle(self.flat_deck)
+        self.draw_pile.shuffle()
 
     def draw_card(self):
-        return self.flat_deck.pop(0) if self.flat_deck else None
+        return self.draw_pile.draw_card()
