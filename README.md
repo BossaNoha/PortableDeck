@@ -23,6 +23,16 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Personal piles → Allow taking whole personal piles
+into hand**, together with personal piles and the table, for **Take whole
+personal pile…** (in the contextual **Table** menu). Choose an accessible,
+nonempty pile. Its entire contents are appended to your hand in stored pile
+order, from bottom to top, without marking received cards revealed. Public logs
+show only the source and count. The action has one Undo step and one autosave.
+This rule defaults to off, is stored in presets/saves and survives restart.
+CLI: `--take-whole-personal-pile` enables the rule and personal piles for new
+games; `take-pile 2 1` selects player 2's first pile, subject to access rules.
+
 Enable **Game Settings → Personal piles → Allow transferring whole personal
 piles**, together with personal piles and the table, for **Transfer personal
 pile…** (in the contextual **Table** menu). Select a nonempty source and a

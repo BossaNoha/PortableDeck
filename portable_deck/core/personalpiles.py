@@ -2,6 +2,27 @@
 
 
 class PersonalPileActions:
+    def take_whole_personal_pile(self, owner, pile):
+        from .actionavailability import action_availability
+        from .actionerrors import ActionValidationError
+        available = action_availability(self, "take_whole_personal_pile")
+        if not available.allowed:
+            raise ActionValidationError(available.code, available.reason)
+        if (type(owner) is not int or type(pile) is not int or not 0 <= owner < len(self.players)
+                or not 0 <= pile < len(self.personal_piles[owner])):
+            raise ActionValidationError("invalid_pile", "Choose a valid personal pile.")
+        if not self.can_access_personal_pile(owner, pile):
+            raise ActionValidationError("access_denied", "You do not have access to this pile.")
+        cards = self.personal_piles[owner][pile]
+        if not cards:
+            raise ActionValidationError("empty_pile", "The source pile is empty.")
+        count = len(cards)
+        self.players[self.current_player_index].hand.extend(cards)
+        cards.clear()
+        self.log_action(self.players[self.current_player_index].name, "take_whole_personal_pile",
+                        count=count, source=self.players[owner].name, source_pile=pile + 1)
+        return count
+
     def initialize_personal_piles(self, enabled=False, count=1, configurations=None, unequal=False, counts=None, team_access=False, dealer_access=False):
         if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= 20:
             raise ValueError("Personal pile count must be between 1 and 20.")

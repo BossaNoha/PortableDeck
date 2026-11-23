@@ -10,6 +10,7 @@ DEFAULT_SETTINGS = {
     "enable_table_limits": False, "max_table_rows": 3, "max_table_columns": 5,
     "show_game_log": True,
     "allow_transfer_personal_piles": False,
+    "allow_take_whole_personal_pile": False,
     "enable_special_actions": False,
     "allow_shuffle_draw_deck": False,
     "allow_draw_multiple_cards": False,

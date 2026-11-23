@@ -159,6 +159,10 @@ class GameGUIBuilder:
             self.positioned_play_buttons.append(self.play_at_spot_button)
 
         self.table_action_buttons = []
+        if self.game.enable_table and self.game.enable_personal_piles and self.game.allow_take_whole_personal_pile:
+            self.take_whole_pile_button = tk.Button(self.card_actions_frame, text="Take whole personal pile…", command=self.take_whole_personal_pile)
+            self.take_whole_pile_button.pack(side="left", padx=5)
+            self.table_action_buttons.append(self.take_whole_pile_button)
         if self.game.enable_table and self.game.enable_personal_piles and self.game.allow_transfer_personal_piles:
             self.transfer_pile_button = tk.Button(self.card_actions_frame, text="Transfer personal pile…", command=self.transfer_personal_pile)
             self.transfer_pile_button.pack(side="left", padx=5)

@@ -1,5 +1,15 @@
 # UI/core boundary audit
 
+Optional whole-pile take: allow_take_whole_personal_pile defaults to False under
+Personal piles, requiring table/personal piles. Session take_whole_personal_pile
+accepts owner/pile_index and validates access and nonempty source before moving
+the entire pile into the current hand in stored order. Received cards retain
+normal hand visibility and are not marked revealed. Logs/results contain only
+source/count, with one Undo/checkpoint. GUI uses immutable accessible pile options
+shared with transfer, guards turn changes and revalidates on execution. CLI
+take-pile shares the action; old single top-card behavior remains available.
+Preset/save/legacy/restart, rollback, privacy and both native Tk layouts are covered.
+
 Optional whole-pile transfer: allow_transfer_personal_piles defaults to False
 under Personal piles, requiring table/personal piles. Core transfer_personal_pile
 validates both indices, actor access, nonempty source, different destination and
@@ -163,7 +173,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 497 tests; native Tk probes for session, deck and preset
+latest full suite passed 505 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

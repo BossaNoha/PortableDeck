@@ -103,6 +103,8 @@ def build_rules_overview(game):
         "team_dealer": "Team + Dealer", "dealer_only": "Dealer only", "owner_dealer": "Owner + Dealer",
         "everyone_but_owner": "Everyone but owner", "team_but_member": "Team but member"}
     personal = flags((("enable_team_pile_access", "Team access enabled"), ("enable_dealer_pile_access", "Dealer access enabled")))
+    if g.allow_take_whole_personal_pile:
+        personal.append(RuleEntry("take_whole_personal_pile", "Take whole personal piles into hand"))
     if g.allow_transfer_personal_piles:
         personal.append(RuleEntry("transfer_personal_pile", "Transfer whole personal piles"))
     for owner, player in enumerate(g.players):

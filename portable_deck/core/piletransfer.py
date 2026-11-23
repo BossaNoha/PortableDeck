@@ -11,11 +11,15 @@ class TransferPile:
     card_count: int
 
 
-def transfer_pile_options(game):
-    choices = tuple(TransferPile(owner, index, f"{player.name} — Pile {index + 1}", len(cards))
+def accessible_pile_options(game):
+    return tuple(TransferPile(owner, index, f"{player.name} — Pile {index + 1}", len(cards))
                     for owner, player in enumerate(game.players)
                     for index, cards in enumerate(game.personal_piles[owner])
                     if game.can_access_personal_pile(owner, index))
+
+
+def transfer_pile_options(game):
+    choices = accessible_pile_options(game)
     targets = tuple(pile for pile in choices if pile.owner not in game.left_players)
     sources = tuple(pile for pile in choices if pile.card_count and any(
         (pile.owner, pile.pile_index) != (target.owner, target.pile_index) for target in targets))

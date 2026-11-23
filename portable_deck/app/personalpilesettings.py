@@ -14,6 +14,7 @@ class PersonalPileSettings:
         self.players_var = players_var
         self.fit_window = fit_window
         legacy_count = settings.get("personal_discard_pile_count", 0)
+        self.take_whole_var = tk.BooleanVar(value=settings.get("allow_take_whole_personal_pile", False))
         self.transfer_var = tk.BooleanVar(value=settings.get("allow_transfer_personal_piles", False))
         self.enabled_var = tk.BooleanVar(value=settings.get("enable_personal_piles", legacy_count > 0))
         self.count_var = tk.StringVar(value=str(settings.get("personal_pile_count", legacy_count or 1)))
@@ -31,6 +32,7 @@ class PersonalPileSettings:
                        command=self.update_states).pack(anchor="w")
         self.options = tk.Frame(parent)
         self.options.pack(fill="x")
+        tk.Checkbutton(self.options, text="Allow taking whole personal piles into hand", variable=self.take_whole_var, wraplength=320, justify="left").pack(anchor="w")
         tk.Checkbutton(self.options, text="Allow transferring whole personal piles", variable=self.transfer_var, wraplength=320, justify="left").pack(anchor="w")
         tk.Checkbutton(self.options, text="Unequal amount of personal piles",
                        variable=self.unequal_var, command=self.rebuild).pack(anchor="w")
@@ -232,7 +234,7 @@ class PersonalPileSettings:
 
     def values(self):
         counts = self.counts()
-        return {"allow_transfer_personal_piles": self.transfer_var.get(), "enable_team_pile_access": self.team_access_var.get(), "enable_dealer_pile_access": self.dealer_access_var.get(), "enable_personal_piles": self.enabled_var.get(), "personal_pile_count": int(self.count_var.get()),
+        return {"allow_take_whole_personal_pile": self.take_whole_var.get(), "allow_transfer_personal_piles": self.transfer_var.get(), "enable_team_pile_access": self.team_access_var.get(), "enable_dealer_pile_access": self.dealer_access_var.get(), "enable_personal_piles": self.enabled_var.get(), "personal_pile_count": int(self.count_var.get()),
                 "unequal_personal_piles": self.unequal_var.get(),
                 "personal_pile_counts": [int(var.get()) for var in self.owner_count_vars[:len(counts)]],
                 "personal_pile_settings": [[self.row_value(self.rows[owner, pile])
