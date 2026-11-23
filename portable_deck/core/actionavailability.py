@@ -27,7 +27,7 @@ ACTIONS = frozenset((
     "flip_hand_card", "play_at_position", "take_table_card", "discard_table_card",
     "flip_table_card", "move_table_card", "request_point", "reduce_score",
     "draw_from_discard", "recycle_discard", "clear_table", "leave_session",
-    "draw_cards", "shuffle_draw_deck", "buy_chips", "play_chips", "take_pot", "insert_draw_deck", "insert_discard_pile",
+    "transfer_personal_pile", "draw_cards", "shuffle_draw_deck", "buy_chips", "play_chips", "take_pot", "insert_draw_deck", "insert_discard_pile",
 )) | frozenset(INTERACTIONS)
 
 
@@ -46,6 +46,7 @@ def _evaluate_availability(g, action, context):
         "reverse_turn_order": g.allow_reverse_turn_order,
         "shuffle_draw_deck": g.enable_special_actions and g.allow_shuffle_draw_deck,
         "draw_cards": g.enable_special_actions and g.allow_draw_multiple_cards,
+        "transfer_personal_pile": g.enable_table and g.enable_personal_piles and g.allow_transfer_personal_piles,
         "draw_card": True,
         "discard_card": g.enable_discard_pile,
         "play_card": g.enable_table or (not g.enable_discard_pile and not g.enable_interactions),
@@ -85,6 +86,11 @@ def _evaluate_availability(g, action, context):
                 return ActionAvailability(False, message, "invalid_selection")
     if g.current_player_must_confirm_point() or g.current_player_must_confirm_pot_withdrawal():
         return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")
+    if action == "transfer_personal_pile":
+        from .piletransfer import transfer_pile_options
+        sources, targets = transfer_pile_options(g)
+        if not any((s.owner, s.pile_index) != (t.owner, t.pile_index) for s in sources for t in targets):
+            return ActionAvailability(False, "No accessible source and destination piles are available.", "no_eligible_piles")
     if action in {"shuffle_draw_deck", "draw_cards"}:
         if g.pending_point_request is not None or g.pending_pot_withdrawal is not None:
             return ActionAvailability(False, "Complete the pending confirmation first.", "confirmation_required")

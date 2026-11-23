@@ -37,6 +37,7 @@ def format_game_event(event):
         "move_table_card": f"{player} moved {card} to another spot on the table.",
         "move_table_sequence": f"{player} moved a sequence starting with {card} on the table.",
         "clear_table": f"The table was cleared. {event.get('count', 0)} card(s) moved to the discard pile.",
+        "transfer_personal_pile": f"{player} moved {event.get('count', 0)} cards from {event.get('source', '')} pile {event.get('source_pile', 0)} to {target} pile {event.get('target_pile', 0)}.",
         "shuffle_draw_deck": f"{player} shuffled the draw deck.",
         "recycle_discard": f"The discard pile was recycled into the draw deck ({event.get('count', 0)} cards).",
         "round_ended": "The round has ended.",

@@ -1,5 +1,16 @@
 # UI/core boundary audit
 
+Optional whole-pile transfer: allow_transfer_personal_piles defaults to False
+under Personal piles, requiring table/personal piles. Core transfer_personal_pile
+validates both indices, actor access, nonempty source, different destination and
+active recipient before mutation. It preserves group order, honors destination
+top/bottom time placement and rejects size-order conflicts without reordering.
+Personal cards currently store names only; no face-state field is introduced.
+Immutable options expose names/counts only; public logs contain no card values.
+Session owns one Undo/checkpoint. GUI guards turn changes and revalidates on
+execution; CLI transfer-pile uses the same action. Preset/save/legacy/restart,
+rollback, access, order and both native Tk layouts are covered.
+
 Optional batch draw: allow_draw_multiple_cards defaults to False under Special
 actions and requires the parent feature. Session draw_cards accepts a positive
 integer count, validates deck capacity before drawing and uses the single-card
@@ -152,7 +163,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 489 tests; native Tk probes for session, deck and preset
+latest full suite passed 497 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

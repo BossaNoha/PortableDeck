@@ -141,6 +141,7 @@ class SessionController:
             if not available.allowed:
                 return ActionResult(False, message=available.reason, code=available.code or "action_unavailable")
         handlers = {
+            "transfer_personal_pile": lambda: self.transfer_personal_pile(parameters),
             "draw_cards": lambda: g.draw_cards(parameters.get("count")),
             "shuffle_draw_deck": lambda: g.shuffle_draw_deck(),
             "play_cards": lambda: self.play_cards(parameters.get("card_indices")),
@@ -216,6 +217,11 @@ class SessionController:
         result = self.run(perform)
         return ActionResult(result.success, result.changed, result.value, result.message, self.last_checkpoint_error,
                             tuple(copy.deepcopy(g.history[event_offset:])), tuple(g.game_log[log_offset:]), result.code)
+
+    def transfer_personal_pile(self, parameters):
+        from .piletransfer import transfer_personal_pile
+        return transfer_personal_pile(self.game, parameters.get("source_owner"), parameters.get("source_pile"),
+                                      parameters.get("target_owner"), parameters.get("target_pile"))
 
     def discard_table_cards(self, parameters):
         from .bulkdiscard import discard_table_cards

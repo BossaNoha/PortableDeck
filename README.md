@@ -23,6 +23,20 @@ while the game remains hidden; the refreshed screen is shown afterward.
 The option is off by default and is an application preference, preserved when
 loading presets and applied to new/resumed games; it does not change game rules.
 
+Enable **Game Settings → Personal piles → Allow transferring whole personal
+piles**, together with personal piles and the table, for **Transfer personal
+pile…** (in the contextual **Table** menu). Select a nonempty source and a
+different destination. You must have access to both; the destination player must
+be active. The whole group retains its internal order and is inserted at the
+top or bottom according to the destination's time-order rule. A size-ordered
+destination accepts the transfer only if its ordering remains valid without
+reordering the group. Public logs contain names/counts, not card identities.
+The rule defaults to off, is stored in presets/saves and survives restart.
+Transfers have one Undo step and one autosave. CLI: `transfer-pile 1 1 2 1`
+uses source player/pile and destination player/pile numbers, starting at 1.
+`--transfer-personal-piles` enables the rule with two owner-only piles per player
+for new CLI games; cross-player access follows the configured rules in loaded games.
+
 Enable **Game Settings → Special actions → Enable special actions** and
 **Allow drawing multiple cards at once** for **Draw multiple cards…**, also
 available in the contextual **Special actions** menu. Enter a positive whole

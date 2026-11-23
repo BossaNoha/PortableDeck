@@ -89,6 +89,7 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         allow_discard_multiple_table_cards=False,
         allow_shuffle_draw_deck=False,
         allow_draw_multiple_cards=False,
+        allow_transfer_personal_piles=False,
     ):
         if not isinstance(allow_choose_next_player, bool):
             raise ValueError("allow_choose_next_player must be true or false")
@@ -96,6 +97,9 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
         if not isinstance(allow_reverse_turn_order, bool):
             raise ValueError("allow_reverse_turn_order must be true or false")
         self.allow_reverse_turn_order = allow_reverse_turn_order
+        if not isinstance(allow_transfer_personal_piles, bool):
+            raise ValueError("allow_transfer_personal_piles must be true or false")
+        self.allow_transfer_personal_piles = allow_transfer_personal_piles
         self.turn_direction = 1
         if not isinstance(allow_skip_next_player, bool):
             raise ValueError("allow_skip_next_player must be true or false")

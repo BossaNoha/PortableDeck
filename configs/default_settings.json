@@ -41,6 +41,7 @@
   "allow_discard_multiple_table_cards": false,
   "allow_shuffle_draw_deck": false,
   "allow_draw_multiple_cards": false,
+  "allow_transfer_personal_piles": false,
   "enable_table": true,
   "enable_discard_pile": true,
   "enable_personal_piles": false,

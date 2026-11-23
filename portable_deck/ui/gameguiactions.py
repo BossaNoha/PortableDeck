@@ -7,6 +7,54 @@ from ..core.playersessionview import build_player_session_view
 from ..core.turnstart import build_turn_start_view
 
 class GameGUIActions:
+    def transfer_personal_pile(self):
+        from ..core.actionavailability import action_availability
+        from ..core.piletransfer import transfer_pile_options
+        available = action_availability(self.game, "transfer_personal_pile")
+        if not available.allowed:
+            messagebox.showwarning("Cannot transfer pile", available.reason, parent=self.root)
+            return
+        sources, targets = transfer_pile_options(self.game)
+        snapshot = build_selection_snapshot(self.game)
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Transfer personal pile")
+        dialog.transient(self.root)
+        lists = []
+        for title, options in (("Source", sources), ("Destination", targets)):
+            tk.Label(dialog, text=title).pack(anchor="w", padx=12, pady=(8, 0))
+            choices = tk.Listbox(dialog, exportselection=False, width=50, height=min(8, len(options)))
+            choices.pack(fill="both", expand=True, padx=12)
+            for pile in options:
+                choices.insert("end", f"{pile.name} ({pile.card_count} cards)")
+            lists.append(choices)
+        lists[0].selection_set(0)
+        source = sources[0]
+        lists[1].selection_set(next(i for i, p in enumerate(targets)
+                                    if (p.owner, p.pile_index) != (source.owner, source.pile_index)))
+
+        def transfer():
+            current = build_selection_snapshot(self.game)
+            if (current.session, current.owner) != (snapshot.session, snapshot.owner):
+                messagebox.showwarning("Turn changed", "Reopen the pile selector before transferring.", parent=dialog)
+                return
+            selected = [choices.curselection() for choices in lists]
+            if not all(selected):
+                messagebox.showwarning("Choose piles", "Select a source and a destination.", parent=dialog)
+                return
+            source, target = sources[selected[0][0]], targets[selected[1][0]]
+            result = self.run_action(lambda: self.session.execute("transfer_personal_pile",
+                source_owner=source.owner, source_pile=source.pile_index,
+                target_owner=target.owner, target_pile=target.pile_index))
+            if result.success:
+                dialog.destroy()
+            else:
+                messagebox.showwarning("Cannot transfer pile", result.message, parent=dialog)
+            return result
+
+        tk.Button(dialog, text="Transfer pile", command=transfer).pack(pady=6)
+        tk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=(0, 8))
+        dialog.grab_set()
+
     def draw_multiple_cards(self):
         from tkinter import simpledialog
         from ..core.actionavailability import action_availability

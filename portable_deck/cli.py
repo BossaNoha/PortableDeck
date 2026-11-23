@@ -15,7 +15,7 @@ from .core.playersessionview import build_player_session_view
 from .core.turnstart import build_turn_start_view
 
 
-HELP = "Commands: show, draw, draw-many COUNT, shuffle, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], discard-table-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
+HELP = "Commands: transfer-pile SOURCE_PLAYER SOURCE_PILE TARGET_PLAYER TARGET_PILE, show, draw, draw-many COUNT, shuffle, play CARD, play-many CARD CARD [...], discard-many shared|personal PILE CARD CARD [...], discard-table-many shared|personal PILE CARD CARD [...], give-many PLAYER CARD CARD [...], take-many CARD CARD [...], end [PLAYER], skip, reverse, confirm-skip, ready, cancel, undo, pending, approve, reject, point, bet AMOUNT, pot PLAYER, help, quit. Card/player numbers start at 1."
 
 
 class CLIClient:
@@ -88,7 +88,7 @@ class CLIClient:
             if not parts:
                 return True
             command, args = parts[0].lower(), parts[1:]
-            arity = {"draw-many": 1, "shuffle": 0, "confirm-skip": 0, "skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
+            arity = {"transfer-pile": 4, "draw-many": 1, "shuffle": 0, "confirm-skip": 0, "skip": 0, "reverse": 0, "show": 0, "draw": 0, "play": 1, "end": 0, "undo": 0,
                      "pending": 0, "approve": 0, "reject": 0, "point": 0,
                      "bet": 1, "pot": 1, "help": 0, "quit": 0, "ready": 0, "cancel": 0}
             if command == "give-many":
@@ -140,7 +140,7 @@ class CLIClient:
                 self.turn_work()
                 return True
             parameters = {}
-            actions = {"draw-many": "draw_cards", "shuffle": "shuffle_draw_deck", "discard-table-many": "discard_table_cards", "take-many": "take_table_cards", "give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
+            actions = {"transfer-pile": "transfer_personal_pile", "draw-many": "draw_cards", "shuffle": "shuffle_draw_deck", "discard-table-many": "discard_table_cards", "take-many": "take_table_cards", "give-many": "give_cards", "discard-many": "discard_cards", "play-many": "play_cards", "skip": "end_turn", "reverse": "reverse_turn_order", "draw": "draw_card", "play": "play_card", "end": "end_turn",
                        "point": "request_point", "bet": "play_chips", "pot": "take_pot"}
             if command in {"approve", "reject"}:
                 prompt = build_turn_start_view(self.game).next_confirmation
@@ -153,7 +153,10 @@ class CLIClient:
                 action, parameters = prompt.action, {"approved": command == "approve"}
             else:
                 action = actions[command]
-                if command == "draw-many":
+                if command == "transfer-pile":
+                    parameters = dict(zip(("source_owner", "source_pile", "target_owner", "target_pile"),
+                                          [self.positive(arg) - 1 for arg in args]))
+                elif command == "draw-many":
                     parameters["count"] = self.positive(args[0])
                 elif command == "give-many":
                     parameters = {"target": self.positive(args[0]) - 1,
@@ -218,6 +221,7 @@ def main(argv=None):
     parser.add_argument("--discard-multiple-table-cards", action="store_true", help="Allow discard-table-many for new games")
     parser.add_argument("--shuffle-draw-deck", action="store_true", help="Allow shuffle for new games")
     parser.add_argument("--draw-multiple-cards", action="store_true", help="Allow draw-many for new games")
+    parser.add_argument("--transfer-personal-piles", action="store_true", help="Enable whole-pile transfers with two owner-only piles per player for new games")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -238,6 +242,9 @@ def main(argv=None):
                 "allow_move_table_card_to_discard": args.discard_multiple_table_cards,
                 "allow_take_multiple_cards": args.take_multiple_cards,
                 "allow_take_from_table": args.take_multiple_cards,
+                "allow_transfer_personal_piles": args.transfer_personal_piles,
+                "enable_personal_piles": args.transfer_personal_piles,
+                "personal_pile_count": 2 if args.transfer_personal_piles else 1,
                 "enable_special_actions": args.shuffle_draw_deck or args.draw_multiple_cards,
                 "allow_draw_multiple_cards": args.draw_multiple_cards,
                 "allow_shuffle_draw_deck": args.shuffle_draw_deck,

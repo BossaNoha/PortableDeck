@@ -159,6 +159,10 @@ class GameGUIBuilder:
             self.positioned_play_buttons.append(self.play_at_spot_button)
 
         self.table_action_buttons = []
+        if self.game.enable_table and self.game.enable_personal_piles and self.game.allow_transfer_personal_piles:
+            self.transfer_pile_button = tk.Button(self.card_actions_frame, text="Transfer personal pile…", command=self.transfer_personal_pile)
+            self.transfer_pile_button.pack(side="left", padx=5)
+            self.table_action_buttons.append(self.transfer_pile_button)
         if self.game.enable_table and self.game.enable_discard_pile and self.game.allow_move_table_card_to_discard and self.game.allow_discard_multiple_table_cards:
             self.discard_multiple_table_button = tk.Button(self.card_actions_frame, text="Discard multiple table cards…", command=self.discard_multiple_table_cards)
             self.discard_multiple_table_button.pack(side="left", padx=5)
