@@ -962,3 +962,12 @@ is the separate team counter. Disabled resources use `None`, distinct from zero.
 The snapshot does not contain card identities or change the game. Tkinter only
 renders the snapshot and retains display choices such as showing "many". A CLI
 or another GUI can use the same data, for example `dataclasses.asdict(status)`.
+
+
+Enable **Game Settings → Draw piles → Deal starting hands from selected draw
+piles** to choose one accessible source per player. Piles are then filled first;
+initial counts include cards subsequently dealt into hands. Shared sources must
+cover combined demand. Other players' owned piles are unavailable. All counts
+are checked before shuffle, without duplicating cards. Default mode stays
+hands-first from main. Presets/saves/restart retain this configuration.
+CLI repeats `--initial-hand-source p1 --initial-hand-source p2` once per player.

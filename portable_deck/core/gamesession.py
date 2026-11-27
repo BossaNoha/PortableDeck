@@ -69,6 +69,8 @@ def export_session(game):
         "deck_path": game.deck.path,
         "draw_piles": game.draw_piles.snapshot(),
         "enable_draw_pile_setup": game.enable_draw_pile_setup,
+        "deal_starting_hands_from_piles": game.deal_starting_hands_from_piles,
+        "initial_hand_sources": game.initial_hand_sources,
         "enable_linked_recycling": game.enable_linked_recycling,
         "draw_pile_recycling": game.draw_pile_recycling,
         "draw_pile_setup": game.draw_pile_setup,
@@ -174,6 +176,9 @@ def restore_session(game_class, state):
     if type(game.enable_draw_pile_setup) is not bool:
         raise ValueError("Saved enable_draw_pile_setup must be true or false")
     game.draw_pile_setup = normalize_draw_pile_setup(state.get("draw_pile_setup", []), len(game.players))
+    from .drawpilesetup import normalize_hand_sources
+    game.deal_starting_hands_from_piles = state.get("deal_starting_hands_from_piles", False)
+    game.initial_hand_sources = normalize_hand_sources(game.deal_starting_hands_from_piles, state.get("initial_hand_sources", []), len(game.players))
     from .drawpiles import DrawPiles
     game.draw_piles = DrawPiles(game.deck.draw_pile, len(game.players))
     if "draw_piles" in state:

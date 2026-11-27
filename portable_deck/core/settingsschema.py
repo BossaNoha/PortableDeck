@@ -2,6 +2,8 @@
 import os
 
 DEFAULT_SETTINGS = {
+    "deal_starting_hands_from_piles": False,
+    "initial_hand_sources": [],
     "enable_linked_recycling": False,
     "draw_pile_recycling": {},
     "enable_draw_pile_setup": False,

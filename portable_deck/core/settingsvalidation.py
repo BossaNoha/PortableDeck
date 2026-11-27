@@ -137,6 +137,11 @@ def validate_settings_and_game(values):
         settings["draw_pile_setup"] = normalize_draw_pile_setup(settings["draw_pile_setup"], settings["num_players"])
     except ValueError as error:
         invalid(str(error), "draw_pile_setup")
+    from .drawpilesetup import normalize_hand_sources
+    try:
+        settings["initial_hand_sources"] = normalize_hand_sources(settings["deal_starting_hands_from_piles"], settings["initial_hand_sources"], settings["num_players"])
+    except ValueError as error:
+        invalid(str(error), "initial_hand_sources")
     from .drawrecycling import normalize_recycling
     try:
         settings["draw_pile_recycling"] = normalize_recycling(settings["draw_pile_recycling"], settings["draw_pile_setup"], settings["shared_discard_pile_count"], settings["personal_discard_pile_count"])
@@ -156,9 +161,11 @@ def validate_settings_and_game(values):
         raise SettingsValidationError(str(error), "deck_path") from error
     if not deck_capacity(game.deck, settings["num_players"], settings["cards_per_player"]).sufficient:
         invalid("The deck is too small for these settings.", "cards_per_player")
-    required = settings["num_players"] * settings["cards_per_player"]
-    if settings["enable_draw_pile_setup"]:
-        required += sum(entry["count"] for entry in settings["draw_pile_setup"])
+    from .drawpilesetup import starting_card_requirement
+    try:
+        required = starting_card_requirement(game, settings["cards_per_player"])
+    except ValueError as error:
+        invalid(str(error), "initial_hand_sources", "draw_pile_setup")
     if required > len(game.deck.flat_deck):
         invalid("Not enough cards for starting hands and draw pile setup.", "draw_pile_setup", "cards_per_player")
     return settings, game

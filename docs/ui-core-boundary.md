@@ -1,5 +1,13 @@
 # UI/core boundary audit
 
+Initial hand sources: optional deal_starting_hands_from_piles and per-player
+initial_hand_sources select accessible configured sources. Core validates each
+source and aggregate demand before shuffling. Selected mode splits piles first,
+then deals round-robin; default mode stays hands-first from main. Presets,
+saves, restart, GUI selectors and CLI flags share the same preparation.
+Tests cover conservation, capacity, ownership and both native Tk layouts.
+
+
 Automatic refill: optional association automatic=True defaults off. Shared
 capacity query validates available draw plus assigned discard before batch
 mutation. Single draws recycle only when empty; original order is consumed
@@ -280,7 +288,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 579 tests; native Tk probes for session, deck and preset
+latest full suite passed 585 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

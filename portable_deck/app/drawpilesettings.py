@@ -11,6 +11,12 @@ class DrawPileSettings:
         self.linked = tk.BooleanVar(value=settings.get("enable_linked_recycling", False))
         self.saved_links = settings.get("draw_pile_recycling", {})
         self.rows = []
+        self.hand_mode = tk.BooleanVar(value=settings.get("deal_starting_hands_from_piles", False))
+        self.hand_vars = [tk.StringVar(value=value) for value in settings.get("initial_hand_sources", [])]
+        self.hand_frame = tk.LabelFrame(parent, text="Starting hand sources")
+        self.hand_widgets = []
+        tk.Checkbutton(parent, text="Deal starting hands from selected draw piles", variable=self.hand_mode, command=self.update).pack(anchor="w")
+        tk.Label(self.hand_frame, text="Piles are filled first. Initial counts include cards subsequently dealt into hands.", wraplength=300, justify="left").pack(anchor="w")
         tk.Checkbutton(parent, text="Enable linked recycling (assigned discard only)", variable=self.linked, command=self.update).pack(anchor="w")
         self.main_frame = tk.LabelFrame(parent, text="Main draw pile recycling", padx=4, pady=4)
         self.main_link = self.link_controls(self.main_frame, self.saved_links.get("main"), shared_only=True)
@@ -19,7 +25,7 @@ class DrawPileSettings:
                  wraplength=300, justify="left").pack(anchor="w", pady=4)
         tk.Checkbutton(parent, text="Enable additional draw piles", variable=self.enabled, command=self.update).pack(anchor="w")
         self.body = tk.Frame(parent)
-        tk.Label(self.body, text="One card set: starting hands are dealt first, then these piles receive their cards. The remainder stays in main.",
+        tk.Label(self.body, text="One card set. Normally hands are dealt first; selected-source mode fills piles first. The remainder stays in main.",
                  wraplength=310, justify="left").pack(anchor="w", pady=5)
         self.scroll_area = ContentScrollArea(self.body, width=310)
         self.scroll_area.pack(fill="both", expand=True)
@@ -31,6 +37,9 @@ class DrawPileSettings:
         self.update()
 
     def update(self):
+        if self.hand_mode.get(): self.hand_frame.pack(fill="x", pady=4)
+        else: self.hand_frame.pack_forget()
+        self.update_hand_sources()
         if self.linked.get(): self.main_frame.pack(fill="x", pady=4)
         else: self.main_frame.pack_forget()
         for row in self.rows:
@@ -56,6 +65,29 @@ class DrawPileSettings:
         except (ValueError, tk.TclError): return
         for row in self.rows:
             row["owner_input"].configure(values=["Shared"] + [f"Player {i + 1}" for i in range(count)])
+        self.update_hand_sources()
+
+    def update_hand_sources(self):
+        try: count = int(self.players_var.get())
+        except (ValueError, tk.TclError): return
+        while len(self.hand_vars) < count:
+            self.hand_vars.append(tk.StringVar(value="main"))
+        while len(self.hand_widgets) < count:
+            index = len(self.hand_widgets)
+            row = tk.Frame(self.hand_frame)
+            tk.Label(row, text=f"Player {index + 1}").pack(side="left")
+            choice = ttk.Combobox(row, state="readonly", width=19, textvariable=self.hand_vars[index], postcommand=self.update_hand_sources)
+            choice.pack(side="left", padx=4)
+            self.hand_widgets.append((row, choice))
+        for index, (row, choice) in enumerate(self.hand_widgets):
+            if index >= count:
+                row.pack_forget()
+                continue
+            row.pack(anchor="w", pady=2)
+            values = ["main"]
+            if self.enabled.get():
+                values.extend(entry["id"].get() for entry in self.rows if entry["owner"].get() in ("Shared", f"Player {index + 1}"))
+            choice.configure(values=values)
 
     def add(self, entry=None):
         if entry is None:
@@ -106,4 +138,6 @@ class DrawPileSettings:
                             "owner": None if owner == "Shared" else int(owner.removeprefix("Player ")) - 1,
                             "count": int(row["count"].get())})
         return {"enable_draw_pile_setup": self.enabled.get(), "draw_pile_setup": entries,
-                "enable_linked_recycling": self.linked.get(), "draw_pile_recycling": links}
+                "enable_linked_recycling": self.linked.get(), "draw_pile_recycling": links,
+                "deal_starting_hands_from_piles": self.hand_mode.get(),
+                "initial_hand_sources": [value.get() for value in self.hand_vars[:int(self.players_var.get())]]}

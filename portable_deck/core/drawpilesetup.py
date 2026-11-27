@@ -28,3 +28,34 @@ def populate_draw_piles(game):
         cards = game.deck.flat_deck[:count]
         game.draw_piles.add(entry["id"], entry["name"], cards, owner=entry["owner"])
         del game.deck.flat_deck[:count]
+
+
+def normalize_hand_sources(enabled, sources, player_count):
+    if type(enabled) is not bool:
+        raise ValueError("deal_starting_hands_from_piles must be true or false")
+    if not isinstance(sources, list) or any(not isinstance(source, str) or not source for source in sources):
+        raise ValueError("Initial hand sources must be a list of draw pile IDs.")
+    if enabled and len(sources) != player_count:
+        raise ValueError("Choose one starting hand source per player.")
+    return list(sources)
+
+
+def starting_card_requirement(game, hand_size):
+    setup = game.draw_pile_setup if game.enable_draw_pile_setup else []
+    total = sum(entry["count"] for entry in setup)
+    if not game.deal_starting_hands_from_piles:
+        return total + len(game.players) * hand_size
+    sources = normalize_hand_sources(True, game.initial_hand_sources, len(game.players))
+    entries = {entry["id"]: entry for entry in setup}
+    demand = {}
+    for player, source in enumerate(sources):
+        if source != "main":
+            if source not in entries:
+                raise ValueError(f"Unknown starting hand source: {source}")
+            if entries[source]["owner"] not in (None, player):
+                raise ValueError("Players may only start from shared or their own draw piles.")
+        demand[source] = demand.get(source, 0) + hand_size
+    for source, count in demand.items():
+        if source != "main" and count > entries[source]["count"]:
+            raise ValueError(f"Draw pile {source} cannot supply all requested starting hands.")
+    return total + demand.get("main", 0)

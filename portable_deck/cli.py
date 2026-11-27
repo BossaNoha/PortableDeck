@@ -291,6 +291,7 @@ def main(argv=None):
     parser.add_argument("--personal-discards", type=int, default=0)
     parser.add_argument("--shared-discards", type=int, default=1)
     parser.add_argument("--auto-refill", action="append", default=[], metavar="DRAW_ID", help="Automatically refill this linked pile during draw/draw-many")
+    parser.add_argument("--initial-hand-source", action="append", default=[], metavar="DRAW_ID", help="Starting hand source; repeat once per player to enable pile-based initial dealing")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -307,6 +308,8 @@ def main(argv=None):
                 links[pile_id]["automatic"] = True
             game = create_game({
                 "num_players": args.players,
+                "deal_starting_hands_from_piles": bool(args.initial_hand_source),
+                "initial_hand_sources": args.initial_hand_source,
                 "enable_linked_recycling": args.linked_recycling or bool(links),
                 "draw_pile_recycling": links,
                 "allow_recycle_discard_to_deck": args.linked_recycling or bool(links),

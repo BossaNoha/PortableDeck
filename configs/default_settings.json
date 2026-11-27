@@ -1,5 +1,6 @@
 {
-  "enable_linked_recycling": false,
+  "deal_starting_hands_from_piles": false,
+  "initial_hand_sources": [],  "enable_linked_recycling": false,
   "draw_pile_recycling": {},
   "enable_draw_pile_setup": false,
   "draw_pile_setup": [],
