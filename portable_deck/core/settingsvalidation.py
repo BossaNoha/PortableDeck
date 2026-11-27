@@ -159,7 +159,7 @@ def validate_settings_and_game(values):
     except (OSError, ValueError) as error:
         # All non-deck constructor constraints are checked above.
         raise SettingsValidationError(str(error), "deck_path") from error
-    if not deck_capacity(game.deck, settings["num_players"], settings["cards_per_player"]).sufficient:
+    if not game.deal_starting_hands_from_piles and not deck_capacity(game.deck, settings["num_players"], settings["cards_per_player"]).sufficient:
         invalid("The deck is too small for these settings.", "cards_per_player")
     from .drawpilesetup import starting_card_requirement
     try:

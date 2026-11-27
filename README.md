@@ -971,3 +971,26 @@ cover combined demand. Other players' owned piles are unavailable. All counts
 are checked before shuffle, without duplicating cards. Default mode stays
 hands-first from main. Presets/saves/restart retain this configuration.
 CLI repeats `--initial-hand-source p1 --initial-hand-source p2` once per player.
+
+
+Independent card sets (core configuration)
+-----------------------------------------
+Additional draw piles can use a complete, independently shuffled card set instead
+of taking cards from main. Keep `enable_draw_pile_setup` enabled and add an entry:
+
+```json
+{"id": "private", "name": "Private deck", "owner": 0, "count": 4,
+ "mode": "independent", "definition": {"types": ["Example"], "cards": [[1, 2, 3, 4]]}}
+```
+
+`count` must equal the embedded definition's full size. The definition can match
+main or describe a different set; each entry creates a separate copy. Existing
+entries without `mode`/`definition` still split main. Mixed setups are supported.
+Starting-hand sources and ownership rules apply to both kinds. Capacity checks
+charge only split piles and main-sourced hands against main.
+
+Saves and presets embed each independent definition; loading preserves live order,
+and restart rebuilds and shuffles the full sets without reading their source files.
+Undo restores the existing piles rather than creating new sets. Dedicated GUI/CLI
+controls for choosing independent definitions are a subsequent step; the current
+GUI preserves these entries when editing other settings.

@@ -1,4 +1,6 @@
-"""Validated initial distribution from one shuffled card set."""
+"""Validated initial distribution and independent embedded card sets."""
+from .deckdefinition import DeckDefinition
+from .drawpile import DrawPile
 
 
 def normalize_draw_pile_setup(setup, player_count):
@@ -6,7 +8,9 @@ def normalize_draw_pile_setup(setup, player_count):
         raise ValueError("Draw pile setup must be a list.")
     result, seen = [], {"main"}
     for entry in setup:
-        if not isinstance(entry, dict) or set(entry) != {"id", "name", "owner", "count"}:
+        if not isinstance(entry, dict) or set(entry) not in (
+                {"id", "name", "owner", "count"},
+                {"id", "name", "owner", "count", "mode", "definition"}):
             raise ValueError("Each draw pile needs id, name, owner and count.")
         pile_id, name, owner, count = (entry[key] for key in ("id", "name", "owner", "count"))
         if not isinstance(pile_id, str) or not pile_id.strip() or pile_id != pile_id.strip() or pile_id in seen:
@@ -17,17 +21,30 @@ def normalize_draw_pile_setup(setup, player_count):
             raise ValueError("Choose an existing draw pile owner or Shared.")
         if type(count) is not int or count < 0:
             raise ValueError("Initial draw pile counts must be nonnegative whole numbers.")
+        normalized = dict(entry)
+        if "mode" in entry:
+            if entry["mode"] != "independent":
+                raise ValueError("Unknown draw pile setup mode.")
+            definition = DeckDefinition.from_data(entry["definition"])
+            if count != len(definition.expanded_cards()):
+                raise ValueError("Independent pile count must match its complete card set.")
+            normalized["definition"] = definition.to_data()
         seen.add(pile_id)
-        result.append(dict(entry))
+        result.append(normalized)
     return result
 
 
 def populate_draw_piles(game):
     for entry in game.draw_pile_setup if game.enable_draw_pile_setup else ():
         count = entry["count"]
-        cards = game.deck.flat_deck[:count]
+        if entry.get("mode") == "independent":
+            pile = DrawPile(DeckDefinition.from_data(entry["definition"]).expanded_cards())
+            pile.shuffle()
+            cards = pile.cards
+        else:
+            cards = game.deck.flat_deck[:count]
+            del game.deck.flat_deck[:count]
         game.draw_piles.add(entry["id"], entry["name"], cards, owner=entry["owner"])
-        del game.deck.flat_deck[:count]
 
 
 def normalize_hand_sources(enabled, sources, player_count):
@@ -42,7 +59,7 @@ def normalize_hand_sources(enabled, sources, player_count):
 
 def starting_card_requirement(game, hand_size):
     setup = game.draw_pile_setup if game.enable_draw_pile_setup else []
-    total = sum(entry["count"] for entry in setup)
+    total = sum(entry["count"] for entry in setup if entry.get("mode") != "independent")
     if not game.deal_starting_hands_from_piles:
         return total + len(game.players) * hand_size
     sources = normalize_hand_sources(True, game.initial_hand_sources, len(game.players))

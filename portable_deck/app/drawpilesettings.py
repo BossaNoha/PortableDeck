@@ -98,6 +98,9 @@ class DrawPileSettings:
         frame = tk.LabelFrame(self.entries, text="Draw pile", padx=5, pady=4)
         frame.pack(fill="x", pady=4)
         row = {key: tk.StringVar(value=str(entry[key])) for key in ("id", "name", "count")}
+        row["definition_settings"] = {key: entry[key] for key in ("mode", "definition") if key in entry}
+        if row["definition_settings"]:
+            frame.configure(text="Draw pile (independent card set)")
         row["owner"] = tk.StringVar(value="Shared" if entry["owner"] is None else f"Player {entry['owner'] + 1}")
         for index, (key, label) in enumerate((("id", "Stable ID"), ("name", "Name"), ("owner", "Owner"), ("count", "Initial cards"))):
             tk.Label(frame, text=label).grid(row=index, column=0, sticky="w")
@@ -106,6 +109,8 @@ class DrawPileSettings:
                 row["owner_input"] = widget
             elif key == "count":
                 widget = tk.Spinbox(frame, from_=0, to=100000, textvariable=row[key], width=20)
+                if row["definition_settings"]:
+                    widget.configure(state="disabled")
             else:
                 widget = tk.Entry(frame, textvariable=row[key], width=23)
             widget.grid(row=index, column=1, sticky="ew")
@@ -136,7 +141,7 @@ class DrawPileSettings:
             owner = row["owner"].get()
             entries.append({"id": row["id"].get(), "name": row["name"].get(),
                             "owner": None if owner == "Shared" else int(owner.removeprefix("Player ")) - 1,
-                            "count": int(row["count"].get())})
+                            "count": int(row["count"].get()), **row["definition_settings"]})
         return {"enable_draw_pile_setup": self.enabled.get(), "draw_pile_setup": entries,
                 "enable_linked_recycling": self.linked.get(), "draw_pile_recycling": links,
                 "deal_starting_hands_from_piles": self.hand_mode.get(),
