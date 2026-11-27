@@ -1,6 +1,8 @@
 """Initial draw-pile distribution controls; validation stays in the core."""
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog, messagebox
+from ..core.deck import Deck
+from ..core.deckdefinition import DeckDefinition
 from ..ui.contentscrollarea import ContentScrollArea
 
 
@@ -25,7 +27,7 @@ class DrawPileSettings:
                  wraplength=300, justify="left").pack(anchor="w", pady=4)
         tk.Checkbutton(parent, text="Enable additional draw piles", variable=self.enabled, command=self.update).pack(anchor="w")
         self.body = tk.Frame(parent)
-        tk.Label(self.body, text="One card set. Normally hands are dealt first; selected-source mode fills piles first. The remainder stays in main.",
+        tk.Label(self.body, text="Split cards from main or use a complete independent card set. Selected-source mode fills piles before dealing hands.",
                  wraplength=310, justify="left").pack(anchor="w", pady=5)
         self.scroll_area = ContentScrollArea(self.body, width=310)
         self.scroll_area.pack(fill="both", expand=True)
@@ -99,18 +101,19 @@ class DrawPileSettings:
         frame.pack(fill="x", pady=4)
         row = {key: tk.StringVar(value=str(entry[key])) for key in ("id", "name", "count")}
         row["definition_settings"] = {key: entry[key] for key in ("mode", "definition") if key in entry}
-        if row["definition_settings"]:
-            frame.configure(text="Draw pile (independent card set)")
+        row["mode"] = tk.StringVar(value="Independent card set" if row["definition_settings"] else "Split from main")
         row["owner"] = tk.StringVar(value="Shared" if entry["owner"] is None else f"Player {entry['owner'] + 1}")
         for index, (key, label) in enumerate((("id", "Stable ID"), ("name", "Name"), ("owner", "Owner"), ("count", "Initial cards"))):
-            tk.Label(frame, text=label).grid(row=index, column=0, sticky="w")
+            label_widget = tk.Label(frame, text=label)
+            label_widget.grid(row=index, column=0, sticky="w")
+            if key == "count":
+                row["count_label"] = label_widget
             if key == "owner":
                 widget = ttk.Combobox(frame, state="readonly", textvariable=row[key], width=20)
                 row["owner_input"] = widget
             elif key == "count":
                 widget = tk.Spinbox(frame, from_=0, to=100000, textvariable=row[key], width=20)
-                if row["definition_settings"]:
-                    widget.configure(state="disabled")
+                row["count_input"] = widget
             else:
                 widget = tk.Entry(frame, textvariable=row[key], width=23)
             widget.grid(row=index, column=1, sticky="ew")
@@ -118,12 +121,58 @@ class DrawPileSettings:
             self.rows.remove(row)
             frame.destroy()
             self.scroll_area.schedule_resize()
+        tk.Label(frame, text="Card source").grid(row=4, column=0, sticky="w")
+        mode = ttk.Combobox(frame, state="readonly", textvariable=row["mode"], width=20,
+                            values=["Split from main", "Independent card set"])
+        mode.grid(row=4, column=1, sticky="ew")
+        definition_frame = tk.Frame(frame)
+        definition_frame.grid(row=5, column=0, columnspan=2, sticky="ew")
+        row["definition_label"] = tk.StringVar(value="")
+        tk.Label(definition_frame, textvariable=row["definition_label"], wraplength=280,
+                 justify="left").pack(anchor="w")
+        tk.Button(definition_frame, text="Choose card set…", command=lambda: self.choose_definition(row)).pack(anchor="w")
+        def update_mode(*_):
+            independent = row["mode"].get() == "Independent card set"
+            if independent:
+                row["count_input"].grid_remove()
+                row["count_label"].grid_remove()
+                definition_frame.grid()
+            else:
+                row["count_input"].grid()
+                row["count_label"].grid()
+                definition_frame.grid_remove()
+            self.scroll_area.schedule_resize()
+        row["mode"].trace_add("write", update_mode)
+        self.describe_definition(row)
+        update_mode()
         row["link"] = self.link_controls(frame, self.saved_links.get(entry["id"]))
-        row["link"]["frame"].grid(row=4, column=0, columnspan=2, sticky="ew", pady=3)
-        tk.Button(frame, text="Remove", command=remove).grid(row=5, column=1, sticky="e", pady=3)
+        row["link"]["frame"].grid(row=6, column=0, columnspan=2, sticky="ew", pady=3)
+        tk.Button(frame, text="Remove", command=remove).grid(row=7, column=1, sticky="e", pady=3)
         self.rows.append(row)
         self.update_owners()
         self.update()
+        self.scroll_area.schedule_resize()
+
+    def describe_definition(self, row):
+        data = row["definition_settings"].get("definition")
+        if data is None:
+            row["definition_label"].set("Choose a card set file. Its complete contents will be copied into this pile.")
+        else:
+            definition = DeckDefinition.from_data(data)
+            row["definition_label"].set(f"{len(definition.expanded_cards())} cards — {', '.join(definition.types)} (embedded copy)")
+
+    def choose_definition(self, row):
+        path = filedialog.askopenfilename(parent=self.entries.winfo_toplevel(), title="Choose independent card set",
+                                          filetypes=[("Card sets", "*.json"), ("All files", "*.*")])
+        if not path:
+            return
+        try:
+            definition = Deck(path).definition
+        except (OSError, ValueError) as error:
+            messagebox.showerror("Invalid card set", str(error), parent=self.entries.winfo_toplevel())
+            return
+        row["definition_settings"] = {"mode": "independent", "definition": definition.to_data()}
+        self.describe_definition(row)
         self.scroll_area.schedule_resize()
 
     def values(self):
@@ -139,9 +188,17 @@ class DrawPileSettings:
         for row in self.rows:
             add_link(row["id"].get(), row["link"])
             owner = row["owner"].get()
+            definition_settings = {}
+            if row["mode"].get() == "Independent card set":
+                definition_settings = row["definition_settings"]
+                if not definition_settings:
+                    raise ValueError(f"Choose a card set for draw pile {row['id'].get()}.")
+                count = len(DeckDefinition.from_data(definition_settings["definition"]).expanded_cards())
+            else:
+                count = int(row["count"].get())
             entries.append({"id": row["id"].get(), "name": row["name"].get(),
                             "owner": None if owner == "Shared" else int(owner.removeprefix("Player ")) - 1,
-                            "count": int(row["count"].get()), **row["definition_settings"]})
+                            "count": count, **definition_settings})
         return {"enable_draw_pile_setup": self.enabled.get(), "draw_pile_setup": entries,
                 "enable_linked_recycling": self.linked.get(), "draw_pile_recycling": links,
                 "deal_starting_hands_from_piles": self.hand_mode.get(),

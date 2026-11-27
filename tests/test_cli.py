@@ -14,6 +14,54 @@ from portable_deck.app.sessionstorage import save_session
 
 
 class CLITests(unittest.TestCase):
+    def test_independent_draw_piles_mix_with_split_and_embed_file_contents(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "own cards.json"
+            definition = {"types": ["Independent"], "cards": [[1, 2, 2, 3]]}
+            path.write_text(json.dumps(definition), encoding="utf-8")
+            with patch("portable_deck.cli.run_cli", return_value=0) as run:
+                main(["--players", "2", "--hand", "2", "--draw-pile", "split", "Split", "shared", "3",
+                      "--independent-draw-pile", "own", "Own", "shared", str(path),
+                      "--independent-draw-pile", "private", "Private", "1", str(path),
+                      "--initial-hand-source", "own", "--initial-hand-source", "own"])
+            game = run.call_args.args[0]
+            self.assertEqual(len(game.deck.flat_deck), 49)
+            self.assertEqual(len(game.draw_piles.get("split").cards), 3)
+            self.assertFalse(game.draw_piles.get("own").cards)
+            self.assertEqual(len(game.draw_piles.get("private").cards), 4)
+            self.assertEqual([len(p.hand) for p in game.players], [2, 2])
+            self.assertEqual(game.draw_pile_setup[1]["definition"], definition)
+            path.unlink()
+            restarted = game.restart()
+            self.assertEqual(len(restarted.draw_piles.get("private").cards), 4)
+
+    def test_independent_draw_pile_cli_reports_invalid_input_before_running(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "invalid.json"
+            path.write_text("{}", encoding="utf-8")
+            for args in (["--independent-draw-pile", "own", "Own", "shared", str(path)],
+                         ["--independent-draw-pile", "own", "Own", "shared", str(path) + ".missing"],
+                         ["--independent-draw-pile", "own", "Own", "0", "decks/demodeck.json"],
+                         ["--draw-pile", "own", "Split", "shared", "1",
+                          "--independent-draw-pile", "own", "Own", "shared", "decks/demodeck.json"]):
+                with self.subTest(args=args), patch("sys.stderr", new_callable=io.StringIO), patch("portable_deck.cli.run_cli") as run:
+                    with self.assertRaises(SystemExit) as error:
+                        main(args)
+                    self.assertEqual(error.exception.code, 2)
+                    run.assert_not_called()
+
+    def test_independent_draw_pile_subprocess_stays_headless(self):
+        script = ("import sys; from portable_deck.cli import main; "
+                  "main(['--players','2','--hand','0','--independent-draw-pile','own','Own','1',"
+                  "'decks/demodeck.json','--json']); assert 'tkinter' not in sys.modules")
+        result = subprocess.run([sys.executable, "-B", "-c", script], input="sources\nquit\n",
+                                text=True, capture_output=True, timeout=30,
+                                cwd=Path(__file__).resolve().parents[1])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        piles = next(json.loads(line)["piles"] for line in result.stdout.splitlines()
+                     if json.loads(line)["type"] == "draw_sources")
+        self.assertEqual([(p["id"], p["card_count"]) for p in piles], [("main", 52), ("own", 52)])
+
     def test_cli_undo_uses_structured_core_codes_and_checkpoint_outcome(self):
         for structured in (False, True):
             with self.subTest(structured=structured):

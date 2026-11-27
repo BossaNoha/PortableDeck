@@ -7,6 +7,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .core.game import Game
+from .core.deck import Deck
 from .app.newgame import create_game
 from .app.sessionstorage import load_session
 from .app.turnhandoff import TurnHandoffController
@@ -285,6 +286,9 @@ def main(argv=None):
     parser.add_argument("--draw-pile", nargs=4, action="append", default=[],
                         metavar=("ID", "NAME", "OWNER", "COUNT"),
                         help="Split remaining cards into a pile; OWNER is shared or a player number. Repeat for more piles.")
+    parser.add_argument("--independent-draw-pile", nargs=4, action="append", default=[],
+                        metavar=("ID", "NAME", "OWNER", "FILE"),
+                        help="Create a complete independent card set from FILE; OWNER is shared or a player number. Repeat as needed.")
     parser.add_argument("--insert-draw-deck", action="store_true", help="Allow insert-draw CARD POSITION for new games")
     parser.add_argument("--linked-recycling", action="store_true", help="Recycle only explicitly assigned discards")
     parser.add_argument("--recycle-from", nargs=3, action="append", default=[], metavar=("DRAW_ID", "TYPE", "PILE"), help="Assign shared or personal discard to a draw pile; repeat as needed")
@@ -306,6 +310,15 @@ def main(argv=None):
                 if pile_id not in links:
                     raise ValueError("--auto-refill requires a --recycle-from association.")
                 links[pile_id]["automatic"] = True
+            piles = [{"id": pile_id, "name": name,
+                      "owner": None if owner == "shared" else CLIClient.positive(owner) - 1,
+                      "count": int(count)} for pile_id, name, owner, count in args.draw_pile]
+            for pile_id, name, owner, path in args.independent_draw_pile:
+                definition = Deck(path).definition
+                piles.append({"id": pile_id, "name": name,
+                              "owner": None if owner == "shared" else CLIClient.positive(owner) - 1,
+                              "count": len(definition.expanded_cards()), "mode": "independent",
+                              "definition": definition.to_data()})
             game = create_game({
                 "num_players": args.players,
                 "deal_starting_hands_from_piles": bool(args.initial_hand_source),
@@ -315,10 +328,8 @@ def main(argv=None):
                 "allow_recycle_discard_to_deck": args.linked_recycling or bool(links),
                 "shared_discard_pile_count": args.shared_discards,
                 "personal_discard_pile_count": args.personal_discards,
-                "enable_draw_pile_setup": bool(args.draw_pile),
-                "draw_pile_setup": [{"id": pile_id, "name": name,
-                                     "owner": None if owner == "shared" else CLIClient.positive(owner) - 1,
-                                     "count": int(count)} for pile_id, name, owner, count in args.draw_pile],
+                "enable_draw_pile_setup": bool(piles),
+                "draw_pile_setup": piles,
                 "cards_per_player": args.hand,
                 # CLI-relative paths keep their existing working-directory meaning.
                 "deck_path": str(Path(args.deck).absolute()),

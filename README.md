@@ -991,6 +991,18 @@ charge only split piles and main-sourced hands against main.
 
 Saves and presets embed each independent definition; loading preserves live order,
 and restart rebuilds and shuffles the full sets without reading their source files.
-Undo restores the existing piles rather than creating new sets. Dedicated GUI/CLI
-controls for choosing independent definitions are a subsequent step; the current
-GUI preserves these entries when editing other settings.
+Undo restores the existing piles rather than creating new sets. In **Game Settings → Draw piles**, add a pile and set **Card source** to
+**Independent card set**. Use **Choose card set…** to select its JSON definition
+(the same file as main is allowed). The panel displays its full size and card
+types. Choose **Split from main** to return to the existing count-based setup.
+Changing other settings preserves the embedded copy; changing the original file
+does not change it. Choose the file again to import updated contents.
+
+CLI supports repeated `--independent-draw-pile ID NAME OWNER FILE` alongside
+`--draw-pile ID NAME OWNER COUNT`. OWNER is `shared` or a player number starting
+at 1. FILE is relative to the working directory; quote paths containing spaces.
+For example, both players can start from a separate complete set:
+
+```sh
+python -m portable_deck.cli --players 2 --hand 3 --independent-draw-pile reserve "Reserve deck" shared decks/demodeck.json --initial-hand-source reserve --initial-hand-source reserve
+```
