@@ -257,7 +257,13 @@ Personal links require an owned draw pile and use that owner's discard; shared
 draw piles can link shared discards. Choose a draw source, then **Recycle Discard
 into Deck**. Only its assigned discard is moved and shuffled, and the target must
 be empty. Other piles stay untouched. An unmapped target is unavailable in linked
-mode. This is a manual action, with one Undo/autosave and no automatic refill.
+mode. Manual recycling has one Undo/autosave. Each association also offers
+**Automatically refill when drawing** (default off). Single/batch draws first
+check the combined capacity of that pile and its assigned discard, consume
+existing draw cards, then recycle only when empty. The entire draw/refill has
+one Undo/autosave; insufficient total capacity changes nothing. Dealing and
+Shared offer still require enough cards already in the draw pile. CLI adds
+`--auto-refill mine` alongside `--recycle-from mine personal 1`.
 Links persist in presets/saves and survive restart. With linked mode off, the
 legacy `main` action still recycles all discards; named targets require linked mode.
 

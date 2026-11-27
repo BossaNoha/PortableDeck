@@ -147,7 +147,8 @@ def _evaluate_availability(g, action, context):
         return ActionAvailability(False, f"Minimum bet: {g.minimum_bet} chips. Available: {g.chip_balance(g.current_player_index)}.", "insufficient_chips")
     if action == "take_pot" and g.chip_pot == 0:
         return ActionAvailability(False, "The pot is empty.", "empty_pot")
-    if action in {"draw_card", "draw_cards"} and not draw_pile.cards:
+    from .drawrecycling import draw_capacity
+    if action in {"draw_card", "draw_cards"} and draw_capacity(g, context.draw_pile_id) == 0:
         return ActionAvailability(False, "The draw deck is empty.", "empty_deck")
     discard_piles = list(g.discard_piles) + [pile for player_piles in g.personal_discard_piles for pile in player_piles]
     if action == "draw_from_discard" and not any(discard_piles):

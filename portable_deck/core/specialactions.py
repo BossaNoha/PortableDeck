@@ -58,7 +58,8 @@ class SpecialActions:
         pile = resolve_draw_pile(self, draw_pile_id)
         if type(count) is not int or count < 1:
             raise ActionValidationError("invalid_count", "Choose a positive whole number of cards.")
-        if count > len(pile.cards):
+        from .drawrecycling import draw_capacity
+        if count > draw_capacity(self, draw_pile_id):
             raise ActionValidationError("insufficient_cards", "The draw deck has too few cards for this draw.")
         cards = []
         for _ in range(count):

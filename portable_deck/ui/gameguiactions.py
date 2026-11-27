@@ -146,7 +146,9 @@ class GameGUIActions:
             messagebox.showwarning(failure_title, available.reason, parent=self.root)
             return
         status = build_session_status(self.game)
-        count_available = next(pile.card_count for pile in draw_pile_options(self.game) if pile.id == source_id)
+        from ..core.drawrecycling import draw_capacity
+        count_available = (next(pile.card_count for pile in draw_pile_options(self.game) if pile.id == source_id)
+                           if dealing else draw_capacity(self.game, source_id))
         maximum = count_available // sum(player.active for player in status.players) if dealing else count_available
         count = simpledialog.askinteger("Deal to active players" if dealing else "Draw multiple cards",
                                         "How many cards per active player?" if dealing else "How many cards?",

@@ -47,7 +47,9 @@ class DrawPileSettings:
         ttk.Combobox(frame, state="readonly", textvariable=kind, width=20,
                      values=["None", "Shared discard"] + ([] if shared_only else ["Personal discard"])).pack(side="left")
         tk.Spinbox(frame, from_=1, to=20, textvariable=index, width=4).pack(side="left", padx=4)
-        return {"frame": frame, "kind": kind, "index": index}
+        automatic = tk.BooleanVar(value=link.get("automatic", False) if link else False)
+        tk.Checkbutton(frame, text="Automatically refill when drawing", variable=automatic).pack(anchor="w")
+        return {"frame": frame, "kind": kind, "index": index, "automatic": automatic}
 
     def update_owners(self, *_):
         try: count = int(self.players_var.get())
@@ -94,6 +96,8 @@ class DrawPileSettings:
             kind = controls["kind"].get()
             if kind != "None":
                 links[pile_id] = {"personal": kind == "Personal discard", "pile_index": int(controls["index"].get()) - 1}
+                if controls["automatic"].get():
+                    links[pile_id]["automatic"] = True
         add_link("main", self.main_link)
         for row in self.rows:
             add_link(row["id"].get(), row["link"])

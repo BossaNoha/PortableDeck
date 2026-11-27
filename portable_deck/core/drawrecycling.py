@@ -11,9 +11,11 @@ def normalize_recycling(links, setup, shared_count, personal_count):
     for pile_id, link in links.items():
         if not isinstance(pile_id, str) or pile_id not in owners:
             raise ValueError("Recycling links must refer to main or a configured draw pile.")
-        if (not isinstance(link, dict) or set(link) != {"personal", "pile_index"}
+        if (not isinstance(link, dict) or set(link) not in ({"personal", "pile_index"}, {"personal", "pile_index", "automatic"})
                 or type(link["personal"]) is not bool or type(link["pile_index"]) is not int):
             raise ValueError("Each recycling link needs personal and pile_index.")
+        if type(link.get("automatic", False)) is not bool:
+            raise ValueError("Automatic recycling must be true or false.")
         count = personal_count if link["personal"] else shared_count
         if not 0 <= link["pile_index"] < count:
             raise ValueError("Recycling link refers to an unavailable discard pile.")
@@ -44,3 +46,13 @@ def recycling_sources(game, pile_id="main"):
     if not 0 <= index < len(piles):
         raise ActionValidationError("invalid_pile", "The assigned discard pile is unavailable.")
     return ((f"{name} {index + 1}", piles[index]),)
+
+
+def draw_capacity(game, pile_id="main"):
+    pile = resolve_draw_pile(game, pile_id)
+    total = len(pile.cards)
+    link = game.draw_pile_recycling.get(pile_id, {})
+    if (game.enable_linked_recycling and game.enable_discard_pile
+            and game.allow_recycle_discard_to_deck and link.get("automatic", False)):
+        total += sum(len(cards) for _, cards in recycling_sources(game, pile_id))
+    return total

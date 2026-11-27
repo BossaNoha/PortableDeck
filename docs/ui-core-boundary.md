@@ -1,5 +1,13 @@
 # UI/core boundary audit
 
+Automatic refill: optional association automatic=True defaults off. Shared
+capacity query validates available draw plus assigned discard before batch
+mutation. Single draws recycle only when empty; original order is consumed
+first. Existing session transaction groups draw/refill into one Undo/checkpoint.
+GUI count bounds/availability use combined capacity; CLI --auto-refill sets the
+same association flag. Deal and Shared offer behavior remains unchanged.
+
+
 Linked recycling: enable_linked_recycling defaults False with draw_pile_recycling
 mapping draw IDs to typed shared/personal discard indices. Validation checks
 configured IDs, counts and ownership; personal sources require an owned target.
@@ -9,7 +17,7 @@ blocks unmapped targets; disabled mode retains legacy main/all-discard behavior
 and rejects named targets. GUI Draw piles edits links, Discard pile exposes the
 manual action and personal discard counts; CLI recycle/--recycle-from shares the
 same path. Presets, saves, legacy defaults, restart, rollback, access and both
-native Tk shared/personal flows are covered. Automatic refill is not introduced.
+native Tk shared/personal flows are covered. Optional per-link automatic refill now applies to single/batch drawing only.
 
 Selected draw destinations: insert_draw_deck accepts draw_pile_id and validates
 ownership/ranges against the selected pile before removing the hand card.
@@ -272,7 +280,7 @@ The local hotseat core and extracted application services can run without
 Tkinter. Named action execution, transaction/Undo/checkpoint behavior, player
 projections, turn-start decisions, saves, deck-library operations, presets and
 settings application/default restoration have independent entry points. The
-latest full suite passed 576 tests; native Tk probes for session, deck and preset
+latest full suite passed 579 tests; native Tk probes for session, deck and preset
 lifecycles are recorded below. This audit changes documentation only and does
 not claim a new exhaustive native/manual test run.
 

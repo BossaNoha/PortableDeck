@@ -294,6 +294,10 @@ class Game(GameLog, FlippingCards, SpecialActions, PlayerLeaving, CardsVisibilit
     def deal_card_to_current(self, draw_pile_id="main"):
         from .drawpiles import resolve_draw_pile
         pile = resolve_draw_pile(self, draw_pile_id)
+        if not pile.cards:
+            from .drawrecycling import draw_capacity
+            if draw_capacity(self, draw_pile_id):
+                self.recycle_discard_into_deck(draw_pile_id)
         card = (self.deck if draw_pile_id == "main" else pile).draw_card()
         player = self.players[self.current_player_index]
         if card:

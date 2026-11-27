@@ -290,6 +290,7 @@ def main(argv=None):
     parser.add_argument("--recycle-from", nargs=3, action="append", default=[], metavar=("DRAW_ID", "TYPE", "PILE"), help="Assign shared or personal discard to a draw pile; repeat as needed")
     parser.add_argument("--personal-discards", type=int, default=0)
     parser.add_argument("--shared-discards", type=int, default=1)
+    parser.add_argument("--auto-refill", action="append", default=[], metavar="DRAW_ID", help="Automatically refill this linked pile during draw/draw-many")
     args = parser.parse_args(argv)
     try:
         if args.load:
@@ -300,6 +301,10 @@ def main(argv=None):
                 if kind not in {"shared", "personal"} or pile_id in links:
                     raise ValueError("Each draw ID needs one shared or personal discard association.")
                 links[pile_id] = {"personal": kind == "personal", "pile_index": CLIClient.positive(index) - 1}
+            for pile_id in args.auto_refill:
+                if pile_id not in links:
+                    raise ValueError("--auto-refill requires a --recycle-from association.")
+                links[pile_id]["automatic"] = True
             game = create_game({
                 "num_players": args.players,
                 "enable_linked_recycling": args.linked_recycling or bool(links),
